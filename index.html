@@ -226,9 +226,35 @@
     outline:none;
     cursor:pointer;
   }
-  .bg-picker select option{
+   .bg-picker select option{
     background:var(--night);
     color:var(--rind);
+  }
+
+  /* ---------- OFFLINE EARNINGS BANNER ---------- */
+  .offline-banner{
+    position:fixed;
+    top:16px;
+    left:50%;
+    transform:translateX(-50%) translateY(-12px);
+    background:var(--card);
+    border:1px solid var(--melon-light);
+    color:var(--rind);
+    font-family:'Poppins', sans-serif;
+    font-size:12.5px;
+    font-weight:500;
+    padding:10px 16px;
+    border-radius:12px;
+    box-shadow:0 12px 30px -14px rgba(0,0,0,0.6);
+    z-index:1000;
+    opacity:0;
+    transition:opacity .4s ease, transform .4s ease;
+    max-width:90vw;
+    text-align:center;
+  }
+  .offline-banner.visible{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
   }
 
   /* ---------- TABS ---------- */
@@ -713,8 +739,10 @@
       selectedSong: 0,
       cursorsOwned: false,
       selectedCursor: 'default',
-      bgOwned: false,
-      selectedBg: 'default'
+       bgOwned: false,
+      selectedBg: 'default',
+      offlineEarningsOwned: false,
+      lastSeen: null
     };
   }
 
@@ -727,8 +755,9 @@
     } catch(e) {}
   }
 
-  function saveGame(){
+    function saveGame(){
     try {
+      game.lastSeen = Date.now();
       localStorage.setItem(SAVE_KEY, JSON.stringify(game));
     } catch(e) {}
   }
@@ -802,6 +831,8 @@
   const CURSOR_COST = 300;
   const CORNER_BONUS = 10000;
   const BG_COST = 400;
+  const OFFLINE_COST = 100000;
+  const OFFLINE_CAP_SECONDS = 24 * 60 * 60;
 
   function buyMusicPlayer(){
     if (game.musicPlayerOwned || game.clicks < MUSIC_PLAYER_COST) return;
@@ -823,7 +854,7 @@
     showCursorPicker();
   }
 
-  function buyBackground(){
+   function buyBackground(){
     if (game.bgOwned || game.clicks < BG_COST) return;
     game.clicks -= BG_COST;
     game.bgOwned = true;
@@ -831,6 +862,15 @@
     saveGame();
     renderShop();
     showBgPicker();
+  }
+
+  function buyOfflineEarnings(){
+    if (game.offlineEarningsOwned || game.clicks < OFFLINE_COST) return;
+    game.clicks -= OFFLINE_COST;
+    game.offlineEarningsOwned = true;
+    updateCounter();
+    saveGame();
+    renderShop();
   }
 
   function buyClickBoost(){
@@ -931,7 +971,14 @@
           <h3>Background Switcher</h3>
           <p>One-time buy. Adds a background picker to the top of the page.</p>
         </div>
-        <button class="buy-btn" id="buy-bg" ${game.bgOwned ? 'disabled' : (game.clicks < BG_COST ? 'disabled' : '')}>${game.bgOwned ? 'Owned' : 'Buy (' + BG_COST + ')'}</button>
+               <button class="buy-btn" id="buy-bg" ${game.bgOwned ? 'disabled' : (game.clicks < BG_COST ? 'disabled' : '')}>${game.bgOwned ? 'Owned' : 'Buy (' + BG_COST + ')'}</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Offline Earnings</h3>
+          <p>One-time buy. Keeps your Clicker upgrades earning clicks while the page is closed (capped at 24 hours away).</p>
+        </div>
+        <button class="buy-btn" id="buy-offline" ${game.offlineEarningsOwned ? 'disabled' : (game.clicks < OFFLINE_COST ? 'disabled' : '')}>${game.offlineEarningsOwned ? 'Owned' : 'Buy (' + OFFLINE_COST + ')'}</button>
       </div>
       <div class="save-load-bar">
         <button id="save-btn">Save Data</button>
@@ -947,6 +994,7 @@
     document.getElementById('buy-music').addEventListener('click', buyMusicPlayer);
     document.getElementById('buy-cursors').addEventListener('click', buyCursors);
     document.getElementById('buy-bg').addEventListener('click', buyBackground);
+    document.getElementById('buy-offline').addEventListener('click', buyOfflineEarnings);
     document.getElementById('save-btn').addEventListener('click', exportSave);
     document.getElementById('load-btn').addEventListener('click', () => loadInput.click());
   }
@@ -1082,6 +1130,47 @@
     cursorPickerEl.classList.add('visible');
     cursorSelect.value = game.selectedCursor;
     applyCursor(game.selectedCursor);
+  }
+
+  /* ---------- OFFLINE EARNINGS ---------- */
+  function formatDuration(seconds){
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    const parts = [];
+    if (h) parts.push(h + 'h');
+    if (m) parts.push(m + 'm');
+    if (!h && !m) parts.push(s + 's');
+    return parts.join(' ');
+  }
+
+  function showOfflineBanner(earned, seconds){
+    const banner = document.createElement('div');
+    banner.className = 'offline-banner';
+    banner.textContent = `Welcome back! +${earned.toLocaleString()} clicks earned while away (${formatDuration(seconds)}).`;
+    document.body.appendChild(banner);
+    requestAnimationFrame(() => banner.classList.add('visible'));
+    setTimeout(() => {
+      banner.classList.remove('visible');
+      setTimeout(() => banner.remove(), 500);
+    }, 5000);
+  }
+
+  function applyOfflineEarnings(){
+    if (!game.offlineEarningsOwned || !game.lastSeen) return;
+
+    const elapsedMs = Date.now() - game.lastSeen;
+    if (elapsedMs <= 1000) return;
+
+    const elapsedSeconds = Math.floor(elapsedMs / 1000);
+    const cappedSeconds = Math.min(elapsedSeconds, OFFLINE_CAP_SECONDS);
+    const earned = cappedSeconds * game.autoClickerOwned;
+
+    if (earned > 0) {
+      game.clicks += earned;
+      saveGame();
+      showOfflineBanner(earned, cappedSeconds);
+    }
   }
 
   /* ---------- BACKGROUND SWITCHER ----------
@@ -1368,8 +1457,9 @@
     });
   }
 
-  loadGame();
+    loadGame();
   if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
+  applyOfflineEarnings();
   updateCounter();
   if (game.musicPlayerOwned) showMusicPlayer();
   if (game.cursorsOwned) showCursorPicker();
@@ -1377,8 +1467,13 @@
   for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
   for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
 
-  renderTabs();
+    renderTabs();
   renderActiveTab();
+
+  window.addEventListener('beforeunload', saveGame);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveGame();
+  });
 </script>
 
 </body>
