@@ -386,7 +386,7 @@
     transform:translateY(-1px);
   }
 
-  /* ---------- DVD LOGO ---------- */
+    /* ---------- DVD LOGO ---------- */
   .dvd-logo{
     position:fixed;
     top:0;
@@ -401,6 +401,9 @@
     z-index:999;
     user-select:none;
     white-space:pre;
+  }
+  .dvd-logo.behind{
+    z-index:-1;
   }
 
   /* ---------- CREWMATE ---------- */
@@ -661,6 +664,7 @@
       clickBoostOwned: 0,
       autoClickerOwned: 0,
       dvdOwned: 0,
+      dvdBehind: false,
       amogusOwned: 0,
       amogusAlive: 0,
       musicPlayerOwned: false,
@@ -831,12 +835,19 @@
         </div>
         <button class="buy-btn" id="buy-auto" ${game.clicks < autoClickerCost() ? 'disabled' : ''}>Buy (${autoClickerCost()})</button>
       </div>
-      <div class="shop-card">
+            <div class="shop-card">
         <div class="shop-info">
           <h3>DVD Logo</h3>
           <p>Spawns a bouncing logo that changes color on every wall bounce. <span class="owned">Owned: ${game.dvdOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-dvd" ${game.clicks < DVD_COST ? 'disabled' : ''}>Buy (${DVD_COST})</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>DVD Layer</h3>
+          <p>Send the DVD logos behind the page, or bring them back to the front.</p>
+        </div>
+        <button class="buy-btn" id="toggle-dvd-layer">${game.dvdBehind ? 'Bring Front' : 'Send Back'}</button>
       </div>
       <div class="shop-card">
         <div class="shop-info">
@@ -868,6 +879,7 @@
     document.getElementById('buy-boost').addEventListener('click', buyClickBoost);
     document.getElementById('buy-auto').addEventListener('click', buyAutoClicker);
     document.getElementById('buy-dvd').addEventListener('click', buyDvd);
+    document.getElementById('toggle-dvd-layer').addEventListener('click', toggleDvdLayer);
     document.getElementById('buy-amogus').addEventListener('click', buyAmogus);
     document.getElementById('buy-music').addEventListener('click', buyMusicPlayer);
     document.getElementById('buy-cursors').addEventListener('click', buyCursors);
@@ -1006,9 +1018,10 @@ async function applyCursor(value){
   /* ---------- DVD LOGO ---------- */
   const DVD_COLORS = ['#57ab46', '#79cf67', '#c1aef0', '#faf3df', '#ff6f9c', '#66c2ff'];
 
-  function spawnDvd(){
+   function spawnDvd(){
     const dvd = document.createElement('div');
     dvd.className = 'dvd-logo';
+    if (game.dvdBehind) dvd.classList.add('behind');
     dvd.textContent = 'DVD\nVIDEO';
     document.body.appendChild(dvd);
 
@@ -1048,6 +1061,13 @@ async function applyCursor(value){
     }
 
     requestAnimationFrame(tick);
+  }
+
+  function toggleDvdLayer(){
+    game.dvdBehind = !game.dvdBehind;
+    document.querySelectorAll('.dvd-logo').forEach(el => el.classList.toggle('behind', game.dvdBehind));
+    saveGame();
+    renderShop();
   }
 
   /* ---------- CREWMATE (AMOGUS) ---------- */
