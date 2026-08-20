@@ -21,7 +21,11 @@
     --line: rgba(255,255,255,0.06);
   }
 
-  *{box-sizing:border-box;}  body.custom-cursor-active *{   cursor:inherit !important; }
+  *{box-sizing:border-box;}
+
+  body.custom-cursor-active *{
+    cursor:inherit !important;
+  }
 
   body{
     margin:0;
@@ -189,7 +193,7 @@
     outline:none;
     cursor:pointer;
   }
-    .cursor-picker select option{
+  .cursor-picker select option{
     background:var(--night);
     color:var(--rind);
   }
@@ -419,7 +423,7 @@
     transform:translateY(-1px);
   }
 
-    /* ---------- DVD LOGO ---------- */
+  /* ---------- DVD LOGO ---------- */
   .dvd-logo{
     position:fixed;
     top:0;
@@ -585,7 +589,7 @@
   <audio id="song-audio"></audio>
   <input type="file" id="load-input" accept="application/json" style="display:none">
 
-   <div class="cursor-picker" id="cursor-picker">
+  <div class="cursor-picker" id="cursor-picker">
     <select id="cursor-select">
       <option value="default">Default</option>
       <option value="duck.png">Duck</option>
@@ -760,7 +764,7 @@
     updateCounter();
     saveGame();
 
-      if (game.musicPlayerOwned) showMusicPlayer();
+    if (game.musicPlayerOwned) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
     for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
@@ -809,7 +813,7 @@
     showMusicPlayer();
   }
 
-   function buyCursors(){
+  function buyCursors(){
     if (game.cursorsOwned || game.clicks < CURSOR_COST) return;
     game.clicks -= CURSOR_COST;
     game.cursorsOwned = true;
@@ -887,7 +891,7 @@
         </div>
         <button class="buy-btn" id="buy-auto" ${game.clicks < autoClickerCost() ? 'disabled' : ''}>Buy (${autoClickerCost()})</button>
       </div>
-            <div class="shop-card">
+      <div class="shop-card">
         <div class="shop-info">
           <h3>DVD Logo</h3>
           <p>Spawns a bouncing logo that changes color on every wall bounce. <span class="owned">Owned: ${game.dvdOwned}</span></p>
@@ -920,7 +924,7 @@
           <h3>Custom Cursors</h3>
           <p>One-time buy. Adds a cursor picker to the top of the page.</p>
         </div>
-      <button class="buy-btn" id="buy-cursors" ${game.cursorsOwned ? 'disabled' : (game.clicks < CURSOR_COST ? 'disabled' : '')}>${game.cursorsOwned ? 'Owned' : 'Buy (' + CURSOR_COST + ')'}</button>
+        <button class="buy-btn" id="buy-cursors" ${game.cursorsOwned ? 'disabled' : (game.clicks < CURSOR_COST ? 'disabled' : '')}>${game.cursorsOwned ? 'Owned' : 'Buy (' + CURSOR_COST + ')'}</button>
       </div>
       <div class="shop-card">
         <div class="shop-info">
@@ -948,7 +952,7 @@
   }
 
   /* ---------- MUSIC PLAYER ---------- */
-   const SONGS = [
+  const SONGS = [
     { label: "Tidal Wave (Shiawase)", file: "shiawave__tidalwave_.mp3" },
     { label: "that friend who can always catch your tune", file: "tfwcacyt.mp3" },
     { label: "Lo-Fi Beats", file: "lofi.mp3" },
@@ -960,7 +964,7 @@
     { label: "Masquerade Party", file: "mp.mp3" }
   ];
 
-   const musicPlayerEl = document.getElementById('music-player');
+  const musicPlayerEl = document.getElementById('music-player');
   const songSelect = document.getElementById('song-select');
   const songAudio = document.getElementById('song-audio');
   const playBtn = document.getElementById('play-btn');
@@ -1027,46 +1031,46 @@
 
   const cursorCache = {};
 
-function resizeCursorImage(src, size){
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.drawImage(img, 0, 0, size, size);
-      try {
-        resolve(canvas.toDataURL());
-      } catch (e) {
-        reject(e);
-      }
-    };
-    img.onerror = reject;
-    img.src = src;
-  });
-}
-
-async function applyCursor(value){
-  if (value === 'default') {
-    document.body.style.cursor = 'auto';
-    document.body.classList.remove('custom-cursor-active');
-    return;
+  function resizeCursorImage(src, size){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.drawImage(img, 0, 0, size, size);
+        try {
+          resolve(canvas.toDataURL());
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
   }
 
-  document.body.classList.add('custom-cursor-active');
-
-  if (!cursorCache[value]) {
-    try {
-      cursorCache[value] = await resizeCursorImage(value, 32);
-    } catch (e) {
-      cursorCache[value] = value;
+  async function applyCursor(value){
+    if (value === 'default') {
+      document.body.style.cursor = 'auto';
+      document.body.classList.remove('custom-cursor-active');
+      return;
     }
-  }
 
-  document.body.style.cursor = `url('${cursorCache[value]}') 16 16, auto`;
-}
+    document.body.classList.add('custom-cursor-active');
+
+    if (!cursorCache[value]) {
+      try {
+        cursorCache[value] = await resizeCursorImage(value, 32);
+      } catch (e) {
+        cursorCache[value] = value;
+      }
+    }
+
+    document.body.style.cursor = `url('${cursorCache[value]}') 16 16, auto`;
+  }
 
   cursorSelect.addEventListener('change', () => {
     game.selectedCursor = cursorSelect.value;
@@ -1080,7 +1084,7 @@ async function applyCursor(value){
     applyCursor(game.selectedCursor);
   }
 
-    /* ---------- BACKGROUND SWITCHER ----------
+  /* ---------- BACKGROUND SWITCHER ----------
      Add your own backgrounds to this list. Each entry needs:
        label - shown in the dropdown
        file  - "default" for the site's normal background, or an image
@@ -1129,9 +1133,9 @@ async function applyCursor(value){
   }
 
   /* ---------- DVD LOGO ---------- */
-  const DVD_COLORS
+  const DVD_COLORS = ['#57ab46', '#79cf67', '#c1aef0', '#faf3df', '#ff6f9c', '#66c2ff'];
 
-   function spawnDvd(){
+  function spawnDvd(){
     const dvd = document.createElement('div');
     dvd.className = 'dvd-logo';
     if (game.dvdBehind) dvd.classList.add('behind');
@@ -1145,7 +1149,7 @@ async function applyCursor(value){
     let colorIndex = Math.floor(Math.random() * DVD_COLORS.length);
     dvd.style.color = DVD_COLORS[colorIndex];
 
-       function tick(){
+    function tick(){
       if (!document.body.contains(dvd)) return;
 
       const w = dvd.offsetWidth || 90;
@@ -1361,7 +1365,7 @@ async function applyCursor(value){
     });
   }
 
-    loadGame();
+  loadGame();
   if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
   updateCounter();
   if (game.musicPlayerOwned) showMusicPlayer();
