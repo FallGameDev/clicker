@@ -852,7 +852,7 @@
       <div class="shop-card">
         <div class="shop-info">
           <h3>Amogus</h3>
-          <p>Spawns a crewmate who does 5 tasks, then wanders. Click him for 50 (or 75 once tasks are done). <span class="owned">Owned: ${game.amogusAlive}</span></p>
+          <p>Spawns a crewmate who does 5 tasks, then wanders. Click him for 100 (or 200 once tasks are done). <span class="owned">Owned: ${game.amogusAlive}</span></p>
         </div>
         <button class="buy-btn" id="buy-amogus" ${game.clicks < AMOGUS_COST ? 'disabled' : ''}>Buy (${AMOGUS_COST})</button>
       </div>
@@ -1132,7 +1132,7 @@ async function applyCursor(value){
       dead = true;
       el.classList.add('dead');
       el.classList.remove('working', 'tasking', 'done');
-      game.clicks += tasksDone ? 75 : 50;
+      game.clicks += tasksDone ? 200 : 100;
       game.amogusAlive = Math.max(0, game.amogusAlive - 1);
       updateCounter();
       saveGame();
