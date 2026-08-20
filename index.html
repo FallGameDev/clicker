@@ -914,8 +914,9 @@
   const cursorSelect = document.getElementById('cursor-select');
 
   function applyCursor(value){
-    document.body.style.cursor = (value === 'default') ? 'auto' : `url('${value}'), auto`;
-  }
+  document.body.style.cursor = (value === 'default') ? 'auto' : `url('${value}'), auto`;
+  document.body.classList.toggle('custom-cursor-active', value !== 'default');
+}
 
   cursorSelect.addEventListener('change', () => {
     game.selectedCursor = cursorSelect.value;
