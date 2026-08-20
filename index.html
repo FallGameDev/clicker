@@ -189,7 +189,40 @@
     outline:none;
     cursor:pointer;
   }
-  .cursor-picker select option{
+    .cursor-picker select option{
+    background:var(--night);
+    color:var(--rind);
+  }
+
+  /* ---------- BACKGROUND PICKER ---------- */
+  .bg-picker{
+    display:none;
+    align-items:center;
+    gap:10px;
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 12px;
+    margin-bottom:18px;
+  }
+  .bg-picker.visible{
+    display:flex;
+  }
+  .bg-picker select{
+    flex:1;
+    font-family:'Poppins', sans-serif;
+    font-weight:500;
+    font-size:12.5px;
+    color:var(--rind);
+    background:var(--night);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:8px 10px;
+    outline:none;
+    cursor:pointer;
+  }
+  .bg-picker select option{
     background:var(--night);
     color:var(--rind);
   }
@@ -552,13 +585,17 @@
   <audio id="song-audio"></audio>
   <input type="file" id="load-input" accept="application/json" style="display:none">
 
-  <div class="cursor-picker" id="cursor-picker">
+   <div class="cursor-picker" id="cursor-picker">
     <select id="cursor-select">
       <option value="default">Default</option>
       <option value="duck.png">Duck</option>
       <option value="banan.png">Banana</option>
       <option value="error.png">Error</option>
     </select>
+  </div>
+
+  <div class="bg-picker" id="bg-picker">
+    <select id="bg-select"></select>
   </div>
 
   <div class="tabs" id="tab-list"></div>
@@ -671,7 +708,9 @@
       musicLoop: false,
       selectedSong: 0,
       cursorsOwned: false,
-      selectedCursor: 'default'
+      selectedCursor: 'default',
+      bgOwned: false,
+      selectedBg: 'default'
     };
   }
 
@@ -721,8 +760,9 @@
     updateCounter();
     saveGame();
 
-    if (game.musicPlayerOwned) showMusicPlayer();
+      if (game.musicPlayerOwned) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
+    if (game.bgOwned) showBgPicker();
     for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
     for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
 
@@ -756,6 +796,8 @@
   const AMOGUS_COST = 100;
   const MUSIC_PLAYER_COST = 500;
   const CURSOR_COST = 300;
+  const CORNER_BONUS = 10000;
+  const BG_COST = 400;
 
   function buyMusicPlayer(){
     if (game.musicPlayerOwned || game.clicks < MUSIC_PLAYER_COST) return;
@@ -767,7 +809,7 @@
     showMusicPlayer();
   }
 
-  function buyCursors(){
+   function buyCursors(){
     if (game.cursorsOwned || game.clicks < CURSOR_COST) return;
     game.clicks -= CURSOR_COST;
     game.cursorsOwned = true;
@@ -775,6 +817,16 @@
     saveGame();
     renderShop();
     showCursorPicker();
+  }
+
+  function buyBackground(){
+    if (game.bgOwned || game.clicks < BG_COST) return;
+    game.clicks -= BG_COST;
+    game.bgOwned = true;
+    updateCounter();
+    saveGame();
+    renderShop();
+    showBgPicker();
   }
 
   function buyClickBoost(){
@@ -868,7 +920,14 @@
           <h3>Custom Cursors</h3>
           <p>One-time buy. Adds a cursor picker to the top of the page.</p>
         </div>
-        <button class="buy-btn" id="buy-cursors" ${game.cursorsOwned ? 'disabled' : (game.clicks < CURSOR_COST ? 'disabled' : '')}>${game.cursorsOwned ? 'Owned' : 'Buy (' + CURSOR_COST + ')'}</button>
+      <button class="buy-btn" id="buy-cursors" ${game.cursorsOwned ? 'disabled' : (game.clicks < CURSOR_COST ? 'disabled' : '')}>${game.cursorsOwned ? 'Owned' : 'Buy (' + CURSOR_COST + ')'}</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Background Switcher</h3>
+          <p>One-time buy. Adds a background picker to the top of the page.</p>
+        </div>
+        <button class="buy-btn" id="buy-bg" ${game.bgOwned ? 'disabled' : (game.clicks < BG_COST ? 'disabled' : '')}>${game.bgOwned ? 'Owned' : 'Buy (' + BG_COST + ')'}</button>
       </div>
       <div class="save-load-bar">
         <button id="save-btn">Save Data</button>
@@ -883,6 +942,7 @@
     document.getElementById('buy-amogus').addEventListener('click', buyAmogus);
     document.getElementById('buy-music').addEventListener('click', buyMusicPlayer);
     document.getElementById('buy-cursors').addEventListener('click', buyCursors);
+    document.getElementById('buy-bg').addEventListener('click', buyBackground);
     document.getElementById('save-btn').addEventListener('click', exportSave);
     document.getElementById('load-btn').addEventListener('click', () => loadInput.click());
   }
@@ -1020,8 +1080,56 @@ async function applyCursor(value){
     applyCursor(game.selectedCursor);
   }
 
+    /* ---------- BACKGROUND SWITCHER ----------
+     Add your own backgrounds to this list. Each entry needs:
+       label - shown in the dropdown
+       file  - "default" for the site's normal background, or an image
+               filename (uploaded to the server) to use as a full-page background
+     Example:
+       { label: "Space", file: "space.png" }
+  ------------------------------------------------- */
+  const BACKGROUNDS = [
+    { label: "Default", file: "default" }
+  ];
+
+  const bgPickerEl = document.getElementById('bg-picker');
+  const bgSelect = document.getElementById('bg-select');
+
+  BACKGROUNDS.forEach(bg => {
+    const opt = document.createElement('option');
+    opt.value = bg.file;
+    opt.textContent = bg.label;
+    bgSelect.appendChild(opt);
+  });
+
+  function applyBackground(file){
+    if (file === 'default') {
+      document.body.style.backgroundImage = '';
+      document.body.style.backgroundSize = '';
+      document.body.style.backgroundPosition = '';
+      document.body.style.backgroundRepeat = '';
+      return;
+    }
+    document.body.style.backgroundImage = `url('${file}')`;
+    document.body.style.backgroundSize = 'cover';
+    document.body.style.backgroundPosition = 'center';
+    document.body.style.backgroundRepeat = 'no-repeat';
+  }
+
+  bgSelect.addEventListener('change', () => {
+    game.selectedBg = bgSelect.value;
+    applyBackground(game.selectedBg);
+    saveGame();
+  });
+
+  function showBgPicker(){
+    bgPickerEl.classList.add('visible');
+    bgSelect.value = game.selectedBg;
+    applyBackground(game.selectedBg);
+  }
+
   /* ---------- DVD LOGO ---------- */
-  const DVD_COLORS = ['#57ab46', '#79cf67', '#c1aef0', '#faf3df', '#ff6f9c', '#66c2ff'];
+  const DVD_COLORS
 
    function spawnDvd(){
     const dvd = document.createElement('div');
@@ -1037,7 +1145,7 @@ async function applyCursor(value){
     let colorIndex = Math.floor(Math.random() * DVD_COLORS.length);
     dvd.style.color = DVD_COLORS[colorIndex];
 
-    function tick(){
+       function tick(){
       if (!document.body.contains(dvd)) return;
 
       const w = dvd.offsetWidth || 90;
@@ -1046,17 +1154,23 @@ async function applyCursor(value){
       x += vx;
       y += vy;
 
-      let bounced = false;
+      let xBounced = false;
+      let yBounced = false;
 
-      if (x <= 0) { x = 0; vx = Math.abs(vx); bounced = true; }
-      if (x + w >= window.innerWidth) { x = window.innerWidth - w; vx = -Math.abs(vx); bounced = true; }
-      if (y <= 0) { y = 0; vy = Math.abs(vy); bounced = true; }
-      if (y + h >= window.innerHeight) { y = window.innerHeight - h; vy = -Math.abs(vy); bounced = true; }
+      if (x <= 0) { x = 0; vx = Math.abs(vx); xBounced = true; }
+      if (x + w >= window.innerWidth) { x = window.innerWidth - w; vx = -Math.abs(vx); xBounced = true; }
+      if (y <= 0) { y = 0; vy = Math.abs(vy); yBounced = true; }
+      if (y + h >= window.innerHeight) { y = window.innerHeight - h; vy = -Math.abs(vy); yBounced = true; }
 
-      if (bounced) {
+      if (xBounced || yBounced) {
         colorIndex = (colorIndex + 1) % DVD_COLORS.length;
         dvd.style.color = DVD_COLORS[colorIndex];
         game.clicks += game.clickPower;
+
+        if (xBounced && yBounced) {
+          game.clicks += CORNER_BONUS;
+        }
+
         updateCounter();
         saveGame();
       }
@@ -1247,11 +1361,12 @@ async function applyCursor(value){
     });
   }
 
-  loadGame();
+    loadGame();
   if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
   updateCounter();
   if (game.musicPlayerOwned) showMusicPlayer();
   if (game.cursorsOwned) showCursorPicker();
+  if (game.bgOwned) showBgPicker();
   for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
   for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
 
