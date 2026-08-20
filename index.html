@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FallGameDev</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#181428;
+    --card:#221c38;
+    --card-hover:#2a2245;
+    --melon:#57ab46;
+    --melon-light:#79cf67;
+    --rind:#faf3df;
+    --lavender:#c1aef0;
+    --cream:#f6efdd;
+    --muted: rgba(246,239,221,0.6);
+    --line: rgba(255,255,255,0.06);
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background: var(--night);
+    background-image: radial-gradient(circle at 50% -10%, rgba(87,171,70,0.22), transparent 42%);
+    color:var(--cream);
+    font-family:'Poppins', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    justify-content:center;
+    padding:64px 20px 44px;
+  }
+
+  a{color:inherit; text-decoration:none;}
+
+  .page{
+    width:100%;
+    max-width:420px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+  }
+
+  /* ---------- PROFILE ---------- */
+  .click-counter{
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:var(--melon-light);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:5px 14px;
+    margin-bottom:12px;
+    user-select:none;
+    display:none;
+  }
+  .click-counter.visible{
+    display:inline-block;
+  }
+
+  .avatar{
+    width:100px;
+    height:100px;
+    border-radius:50%;
+    overflow:hidden;
+    margin-bottom:20px;
+    box-shadow:0 0 0 3px var(--night), 0 0 0 5px var(--melon), 0 14px 30px -14px rgba(87,171,70,0.6);
+    cursor:pointer;
+    transition:transform .1s ease;
+    user-select:none;
+  }
+  .avatar:active{transform:scale(0.93);}
+  .avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .name{
+    font-family:'Fredoka One', cursive;
+    font-size:22px;
+    color:var(--rind);
+    margin:0 0 8px;
+    letter-spacing:0.3px;
+  }
+
+  .bio{
+    font-size:12.5px;
+    font-weight:400;
+    line-height:1.6;
+    color:var(--muted);
+    max-width:300px;
+    margin:0 0 30px;
+  }
+
+  /* ---------- MUSIC PLAYER ---------- */
+  .music-player{
+    display:none;
+    align-items:center;
+    gap:10px;
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 12px;
+    margin-bottom:18px;
+  }
+  .music-player.visible{
+    display:flex;
+  }
+  .music-player select{
+    flex:1;
+    font-family:'Poppins', sans-serif;
+    font-weight:500;
+    font-size:12.5px;
+    color:var(--rind);
+    background:var(--night);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:8px 10px;
+    outline:none;
+    cursor:pointer;
+  }
+  .music-player select option{
+    background:var(--night);
+    color:var(--rind);
+  }
+  .music-player .play-btn{
+    flex-shrink:0;
+    width:36px;
+    height:36px;
+    border-radius:9px;
+    border:none;
+    background:var(--melon-light);
+    color:var(--night);
+    font-size:14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s ease, transform .12s ease;
+  }
+  .music-player .play-btn:hover{background:var(--melon);}
+  .music-player .play-btn:active{transform:scale(0.94);}
+
+  /* ---------- TABS ---------- */
+  .tabs{
+    display:flex;
+    gap:8px;
+    width:100%;
+    margin-bottom:22px;
+  }
+  .tab-btn{
+    flex:1;
+    font-family:'Fredoka One', cursive;
+    font-size:12.5px;
+    color:var(--muted);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 8px;
+    cursor:pointer;
+    transition:transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .tab-btn:hover{
+    color:var(--rind);
+    transform:translateY(-1px);
+  }
+  .tab-btn.active{
+    background:var(--melon);
+    border-color:var(--melon);
+    color:var(--night);
+  }
+
+  /* ---------- LINK LIST ---------- */
+  .links{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:13px;
+    margin-bottom:40px;
+  }
+
+  .link-card{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:11px 16px;
+    transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
+  }
+  .link-card:hover{
+    transform:translateY(-2px);
+    background:var(--card-hover);
+    box-shadow:0 12px 24px -16px rgba(0,0,0,0.5);
+  }
+  .link-card:active{transform:translateY(0);}
+
+  .link-thumb{
+    width:42px;
+    height:42px;
+    border-radius:11px;
+    overflow:hidden;
+    flex-shrink:0;
+    background:var(--melon);
+  }
+  .link-thumb img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+
+  .link-text{
+    flex:1;
+    text-align:left;
+    min-width:0;
+  }
+  .link-text h3{
+    font-family:'Fredoka One', cursive;
+    font-weight:400;
+    margin:0 0 2px;
+    font-size:13px;
+    color:var(--rind);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .link-text p{
+    margin:0;
+    font-size:11px;
+    font-weight:400;
+    line-height:1.4;
+    color:var(--muted);
+    display:-webkit-box;
+    -webkit-line-clamp:1;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+
+  .link-arrow{
+    flex-shrink:0;
+    font-size:15px;
+    color:var(--melon-light);
+    transition:transform .15s ease;
+  }
+  .link-card:hover .link-arrow{transform:translateX(3px);}
+
+  .empty-state{
+    border:1px dashed var(--line);
+    border-radius:16px;
+    padding:30px 20px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+    width:100%;
+  }
+
+  /* ---------- SHOP ---------- */
+  .shop-card{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px 16px;
+  }
+  .shop-info{
+    flex:1;
+    text-align:left;
+    min-width:0;
+  }
+  .shop-info h3{
+    font-family:'Fredoka One', cursive;
+    font-weight:400;
+    margin:0 0 2px;
+    font-size:13px;
+    color:var(--rind);
+  }
+  .shop-info p{
+    margin:0;
+    font-size:11px;
+    font-weight:400;
+    line-height:1.4;
+    color:var(--muted);
+  }
+  .shop-info .owned{
+    color:var(--lavender);
+    font-weight:600;
+  }
+  .buy-btn{
+    flex-shrink:0;
+    font-family:'Fredoka One', cursive;
+    font-size:11.5px;
+    color:var(--night);
+    background:var(--melon-light);
+    border:none;
+    border-radius:10px;
+    padding:9px 12px;
+    cursor:pointer;
+    transition:transform .12s ease, background .12s ease, opacity .12s ease;
+  }
+  .buy-btn:hover:not(:disabled){transform:translateY(-1px); background:var(--melon);}
+  .buy-btn:active:not(:disabled){transform:translateY(0);}
+  .buy-btn:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+  }
+
+  .save-load-bar{
+    display:flex;
+    gap:10px;
+    width:100%;
+  }
+  .save-load-bar button{
+    flex:1;
+    font-family:'Fredoka One', cursive;
+    font-size:12px;
+    color:var(--rind);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 8px;
+    cursor:pointer;
+    transition:transform .12s ease, border-color .12s ease, color .12s ease;
+  }
+  .save-load-bar button:hover{
+    border-color:var(--melon);
+    color:var(--melon-light);
+    transform:translateY(-1px);
+  }
+
+  /* ---------- DVD LOGO ---------- */
+  .dvd-logo{
+    position:fixed;
+    top:0;
+    left:0;
+    font-family:'Poppins', sans-serif;
+    font-weight:700;
+    font-size:26px;
+    line-height:1.05;
+    text-align:center;
+    background:none;
+    pointer-events:none;
+    z-index:999;
+    user-select:none;
+    white-space:pre;
+  }
+
+  /* ---------- CREWMATE ---------- */
+  .crewmate{
+    position:fixed;
+    width:36px;
+    height:48px;
+    z-index:998;
+    cursor:pointer;
+  }
+  .crewmate .body{
+    position:relative;
+    width:100%;
+    height:100%;
+    transition:transform .4s ease;
+  }
+  .crewmate .shell{
+    position:absolute;
+    inset:0;
+    background:var(--ccolor);
+    border-radius:16px 16px 10px 10px;
+    box-shadow:inset -5px 0 8px rgba(0,0,0,0.25);
+    transition:box-shadow .25s ease;
+  }
+  .crewmate.tasking .shell{
+    box-shadow:inset -5px 0 8px rgba(0,0,0,0.25), 0 0 0 3px #ff4d4d;
+  }
+  .crewmate.done .shell{
+    box-shadow:inset -5px 0 8px rgba(0,0,0,0.25), 0 0 0 3px #4dff88;
+  }
+  .crewmate .visor{
+    position:absolute;
+    top:6px;
+    left:16px;
+    width:18px;
+    height:11px;
+    background:linear-gradient(180deg,#dff6ff,#9fd8f2);
+    border-radius:7px;
+    box-shadow:0 0 0 2px var(--ccolor);
+  }
+  .crewmate .backpack{
+    position:absolute;
+    top:14px;
+    right:-5px;
+    width:9px;
+    height:18px;
+    background:var(--ccolor);
+    filter:brightness(0.72);
+    border-radius:5px;
+  }
+  .crewmate .legs{
+    position:absolute;
+    bottom:-4px;
+    left:5px;
+    width:26px;
+    height:10px;
+    background:var(--ccolor);
+    border-radius:0 0 6px 6px;
+  }
+  .crewmate.facing-left .backpack{
+    left:-5px;
+    right:auto;
+  }
+  .crewmate:hover:not(.dead) .body{
+    transform:translateY(-3px);
+  }
+  .crewmate.dead{
+    cursor:default;
+  }
+  .crewmate.dead .body{
+    transform:rotate(90deg) translate(2px, -2px);
+  }
+  .crewmate.dead .visor{
+    opacity:0.5;
+  }
+  .crewmate.dead::after{
+    content:"";
+    position:absolute;
+    bottom:-6px;
+    left:50%;
+    transform:translateX(-50%);
+    width:54px;
+    height:20px;
+    background:radial-gradient(ellipse at center, rgba(200,30,30,0.55), transparent 72%);
+    border-radius:50%;
+    z-index:-1;
+  }
+  .crewmate.working .body{
+    animation:task-bob .3s ease-in-out infinite alternate;
+  }
+  @keyframes task-bob{
+    from{ transform:translateY(0); }
+    to{ transform:translateY(-3px); }
+  }
+
+  /* ---------- TASK MARKERS ---------- */
+  .task-marker{
+    position:fixed;
+    bottom:4px;
+    width:16px;
+    height:16px;
+    border-radius:4px;
+    background:var(--melon-light);
+    box-shadow:0 0 0 2px rgba(0,0,0,0.35);
+    z-index:997;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Poppins', sans-serif;
+    font-weight:800;
+    font-size:10px;
+    color:var(--night);
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    color:rgba(246,239,221,0.32);
+    font-size:12px;
+    font-weight:400;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+    .link-card:hover{transform:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="click-counter" id="click-counter">0 clicks</div>
+
+  <div class="avatar" id="avatar">
+    <img src="profile.png" alt="FallGameDev profile picture">
+  </div>
+
+  <h1 class="name">FallGameDev</h1>
+  <p class="bio">Indie game developer building weird little worlds across GameMaker, Godot, and Roblox.</p>
+
+  <div class="music-player" id="music-player">
+    <select id="song-select"></select>
+    <button class="play-btn" id="play-btn">&#9658;</button>
+  </div>
+  <audio id="song-audio"></audio>
+  <input type="file" id="load-input" accept="application/json" style="display:none">
+
+  <div class="tabs" id="tab-list"></div>
+
+  <div class="links" id="link-list"></div>
+
+  <footer>FallGameDev &mdash; made with duct tape, coffee, and a little chaos.</footer>
+
+</div>
+
+<script>
+  /* ======================================================
+     EDIT THESE LISTS TO ADD / REMOVE / CHANGE ENTRIES
+     Each entry needs:
+       name  - the title shown on the link
+       desc  - a short description
+       link  - where it goes when clicked
+       image - path or URL to the thumbnail image
+     Add as many items as you want to any list below.
+     ====================================================== */
+  const PROJECTS = [
+    {
+      name: "Fried Rice at Eddie's",
+      desc: "FNAF-style fangame, rebuilt in HTML/CSS/JS.",
+      link: "#",
+      image: "https://placehold.co/100x100/2e5a26/f6efdd?text=FR"
+    },
+    {
+      name: "AMONG US OFFLINE",
+      desc: "Full Among Us clone in a single HTML file.",
+      link: "#",
+      image: "https://placehold.co/100x100/c1aef0/181428?text=AU"
+    },
+    {
+      name: "Cosmic Cat Adventure",
+      desc: "Scratch space shooter, dodge asteroids, collect stars.",
+      link: "#",
+      image: "https://placehold.co/100x100/79cf67/181428?text=CC"
+    }
+  ];
+
+  const VIDEOS = [
+    {
+      name: "Dev Log #1",
+      desc: "First look at Fried Rice at Eddie's in HTML/CSS/JS.",
+      link: "#",
+      image: "https://placehold.co/100x100/ff6f9c/181428?text=DL1"
+    },
+    {
+      name: "BONELAB Stream VOD",
+      desc: "Full stream replay from the channel.",
+      link: "#",
+      image: "https://placehold.co/100x100/57ab46/181428?text=VOD"
+    }
+  ];
+
+  const LINKS = [
+    {
+      name: "YouTube",
+      desc: "Subscribe for dev logs and streams.",
+      link: "#",
+      image: "https://placehold.co/100x100/faf3df/181428?text=YT"
+    },
+    {
+      name: "itch.io",
+      desc: "Play the games as they release.",
+      link: "#",
+      image: "https://placehold.co/100x100/c1aef0/181428?text=IO"
+    }
+  ];
+
+  const TABS = [
+    { id: "projects", label: "Projects", data: PROJECTS },
+    { id: "videos", label: "Videos", data: VIDEOS },
+    { id: "links", label: "Links", data: LINKS },
+    { id: "shop", label: "Shop", data: null }
+  ];
+
+  let activeTab = TABS[0].id;
+
+  const tabBar = document.getElementById('tab-list');
+  const list = document.getElementById('link-list');
+  const counterEl = document.getElementById('click-counter');
+  const avatarEl = document.getElementById('avatar');
+  const loadInput = document.getElementById('load-input');
+
+  loadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => importSave(reader.result);
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  /* ---------- CLICKER GAME STATE ---------- */
+  const SAVE_KEY = 'fallgamedev-clicker-save';
+
+  function defaultGame(){
+    return {
+      clicks: 0,
+      clickPower: 1,
+      clickBoostOwned: 0,
+      autoClickerOwned: 0,
+      dvdOwned: 0,
+      amogusOwned: 0,
+      amogusAlive: 0,
+      musicPlayerOwned: false
+    };
+  }
+
+  let game = defaultGame();
+
+  function loadGame(){
+    try {
+      const saved = JSON.parse(localStorage.getItem(SAVE_KEY));
+      if (saved) game = Object.assign(defaultGame(), saved);
+    } catch(e) {}
+  }
+
+  function saveGame(){
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+    } catch(e) {}
+  }
+
+  function clearEntities(){
+    document.querySelectorAll('.crewmate').forEach(el => el.remove());
+    document.querySelectorAll('.dvd-logo').forEach(el => el.remove());
+  }
+
+  function exportSave(){
+    const blob = new Blob([JSON.stringify(game, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'fallgamedev-save.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importSave(jsonText){
+    let parsed;
+    try {
+      parsed = JSON.parse(jsonText);
+    } catch(e) {
+      alert("That doesn't look like a valid save file.");
+      return;
+    }
+
+    clearEntities();
+    game = Object.assign(defaultGame(), parsed);
+    if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
+
+    updateCounter();
+    saveGame();
+
+    if (game.musicPlayerOwned) showMusicPlayer();
+    for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
+    for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
+
+    renderShop();
+  }
+
+  function updateCounter(){
+    counterEl.textContent = game.clicks.toLocaleString() + (game.clicks === 1 ? ' click' : ' clicks');
+    if (game.clicks > 0) counterEl.classList.add('visible');
+  }
+
+  avatarEl.addEventListener('click', () => {
+    game.clicks += game.clickPower;
+    updateCounter();
+    saveGame();
+    if (activeTab === 'shop') renderShop();
+  });
+
+  setInterval(() => {
+    if (game.autoClickerOwned > 0) {
+      game.clicks += game.autoClickerOwned;
+      updateCounter();
+      saveGame();
+      if (activeTab === 'shop') renderShop();
+    }
+  }, 1000);
+
+  function clickBoostCost(){ return 10 * (game.clickBoostOwned + 1); }
+  function autoClickerCost(){ return 50 * (game.autoClickerOwned + 1); }
+  const DVD_COST = 100;
+  const AMOGUS_COST = 100;
+  const MUSIC_PLAYER_COST = 500;
+
+  function buyMusicPlayer(){
+    if (game.musicPlayerOwned || game.clicks < MUSIC_PLAYER_COST) return;
+    game.clicks -= MUSIC_PLAYER_COST;
+    game.musicPlayerOwned = true;
+    updateCounter();
+    saveGame();
+    renderShop();
+    showMusicPlayer();
+  }
+
+  function buyClickBoost(){
+    const cost = clickBoostCost();
+    if (game.clicks < cost) return;
+    game.clicks -= cost;
+    game.clickBoostOwned += 1;
+    game.clickPower += 1;
+    updateCounter();
+    saveGame();
+    renderShop();
+  }
+
+  function buyAutoClicker(){
+    const cost = autoClickerCost();
+    if (game.clicks < cost) return;
+    game.clicks -= cost;
+    game.autoClickerOwned += 1;
+    updateCounter();
+    saveGame();
+    renderShop();
+  }
+
+  function buyDvd(){
+    if (game.clicks < DVD_COST) return;
+    game.clicks -= DVD_COST;
+    game.dvdOwned += 1;
+    updateCounter();
+    saveGame();
+    renderShop();
+    spawnDvd();
+  }
+
+  function buyAmogus(){
+    if (game.clicks < AMOGUS_COST) return;
+    game.clicks -= AMOGUS_COST;
+    game.amogusOwned += 1;
+    game.amogusAlive += 1;
+    updateCounter();
+    saveGame();
+    renderShop();
+    spawnCrewmate();
+  }
+
+  function renderShop(){
+    list.innerHTML = `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Click Boost</h3>
+          <p>+1 click power per click. <span class="owned">Owned: ${game.clickBoostOwned}</span></p>
+        </div>
+        <button class="buy-btn" id="buy-boost" ${game.clicks < clickBoostCost() ? 'disabled' : ''}>Buy (${clickBoostCost()})</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Clicker</h3>
+          <p>+1 click every second, automatically. <span class="owned">Owned: ${game.autoClickerOwned}</span></p>
+        </div>
+        <button class="buy-btn" id="buy-auto" ${game.clicks < autoClickerCost() ? 'disabled' : ''}>Buy (${autoClickerCost()})</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>DVD Logo</h3>
+          <p>Spawns a bouncing logo that changes color on every wall bounce. <span class="owned">Owned: ${game.dvdOwned}</span></p>
+        </div>
+        <button class="buy-btn" id="buy-dvd" ${game.clicks < DVD_COST ? 'disabled' : ''}>Buy (${DVD_COST})</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Amogus</h3>
+          <p>Spawns a crewmate who does 5 tasks, then wanders. Click him for 50 (or 75 once tasks are done). <span class="owned">Owned: ${game.amogusAlive}</span></p>
+        </div>
+        <button class="buy-btn" id="buy-amogus" ${game.clicks < AMOGUS_COST ? 'disabled' : ''}>Buy (${AMOGUS_COST})</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Music Player</h3>
+          <p>One-time buy. Adds a song picker to the top of the page.</p>
+        </div>
+        <button class="buy-btn" id="buy-music" ${game.musicPlayerOwned ? 'disabled' : (game.clicks < MUSIC_PLAYER_COST ? 'disabled' : '')}>${game.musicPlayerOwned ? 'Owned' : 'Buy (' + MUSIC_PLAYER_COST + ')'}</button>
+      </div>
+      <div class="save-load-bar">
+        <button id="save-btn">Save Data</button>
+        <button id="load-btn">Load Data</button>
+      </div>
+    `;
+
+    document.getElementById('buy-boost').addEventListener('click', buyClickBoost);
+    document.getElementById('buy-auto').addEventListener('click', buyAutoClicker);
+    document.getElementById('buy-dvd').addEventListener('click', buyDvd);
+    document.getElementById('buy-amogus').addEventListener('click', buyAmogus);
+    document.getElementById('buy-music').addEventListener('click', buyMusicPlayer);
+    document.getElementById('save-btn').addEventListener('click', exportSave);
+    document.getElementById('load-btn').addEventListener('click', () => loadInput.click());
+  }
+
+  /* ---------- MUSIC PLAYER ---------- */
+  const SONGS = [
+    { label: "Shiawave", file: "shiawave__tidalwave_.mp3" },
+    { label: "That Friend Who Can Always Catch Your Tune", file: "tfwcacyt.mp3" },
+    { label: "Lo-Fi Beats", file: "lofi.mp3" },
+    { label: "Minecraft", file: "minecraft.mp3" }
+  ];
+
+  const musicPlayerEl = document.getElementById('music-player');
+  const songSelect = document.getElementById('song-select');
+  const songAudio = document.getElementById('song-audio');
+  const playBtn = document.getElementById('play-btn');
+
+  SONGS.forEach((song, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = song.label;
+    songSelect.appendChild(opt);
+  });
+
+  function loadSong(index){
+    songAudio.src = SONGS[index].file;
+  }
+
+  songSelect.addEventListener('change', () => {
+    const wasPlaying = !songAudio.paused;
+    loadSong(songSelect.value);
+    if (wasPlaying) songAudio.play();
+    else playBtn.innerHTML = '&#9658;';
+  });
+
+  playBtn.addEventListener('click', () => {
+    if (!songAudio.src) loadSong(songSelect.value);
+    if (songAudio.paused) {
+      songAudio.play();
+    } else {
+      songAudio.pause();
+    }
+  });
+
+  songAudio.addEventListener('play', () => { playBtn.innerHTML = '&#10074;&#10074;'; });
+  songAudio.addEventListener('pause', () => { playBtn.innerHTML = '&#9658;'; });
+
+  function showMusicPlayer(){
+    musicPlayerEl.classList.add('visible');
+    if (!songAudio.src) loadSong(0);
+  }
+
+  /* ---------- DVD LOGO ---------- */
+  const DVD_COLORS = ['#57ab46', '#79cf67', '#c1aef0', '#faf3df', '#ff6f9c', '#66c2ff'];
+
+  function spawnDvd(){
+    const dvd = document.createElement('div');
+    dvd.className = 'dvd-logo';
+    dvd.textContent = 'DVD\nVIDEO';
+    document.body.appendChild(dvd);
+
+    let x = Math.random() * (window.innerWidth - 90);
+    let y = Math.random() * (window.innerHeight - 60);
+    let vx = (Math.random() < 0.5 ? -1 : 1) * (1.8 + Math.random() * 1.2);
+    let vy = (Math.random() < 0.5 ? -1 : 1) * (1.8 + Math.random() * 1.2);
+    let colorIndex = Math.floor(Math.random() * DVD_COLORS.length);
+    dvd.style.color = DVD_COLORS[colorIndex];
+
+    function tick(){
+      if (!document.body.contains(dvd)) return;
+
+      const w = dvd.offsetWidth || 90;
+      const h = dvd.offsetHeight || 60;
+
+      x += vx;
+      y += vy;
+
+      let bounced = false;
+
+      if (x <= 0) { x = 0; vx = Math.abs(vx); bounced = true; }
+      if (x + w >= window.innerWidth) { x = window.innerWidth - w; vx = -Math.abs(vx); bounced = true; }
+      if (y <= 0) { y = 0; vy = Math.abs(vy); bounced = true; }
+      if (y + h >= window.innerHeight) { y = window.innerHeight - h; vy = -Math.abs(vy); bounced = true; }
+
+      if (bounced) {
+        colorIndex = (colorIndex + 1) % DVD_COLORS.length;
+        dvd.style.color = DVD_COLORS[colorIndex];
+        game.clicks += game.clickPower;
+        updateCounter();
+        saveGame();
+      }
+
+      dvd.style.transform = `translate(${x}px, ${y}px)`;
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  /* ---------- CREWMATE (AMOGUS) ---------- */
+  const CREWMATE_COLORS = ['#c51111','#132ed1','#117f2d','#ed54ba','#ef7d0d','#f5f557','#3f474e','#d6e0f0','#6b2fbb','#71491e','#38fedc','#50ef39'];
+  const TASK_COUNT = 5;
+  let TASK_POSITIONS = [];
+  let taskMarkersReady = false;
+
+  function ensureTaskMarkers(){
+    if (taskMarkersReady) return;
+    taskMarkersReady = true;
+
+    const margin = 36;
+    const usable = window.innerWidth - margin * 2;
+    TASK_POSITIONS = Array.from({ length: TASK_COUNT }, (_, i) => margin + (usable * i / (TASK_COUNT - 1)));
+
+    TASK_POSITIONS.forEach(x => {
+      const marker = document.createElement('div');
+      marker.className = 'task-marker';
+      marker.style.left = (x - 8) + 'px';
+      marker.textContent = '!';
+      document.body.appendChild(marker);
+    });
+  }
+
+  function spawnCrewmate(){
+    ensureTaskMarkers();
+
+    const el = document.createElement('div');
+    el.className = 'crewmate';
+    el.style.setProperty('--ccolor', CREWMATE_COLORS[Math.floor(Math.random() * CREWMATE_COLORS.length)]);
+    el.innerHTML = `
+      <div class="body">
+        <div class="backpack"></div>
+        <div class="shell"></div>
+        <div class="legs"></div>
+        <div class="visor"></div>
+      </div>
+    `;
+    document.body.appendChild(el);
+
+    let x = Math.random() * (window.innerWidth - 36);
+    let direction = Math.random() < 0.5 ? -1 : 1;
+    let speed = 0.6 + Math.random() * 0.8;
+    let dead = false;
+    let taskIndex = 0;
+    let tasksDone = false;
+    let workingUntil = null;
+
+    el.style.bottom = '16px';
+    el.style.left = x + 'px';
+    el.classList.add('tasking');
+    if (direction < 0) el.classList.add('facing-left');
+
+    el.addEventListener('click', () => {
+      if (dead) return;
+      dead = true;
+      el.classList.add('dead');
+      el.classList.remove('working', 'tasking', 'done');
+      game.clicks += tasksDone ? 75 : 50;
+      game.amogusAlive = Math.max(0, game.amogusAlive - 1);
+      updateCounter();
+      saveGame();
+      if (activeTab === 'shop') renderShop();
+      setTimeout(() => {
+        el.style.transition = 'opacity 1s ease';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 1000);
+      }, 3000);
+    });
+
+    function walk(){
+      if (!document.body.contains(el)) return;
+
+      if (!dead) {
+        if (!tasksDone) {
+          const targetX = TASK_POSITIONS[taskIndex];
+
+          if (workingUntil !== null) {
+            if (Date.now() >= workingUntil) {
+              workingUntil = null;
+              el.classList.remove('working');
+              taskIndex += 1;
+              if (taskIndex >= TASK_POSITIONS.length) {
+                tasksDone = true;
+                el.classList.remove('tasking');
+                el.classList.add('done');
+              }
+            }
+          } else {
+            const dx = targetX - x;
+            if (Math.abs(dx) < 2) {
+              workingUntil = Date.now() + 1300;
+              el.classList.add('working');
+            } else {
+              direction = dx > 0 ? 1 : -1;
+              el.classList.toggle('facing-left', direction < 0);
+              x += direction * speed;
+            }
+          }
+        } else {
+          x += direction * speed;
+          const maxX = window.innerWidth - 36;
+
+          if (x <= 0) { x = 0; direction = 1; el.classList.remove('facing-left'); }
+          if (x >= maxX) { x = maxX; direction = -1; el.classList.add('facing-left'); }
+          if (Math.random() < 0.004) {
+            direction *= -1;
+            el.classList.toggle('facing-left', direction < 0);
+          }
+        }
+
+        el.style.left = x + 'px';
+      }
+
+      requestAnimationFrame(walk);
+    }
+
+    requestAnimationFrame(walk);
+  }
+
+  /* ---------- TABS ---------- */
+  function renderTabs(){
+    tabBar.innerHTML = "";
+
+    TABS.forEach(tab => {
+      const btn = document.createElement('button');
+      btn.className = 'tab-btn' + (tab.id === activeTab ? ' active' : '');
+      btn.textContent = tab.label;
+      btn.addEventListener('click', () => {
+        activeTab = tab.id;
+        renderTabs();
+        renderActiveTab();
+      });
+      tabBar.appendChild(btn);
+    });
+  }
+
+  function renderActiveTab(){
+    if (activeTab === 'shop') {
+      renderShop();
+    } else {
+      renderLinks(TABS.find(t => t.id === activeTab).data);
+    }
+  }
+
+  function renderLinks(items){
+    list.innerHTML = "";
+
+    if (!items || items.length === 0) {
+      list.innerHTML = '<div class="empty-state">Nothing here yet &mdash; add an entry to this list in the script to see it here.</div>';
+      return;
+    }
+
+    items.forEach(item => {
+      const card = document.createElement('a');
+      card.className = 'link-card';
+      card.href = item.link || '#';
+
+      card.innerHTML = `
+        <div class="link-thumb">
+          <img src="${item.image}" alt="${item.name}">
+        </div>
+        <div class="link-text">
+          <h3>${item.name}</h3>
+          <p>${item.desc}</p>
+        </div>
+        <span class="link-arrow">&rarr;</span>
+      `;
+
+      list.appendChild(card);
+    });
+  }
+
+  loadGame();
+  if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
+  updateCounter();
+  if (game.musicPlayerOwned) showMusicPlayer();
+  for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
+  for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
+
+  renderTabs();
+  renderActiveTab();
+</script>
+
+</body>
+</html>
