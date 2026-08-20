@@ -883,10 +883,11 @@
     { label: "Minecraft", file: "minecraft.mp3" }
   ];
 
-  const musicPlayerEl = document.getElementById('music-player');
+   const musicPlayerEl = document.getElementById('music-player');
   const songSelect = document.getElementById('song-select');
   const songAudio = document.getElementById('song-audio');
   const playBtn = document.getElementById('play-btn');
+  const loopBtn = document.getElementById('loop-btn');
 
   SONGS.forEach((song, i) => {
     const opt = document.createElement('option');
@@ -901,7 +902,9 @@
 
   songSelect.addEventListener('change', () => {
     const wasPlaying = !songAudio.paused;
+    game.selectedSong = parseInt(songSelect.value, 10);
     loadSong(songSelect.value);
+    saveGame();
     if (wasPlaying) songAudio.play();
     else playBtn.innerHTML = '&#9658;';
   });
@@ -918,9 +921,27 @@
   songAudio.addEventListener('play', () => { playBtn.innerHTML = '&#10074;&#10074;'; });
   songAudio.addEventListener('pause', () => { playBtn.innerHTML = '&#9658;'; });
 
+  function updateLoopBtn(){
+    loopBtn.classList.toggle('active', songAudio.loop);
+  }
+
+  loopBtn.addEventListener('click', () => {
+    songAudio.loop = !songAudio.loop;
+    game.musicLoop = songAudio.loop;
+    saveGame();
+    updateLoopBtn();
+  });
+
   function showMusicPlayer(){
     musicPlayerEl.classList.add('visible');
-    if (!songAudio.src) loadSong(0);
+    const idx = game.selectedSong || 0;
+    songSelect.value = idx;
+    loadSong(idx);
+    songAudio.loop = game.musicLoop;
+    updateLoopBtn();
+    if (game.musicLoop) {
+      songAudio.play().catch(() => {});
+    }
   }
 
   /* ---------- CURSOR PICKER ---------- */
