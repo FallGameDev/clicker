@@ -581,6 +581,235 @@
     color:var(--night);
   }
 
+  /* ---------- SPOOPY BUTTON ---------- */
+  .spoopy-btn{
+    position:fixed;
+    top:16px;
+    right:16px;
+    width:40px;
+    height:40px;
+    padding:0;
+    border:none;
+    background:none;
+    cursor:pointer;
+    opacity:0.25;
+    z-index:500;
+    transition:opacity .2s ease, transform .15s ease;
+  }
+  .spoopy-btn:hover{
+    opacity:0.45;
+    transform:scale(1.05);
+  }
+  .spoopy-btn img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    display:block;
+  }
+
+  /* ---------- MYSTERY MENU ---------- */
+  .mystery-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(10,8,16,0.85);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:2000;
+    padding:20px;
+  }
+  .mystery-overlay.visible{
+    display:flex;
+  }
+  .mystery-box{
+    width:100%;
+    max-width:340px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:28px 24px;
+    text-align:center;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.7);
+    position:relative;
+  }
+  .mystery-close{
+    position:absolute;
+    top:10px;
+    right:12px;
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:18px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .mystery-close:hover{
+    color:var(--rind);
+  }
+  .mystery-title{
+    font-family:'Fredoka One', cursive;
+    font-size:20px;
+    color:var(--rind);
+    margin:0 0 18px;
+  }
+  .mystery-input{
+    width:100%;
+    font-family:'Poppins', sans-serif;
+    font-size:14px;
+    color:var(--rind);
+    background:var(--night);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:11px 14px;
+    outline:none;
+    margin-bottom:14px;
+    box-sizing:border-box;
+  }
+  .mystery-input:focus{
+    border-color:var(--melon-light);
+  }
+  .mystery-submit{
+    width:100%;
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:var(--night);
+    background:var(--melon-light);
+    border:none;
+    border-radius:10px;
+    padding:11px;
+    cursor:pointer;
+    transition:background .15s ease, transform .12s ease;
+  }
+  .mystery-submit:hover{
+    background:var(--melon);
+  }
+  .mystery-submit:active{
+    transform:scale(0.97);
+  }
+  .mystery-spinner{
+    width:40px;
+    height:40px;
+    margin:10px auto 0;
+    border-radius:50%;
+    border:4px solid rgba(255,255,255,0.15);
+    border-top-color:var(--melon-light);
+    animation:mystery-spin .8s linear infinite;
+  }
+  @keyframes mystery-spin{
+    to{ transform:rotate(360deg); }
+  }
+
+  /* ---------- ADMIN PANEL ---------- */
+  .admin-panel{
+    position:fixed;
+    top:90px;
+    left:16px;
+    width:260px;
+    background:var(--card);
+    border:1px solid var(--melon-light);
+    border-radius:14px;
+    box-shadow:0 24px 50px -18px rgba(0,0,0,0.7);
+    z-index:3000;
+    display:none;
+    overflow:hidden;
+  }
+  .admin-panel.visible{
+    display:block;
+  }
+  .admin-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--night);
+    padding:10px 12px;
+    font-family:'Fredoka One', cursive;
+    font-size:12.5px;
+    color:var(--rind);
+    cursor:move;
+    user-select:none;
+    touch-action:none;
+  }
+  .admin-header-btns{
+    display:flex;
+    gap:6px;
+  }
+  .admin-icon-btn{
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:15px;
+    cursor:pointer;
+    line-height:1;
+    padding:2px 4px;
+  }
+  .admin-icon-btn:hover{
+    color:var(--rind);
+  }
+  .admin-body{
+    padding:12px 14px 14px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    max-height:60vh;
+    overflow-y:auto;
+  }
+  .admin-panel.collapsed .admin-body{
+    display:none;
+  }
+  .admin-panel.expanded{
+    top:0 !important;
+    left:0 !important;
+    width:100vw !important;
+    max-width:100vw;
+    height:100vh;
+    border-radius:0;
+  }
+  .admin-panel.expanded .admin-body{
+    max-height:calc(100vh - 46px);
+  }
+  .admin-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-family:'Poppins', sans-serif;
+    font-size:11.5px;
+    color:var(--muted);
+  }
+  .admin-row input[type="number"]{
+    width:78px;
+    background:var(--night);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--rind);
+    padding:6px 8px;
+    font-family:'Poppins', sans-serif;
+    font-size:12px;
+    outline:none;
+  }
+  .admin-row input[type="checkbox"]{
+    width:18px;
+    height:18px;
+    accent-color:var(--melon-light);
+    cursor:pointer;
+  }
+  .admin-apply{
+    margin-top:4px;
+    font-family:'Fredoka One', cursive;
+    font-size:12.5px;
+    color:var(--night);
+    background:var(--melon-light);
+    border:none;
+    border-radius:10px;
+    padding:10px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .admin-apply:hover{
+    background:var(--melon);
+  }
+
   /* ---------- FOOTER ---------- */
   footer{
     color:rgba(246,239,221,0.32);
@@ -595,6 +824,10 @@
 </style>
 </head>
 <body>
+
+<button class="spoopy-btn" id="spoopy-btn" title="???">
+  <img src="spoopy.png" alt="">
+</button>
 
 <div class="page">
 
@@ -616,13 +849,9 @@
   <input type="file" id="load-input" accept="application/json" style="display:none">
 
   <div class="cursor-picker" id="cursor-picker">
-    <select id="cursor-select">
-      <option value="default">Default</option>
-      <option value="duck.png">Duck</option>
-      <option value="banan.png">Banana</option>
-      <option value="error.png">Error</option>
-    </select>
+    <select id="cursor-select"></select>
   </div>
+  <input type="file" id="import-file-input" style="display:none">
 
   <div class="bg-picker" id="bg-picker">
     <select id="bg-select"></select>
@@ -634,6 +863,66 @@
 
   <footer>FallGameDev &mdash; made with duct tape, coffee, and a little chaos.</footer>
 
+</div>
+
+<div class="mystery-overlay" id="mystery-overlay">
+  <div class="mystery-box">
+    <button class="mystery-close" id="mystery-close">&times;</button>
+    <h1 class="mystery-title">What do you seek?</h1>
+    <input type="text" id="mystery-input" class="mystery-input" placeholder="Type here..." autocomplete="off">
+    <button class="mystery-submit" id="mystery-submit">Submit</button>
+    <div class="mystery-spinner" id="mystery-spinner" style="display:none;"></div>
+  </div>
+</div>
+
+<div class="admin-panel" id="admin-panel">
+  <div class="admin-header" id="admin-header">
+    <span>Admin Menu</span>
+    <div class="admin-header-btns">
+      <button class="admin-icon-btn" id="admin-collapse" title="Collapse">&#8722;</button>
+      <button class="admin-icon-btn" id="admin-expand" title="Expand">&#10530;</button>
+      <button class="admin-icon-btn" id="admin-close" title="Close">&times;</button>
+    </div>
+  </div>
+  <div class="admin-body" id="admin-body">
+    <div class="admin-row">
+      <label for="admin-clicks">Clicks</label>
+      <input type="number" id="admin-clicks" min="0">
+    </div>
+    <div class="admin-row">
+      <label for="admin-boost">Click Boost (owned)</label>
+      <input type="number" id="admin-boost" min="0">
+    </div>
+    <div class="admin-row">
+      <label for="admin-auto">Clicker (owned)</label>
+      <input type="number" id="admin-auto" min="0">
+    </div>
+    <div class="admin-row">
+      <label for="admin-dvd">DVD Logos</label>
+      <input type="number" id="admin-dvd" min="0">
+    </div>
+    <div class="admin-row">
+      <label for="admin-amogus">Amoguses</label>
+      <input type="number" id="admin-amogus" min="0">
+    </div>
+    <div class="admin-row">
+      <label for="admin-offline">Offline Earnings</label>
+      <input type="checkbox" id="admin-offline">
+    </div>
+    <div class="admin-row">
+      <label for="admin-bg">Background Switcher</label>
+      <input type="checkbox" id="admin-bg">
+    </div>
+    <div class="admin-row">
+      <label for="admin-cursors">Custom Cursors</label>
+      <input type="checkbox" id="admin-cursors">
+    </div>
+    <div class="admin-row">
+      <label for="admin-music">Music Player</label>
+      <input type="checkbox" id="admin-music">
+    </div>
+    <button class="admin-apply" id="admin-apply">Apply</button>
+  </div>
 </div>
 
 <script>
@@ -742,7 +1031,10 @@
        bgOwned: false,
       selectedBg: 'default',
       offlineEarningsOwned: false,
-      lastSeen: null
+      lastSeen: null,
+      customBackgrounds: [],
+      customSongs: [],
+      customCursors: []
     };
   }
 
@@ -789,6 +1081,7 @@
     clearEntities();
     game = Object.assign(defaultGame(), parsed);
     if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
+    loadCustomAssets();
 
     updateCounter();
     saveGame();
@@ -1018,12 +1311,20 @@
   const playBtn = document.getElementById('play-btn');
   const loopBtn = document.getElementById('loop-btn');
 
-  SONGS.forEach((song, i) => {
+  function renderSongOption(song, index){
     const opt = document.createElement('option');
-    opt.value = i;
+    opt.value = index;
     opt.textContent = song.label;
     songSelect.appendChild(opt);
-  });
+  }
+
+  SONGS.forEach(renderSongOption);
+
+  function addSongOption(entry){
+    const index = SONGS.length;
+    SONGS.push(entry);
+    renderSongOption(entry, index);
+  }
 
   function loadSong(index){
     songAudio.src = SONGS[index].file;
@@ -1076,6 +1377,27 @@
   /* ---------- CURSOR PICKER ---------- */
   const cursorPickerEl = document.getElementById('cursor-picker');
   const cursorSelect = document.getElementById('cursor-select');
+
+  const CURSORS = [
+    { label: "Default", file: "default" },
+    { label: "Duck", file: "duck.png" },
+    { label: "Banana", file: "banan.png" },
+    { label: "Error", file: "error.png" }
+  ];
+
+  function renderCursorOption(entry){
+    const opt = document.createElement('option');
+    opt.value = entry.file;
+    opt.textContent = entry.label;
+    cursorSelect.appendChild(opt);
+  }
+
+  CURSORS.forEach(renderCursorOption);
+
+  function addCursorOption(entry){
+    CURSORS.push(entry);
+    renderCursorOption(entry);
+  }
 
   const cursorCache = {};
 
@@ -1191,12 +1513,31 @@
   const bgPickerEl = document.getElementById('bg-picker');
   const bgSelect = document.getElementById('bg-select');
 
-  BACKGROUNDS.forEach(bg => {
+  function renderBgOption(bg){
     const opt = document.createElement('option');
     opt.value = bg.file;
     opt.textContent = bg.label;
     bgSelect.appendChild(opt);
-  });
+  }
+
+  BACKGROUNDS.forEach(renderBgOption);
+
+  function addBackgroundOption(entry){
+    BACKGROUNDS.push(entry);
+    renderBgOption(entry);
+  }
+
+  function loadCustomAssets(){
+    (game.customBackgrounds || []).forEach(entry => {
+      if (!BACKGROUNDS.some(b => b.file === entry.file)) addBackgroundOption(entry);
+    });
+    (game.customSongs || []).forEach(entry => {
+      if (!SONGS.some(s => s.file === entry.file)) addSongOption(entry);
+    });
+    (game.customCursors || []).forEach(entry => {
+      if (!CURSORS.some(c => c.file === entry.file)) addCursorOption(entry);
+    });
+  }
 
   function applyBackground(file){
     if (file === 'default') {
@@ -1216,6 +1557,67 @@
     game.selectedBg = bgSelect.value;
     applyBackground(game.selectedBg);
     saveGame();
+  });
+
+  /* ---------- IMPORT (image / sound / mouse) ---------- */
+  const importFileInput = document.getElementById('import-file-input');
+  let importKind = null;
+
+  function showToast(message){
+    const banner = document.createElement('div');
+    banner.className = 'offline-banner';
+    banner.textContent = message;
+    document.body.appendChild(banner);
+    requestAnimationFrame(() => banner.classList.add('visible'));
+    setTimeout(() => {
+      banner.classList.remove('visible');
+      setTimeout(() => banner.remove(), 500);
+    }, 4000);
+  }
+
+  function openImportPicker(kind){
+    importKind = kind;
+    importFileInput.accept = (kind === 'sound') ? 'audio/*' : 'image/*';
+    importFileInput.value = '';
+    importFileInput.click();
+  }
+
+  importFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const label = file.name.replace(/\.[^/.]+$/, '') || 'Custom';
+
+      if (importKind === 'image') {
+        const entry = { label: label, file: dataUrl };
+        if (!BACKGROUNDS.some(b => b.file === dataUrl)) {
+          addBackgroundOption(entry);
+          game.customBackgrounds.push(entry);
+          saveGame();
+        }
+        showToast(`Added "${label}" to Background Switcher.`);
+      } else if (importKind === 'sound') {
+        const entry = { label: label, file: dataUrl };
+        if (!SONGS.some(s => s.file === dataUrl)) {
+          addSongOption(entry);
+          game.customSongs.push(entry);
+          saveGame();
+        }
+        showToast(`Added "${label}" to the Music Player.`);
+      } else if (importKind === 'mouse') {
+        const entry = { label: label, file: dataUrl };
+        if (!CURSORS.some(c => c.file === dataUrl)) {
+          addCursorOption(entry);
+          game.customCursors.push(entry);
+          saveGame();
+        }
+        showToast(`Added "${label}" to Custom Cursors.`);
+      }
+    };
+    reader.readAsDataURL(file);
   });
 
   function showBgPicker(){
@@ -1457,8 +1859,248 @@
     });
   }
 
-    loadGame();
+    /* ---------- SPOOPY / MYSTERY MENU ---------- */
+  const spoopyBtn = document.getElementById('spoopy-btn');
+  const mysteryOverlay = document.getElementById('mystery-overlay');
+  const mysteryInput = document.getElementById('mystery-input');
+  const mysterySubmit = document.getElementById('mystery-submit');
+  const mysteryClose = document.getElementById('mystery-close');
+  const mysterySpinner = document.getElementById('mystery-spinner');
+
+  function openMystery(){
+    mysteryOverlay.classList.add('visible');
+    mysteryInput.value = '';
+    mysteryInput.style.display = '';
+    mysterySubmit.style.display = '';
+    mysterySpinner.style.display = 'none';
+    mysteryInput.focus();
+  }
+
+  function closeMystery(){
+    mysteryOverlay.classList.remove('visible');
+  }
+
+  spoopyBtn.addEventListener('click', openMystery);
+  mysteryClose.addEventListener('click', closeMystery);
+  mysteryOverlay.addEventListener('click', (e) => {
+    if (e.target === mysteryOverlay) closeMystery();
+  });
+
+  /* ======================================================
+     PRINT COMMAND TARGETS
+     "print dvd" logs the value each function returns.
+     Add more entries here to make more things printable.
+     ====================================================== */
+  const PRINT_MAP = {
+    dvd: () => game.dvdOwned,
+    clicks: () => game.clicks,
+    boost: () => game.clickBoostOwned,
+    clicker: () => game.autoClickerOwned,
+    amogus: () => game.amogusAlive,
+    song: () => (SONGS[game.selectedSong] ? SONGS[game.selectedSong].label : game.selectedSong),
+    bg: () => game.selectedBg,
+    mouse: () => game.selectedCursor
+  };
+
+  function handlePrintCommand(raw){
+    const rest = raw.replace(/^print\s+/i, '').trim();
+    const quotedMatch = rest.match(/^"([\s\S]*)"$/);
+
+    if (quotedMatch) {
+      console.log(quotedMatch[1]);
+      return;
+    }
+
+    const key = rest.toLowerCase();
+    if (Object.prototype.hasOwnProperty.call(PRINT_MAP, key)) {
+      console.log(PRINT_MAP[key]());
+    } else {
+      console.log(`print: unknown target "${rest}"`);
+    }
+  }
+
+  function submitMysteryAnswer(){
+    const answer = mysteryInput.value.trim();
+    if (!answer) return;
+
+    mysteryInput.style.display = 'none';
+    mysterySubmit.style.display = 'none';
+    mysterySpinner.style.display = 'block';
+
+    /* ======================================================
+       ANSWER LOGIC GOES HERE.
+       "normalized" holds whatever was typed, lowercased.
+       Add checks like:
+         if (normalized === 'some phrase') { ...do something... }
+       Tell me what answers should do and I'll fill this in.
+       ====================================================== */
+    const normalized = answer.toLowerCase();
+
+    setTimeout(() => {
+      mysterySpinner.style.display = 'none';
+
+      if (normalized === 'menu') {
+        closeMystery();
+        openAdminPanel();
+        return;
+      }
+
+      if (normalized.startsWith('import ')) {
+        const kind = normalized.slice(7).trim();
+        if (kind === 'image' || kind === 'sound' || kind === 'mouse') {
+          closeMystery();
+          openImportPicker(kind);
+          return;
+        }
+      }
+
+      if (/^print\s+/i.test(answer)) {
+        handlePrintCommand(answer);
+      }
+
+      // Placeholder for other answers - just resets the form for now.
+      mysteryInput.style.display = '';
+      mysterySubmit.style.display = '';
+      mysteryInput.value = '';
+    }, 2000);
+  }
+
+  mysterySubmit.addEventListener('click', submitMysteryAnswer);
+  mysteryInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') submitMysteryAnswer();
+  });
+
+  /* ---------- ADMIN PANEL ---------- */
+  const adminPanel = document.getElementById('admin-panel');
+  const adminHeader = document.getElementById('admin-header');
+  const adminCollapseBtn = document.getElementById('admin-collapse');
+  const adminCloseBtn = document.getElementById('admin-close');
+  const adminApplyBtn = document.getElementById('admin-apply');
+
+  const adminClicksInput = document.getElementById('admin-clicks');
+  const adminBoostInput = document.getElementById('admin-boost');
+  const adminAutoInput = document.getElementById('admin-auto');
+  const adminDvdInput = document.getElementById('admin-dvd');
+  const adminAmogusInput = document.getElementById('admin-amogus');
+  const adminOfflineInput = document.getElementById('admin-offline');
+  const adminBgInput = document.getElementById('admin-bg');
+  const adminCursorsInput = document.getElementById('admin-cursors');
+  const adminMusicInput = document.getElementById('admin-music');
+
+  function openAdminPanel(){
+    adminClicksInput.value = game.clicks;
+    adminBoostInput.value = game.clickBoostOwned;
+    adminAutoInput.value = game.autoClickerOwned;
+    adminDvdInput.value = game.dvdOwned;
+    adminAmogusInput.value = game.amogusAlive;
+    adminOfflineInput.checked = game.offlineEarningsOwned;
+    adminBgInput.checked = game.bgOwned;
+    adminCursorsInput.checked = game.cursorsOwned;
+    adminMusicInput.checked = game.musicPlayerOwned;
+
+    adminPanel.classList.add('visible');
+    adminPanel.classList.remove('collapsed');
+  }
+
+  const adminExpandBtn = document.getElementById('admin-expand');
+
+  adminCloseBtn.addEventListener('click', () => {
+    adminPanel.classList.remove('visible', 'expanded', 'collapsed');
+    adminCollapseBtn.innerHTML = '&#8722;';
+    adminExpandBtn.innerHTML = '&#10530;';
+  });
+
+  adminCollapseBtn.addEventListener('click', () => {
+    adminPanel.classList.toggle('collapsed');
+    adminCollapseBtn.innerHTML = adminPanel.classList.contains('collapsed') ? '&#43;' : '&#8722;';
+  });
+
+  adminExpandBtn.addEventListener('click', () => {
+    adminPanel.classList.toggle('expanded');
+    const isExpanded = adminPanel.classList.contains('expanded');
+    adminExpandBtn.innerHTML = isExpanded ? '&#10529;' : '&#10530;';
+    if (isExpanded) {
+      adminPanel.classList.remove('collapsed');
+      adminCollapseBtn.innerHTML = '&#8722;';
+    }
+  });
+
+  // Dragging (mouse + touch, via pointer events)
+  let adminDragging = false;
+  let adminOffsetX = 0;
+  let adminOffsetY = 0;
+
+  adminHeader.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.admin-icon-btn')) return;
+    adminDragging = true;
+    const rect = adminPanel.getBoundingClientRect();
+    adminOffsetX = e.clientX - rect.left;
+    adminOffsetY = e.clientY - rect.top;
+    adminHeader.setPointerCapture(e.pointerId);
+  });
+
+  adminHeader.addEventListener('pointermove', (e) => {
+    if (!adminDragging) return;
+    const maxLeft = Math.max(0, window.innerWidth - adminPanel.offsetWidth);
+    const maxTop = Math.max(0, window.innerHeight - adminPanel.offsetHeight);
+    const left = Math.min(Math.max(0, e.clientX - adminOffsetX), maxLeft);
+    const top = Math.min(Math.max(0, e.clientY - adminOffsetY), maxTop);
+    adminPanel.style.left = left + 'px';
+    adminPanel.style.top = top + 'px';
+  });
+
+  adminHeader.addEventListener('pointerup', () => { adminDragging = false; });
+  adminHeader.addEventListener('pointercancel', () => { adminDragging = false; });
+
+  adminApplyBtn.addEventListener('click', () => {
+    const clicksVal = parseInt(adminClicksInput.value, 10);
+    game.clicks = isNaN(clicksVal) ? 0 : Math.max(0, clicksVal);
+
+    const boostVal = parseInt(adminBoostInput.value, 10);
+    game.clickBoostOwned = isNaN(boostVal) ? 0 : Math.max(0, boostVal);
+    game.clickPower = 1 + game.clickBoostOwned;
+
+    const autoVal = parseInt(adminAutoInput.value, 10);
+    game.autoClickerOwned = isNaN(autoVal) ? 0 : Math.max(0, autoVal);
+
+    const dvdVal = parseInt(adminDvdInput.value, 10);
+    game.dvdOwned = isNaN(dvdVal) ? 0 : Math.max(0, dvdVal);
+    document.querySelectorAll('.dvd-logo').forEach(el => el.remove());
+    for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
+
+    const amogusVal = parseInt(adminAmogusInput.value, 10);
+    const safeAmogus = isNaN(amogusVal) ? 0 : Math.max(0, amogusVal);
+    game.amogusOwned = safeAmogus;
+    game.amogusAlive = safeAmogus;
+    document.querySelectorAll('.crewmate').forEach(el => el.remove());
+    for (let i = 0; i < safeAmogus; i++) spawnCrewmate();
+
+    game.offlineEarningsOwned = adminOfflineInput.checked;
+
+    game.bgOwned = adminBgInput.checked;
+    if (game.bgOwned) showBgPicker();
+    else bgPickerEl.classList.remove('visible');
+
+    game.cursorsOwned = adminCursorsInput.checked;
+    if (game.cursorsOwned) showCursorPicker();
+    else cursorPickerEl.classList.remove('visible');
+
+    game.musicPlayerOwned = adminMusicInput.checked;
+    if (game.musicPlayerOwned) {
+      showMusicPlayer();
+    } else {
+      musicPlayerEl.classList.remove('visible');
+      songAudio.pause();
+    }
+
+    updateCounter();
+    saveGame();
+    if (activeTab === 'shop') renderShop();
+  });
+
+  loadGame();
   if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
+  loadCustomAssets();
   applyOfflineEarnings();
   updateCounter();
   if (game.musicPlayerOwned) showMusicPlayer();
