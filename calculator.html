@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  
+  <!-- Google Font for Buttons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Custom pixel font loaded from webserver */
+    @font-face {
+      font-family: 'PixelFont';
+      src: url('pixel.ttf') format('truetype');
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    :root {
+      --bg-color: #fce4ec;
+      --calc-body: #00822e;
+      --calc-body-shadow: #005a20;
+      --calc-accent: #006322;
+      
+      --screen-bezel: #123d1b;
+      --screen-bg: #cbf3d2;
+      --screen-text: #052e0f;
+      
+      --btn-number-bg: #ffb7b2;
+      --btn-number-text: #4a1525;
+      --btn-number-shadow: #e5989b;
+      
+      --btn-operator-bg: #b5ead7;
+      --btn-operator-text: #052e0f;
+      --btn-operator-shadow: #88d4bc;
+      
+      --btn-action-bg: #ff85a1;
+      --btn-action-text: #ffffff;
+      --btn-action-shadow: #d85d7c;
+      
+      --btn-sci-bg: #74c69d;
+      --btn-sci-text: #052e0f;
+      --btn-sci-shadow: #52b788;
+      
+      --btn-mem-bg: #f7aef8;
+      --btn-mem-text: #3d0c3d;
+      --btn-mem-shadow: #d87cd8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Fredoka', sans-serif;
+      padding: 20px;
+    }
+
+    /* Outer Shell - Realistic Handheld Calculator Form */
+    .calculator {
+      background-color: var(--calc-body);
+      padding: 32px 30px 36px 30px;
+      border-radius: 38px;
+      box-shadow: 
+        0 14px 0 var(--calc-body-shadow), 
+        0 25px 35px rgba(0, 0, 0, 0.25);
+      width: 100%;
+      max-width: 520px;
+      position: relative;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* Solar Panel Details for Realism */
+    .calc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+      padding: 0 4px;
+    }
+
+    .brand-logo {
+      color: #ffffff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .solar-panel {
+      background: #3d2314;
+      border: 2px solid #24140b;
+      border-radius: 6px;
+      width: 110px;
+      height: 28px;
+      display: flex;
+      gap: 6px;
+      padding: 3px 6px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+    }
+
+    .solar-cell {
+      flex: 1;
+      background: linear-gradient(180deg, #57331d 0%, #2b180d 100%);
+      border-right: 1px solid #1a0c06;
+    }
+    .solar-cell:last-child {
+      border-right: none;
+    }
+
+    /* Screen Assembly */
+    .display-bezel {
+      background-color: var(--screen-bezel);
+      border-radius: 20px;
+      padding: 18px 22px;
+      margin-bottom: 24px;
+      box-shadow: 
+        inset 0 4px 8px rgba(0,0,0,0.6),
+        0 2px 0 rgba(255,255,255,0.2);
+    }
+
+    .display {
+      background-color: var(--screen-bg);
+      border-radius: 10px;
+      padding: 14px 18px;
+      text-align: right;
+      box-shadow: inset 0 3px 6px rgba(0,0,0,0.2);
+      border: 2px solid #0f2e15;
+    }
+
+    .memory-indicator {
+      font-family: 'PixelFont', monospace;
+      font-size: 0.95rem;
+      color: var(--screen-text);
+      height: 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      opacity: 0.85;
+    }
+
+    .display-text {
+      font-family: 'PixelFont', monospace;
+      font-size: 2.4rem;
+      color: var(--screen-text);
+      min-height: 2.6rem;
+      word-break: break-all;
+      line-height: 1.1;
+      margin-top: 6px;
+    }
+
+    /* Keypad Section Layouts */
+    .keypad {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .grid-mem {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .grid-sci {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      background: var(--calc-accent);
+      padding: 12px;
+      border-radius: 18px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    /* Key Styling */
+    button {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      padding: 14px 0;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.08s ease;
+      user-select: none;
+      outline: none;
+    }
+
+    .btn-num {
+      background-color: var(--btn-number-bg);
+      color: var(--btn-number-text);
+      box-shadow: 0 4px 0 var(--btn-number-shadow);
+      font-size: 1.35rem;
+    }
+
+    .btn-op {
+      background-color: var(--btn-operator-bg);
+      color: var(--btn-operator-text);
+      box-shadow: 0 4px 0 var(--btn-operator-shadow);
+      font-size: 1.35rem;
+    }
+
+    .btn-action {
+      background-color: var(--btn-action-bg);
+      color: var(--btn-action-text);
+      box-shadow: 0 4px 0 var(--btn-action-shadow);
+    }
+
+    .btn-sci {
+      background-color: var(--btn-sci-bg);
+      color: var(--btn-sci-text);
+      box-shadow: 0 3px 0 var(--btn-sci-shadow);
+      font-size: 1rem;
+      padding: 11px 0;
+    }
+
+    .btn-mem {
+      background-color: var(--btn-mem-bg);
+      color: var(--btn-mem-text);
+      box-shadow: 0 3px 0 var(--btn-mem-shadow);
+      font-size: 0.95rem;
+      padding: 9px 0;
+    }
+
+    button:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.2) !important;
+    }
+
+    .span-two {
+      grid-column: span 2;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calculator">
+    <!-- Calculator Header -->
+    <div class="calc-header">
+      <span class="brand-logo">Calculator</span>
+      <div class="solar-panel">
+        <div class="solar-cell"></div>
+        <div class="solar-cell"></div>
+        <div class="solar-cell"></div>
+        <div class="solar-cell"></div>
+      </div>
+    </div>
+
+    <!-- Screen Bezel Assembly -->
+    <div class="display-bezel">
+      <div class="display">
+        <div class="memory-indicator">
+          <span id="mem-status"></span>
+        </div>
+        <div id="display-screen" class="display-text">0</div>
+      </div>
+    </div>
+    
+    <!-- Keypad Assembly -->
+    <div class="keypad">
+      <!-- Memory Row -->
+      <div class="grid-mem">
+        <button class="btn-mem" onclick="memoryClear()">MC</button>
+        <button class="btn-mem" onclick="memoryRecall()">MR</button>
+        <button class="btn-mem" onclick="memoryAdd()">M+</button>
+        <button class="btn-mem" onclick="memorySubtract()">M-</button>
+        <button class="btn-mem" onclick="memoryStore()">MS</button>
+      </div>
+
+      <!-- Scientific Functions Grid Panel -->
+      <div class="grid-sci">
+        <button class="btn-sci" onclick="appendFunc('sin(')">sin</button>
+        <button class="btn-sci" onclick="appendFunc('cos(')">cos</button>
+        <button class="btn-sci" onclick="appendFunc('tan(')">tan</button>
+        <button class="btn-sci" onclick="appendFunc('log(')">log</button>
+        <button class="btn-sci" onclick="appendFunc('ln(')">ln</button>
+
+        <button class="btn-sci" onclick="appendFunc('sqrt(')">√</button>
+        <button class="btn-sci" onclick="appendOperator('^')">xⁿ</button>
+        <button class="btn-sci" onclick="appendConstant('π')">π</button>
+        <button class="btn-sci" onclick="appendConstant('e')">e</button>
+        <button class="btn-sci" onclick="factorial()">x!</button>
+
+        <button class="btn-sci" onclick="appendOperator('(')">(</button>
+        <button class="btn-sci" onclick="appendOperator(')')">)</button>
+        <button class="btn-sci" onclick="appendOperator('%')">%</button>
+        <button class="btn-sci span-two" onclick="appendOperator('1/')">1/x</button>
+      </div>
+
+      <!-- Primary Keypad -->
+      <div class="grid-main">
+        <button class="btn-action span-two" onclick="clearDisplay()">AC</button>
+        <button class="btn-action" onclick="deleteChar()">DEL</button>
+        <button class="btn-op" onclick="appendOperator('/')">÷</button>
+
+        <button class="btn-num" onclick="appendNumber('7')">7</button>
+        <button class="btn-num" onclick="appendNumber('8')">8</button>
+        <button class="btn-num" onclick="appendNumber('9')">9</button>
+        <button class="btn-op" onclick="appendOperator('*')">×</button>
+
+        <button class="btn-num" onclick="appendNumber('4')">4</button>
+        <button class="btn-num" onclick="appendNumber('5')">5</button>
+        <button class="btn-num" onclick="appendNumber('6')">6</button>
+        <button class="btn-op" onclick="appendOperator('-')">-</button>
+
+        <button class="btn-num" onclick="appendNumber('1')">1</button>
+        <button class="btn-num" onclick="appendNumber('2')">2</button>
+        <button class="btn-num" onclick="appendNumber('3')">3</button>
+        <button class="btn-op" onclick="appendOperator('+')">+</button>
+
+        <button class="btn-num span-two" onclick="appendNumber('0')">0</button>
+        <button class="btn-num" onclick="appendNumber('.')">.</button>
+        <button class="btn-action" onclick="calculate()">=</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const display = document.getElementById('display-screen');
+    const memStatus = document.getElementById('mem-status');
+
+    let currentInput = '0';
+    let shouldResetDisplay = false;
+    let memoryValue = parseFloat(localStorage.getItem('calc_memory')) || 0;
+
+    // Initialize Memory UI
+    updateMemoryUI();
+
+    function updateDisplay() {
+      display.textContent = currentInput;
+    }
+
+    function updateMemoryUI() {
+      if (localStorage.getItem('calc_memory') !== null) {
+        memStatus.textContent = 'M';
+      } else {
+        memStatus.textContent = '';
+      }
+    }
+
+    function appendNumber(num) {
+      if (currentInput === '0' || shouldResetDisplay) {
+        if (num === '.') {
+          currentInput = '0.';
+        } else {
+          currentInput = num;
+        }
+        shouldResetDisplay = false;
+      } else {
+        if (num === '.' && currentInput.slice(-1) === '.') return;
+        currentInput += num;
+      }
+      updateDisplay();
+    }
+
+    function appendOperator(op) {
+      if (shouldResetDisplay) shouldResetDisplay = false;
+      if (op === '1/') {
+        currentInput = `1/(${currentInput})`;
+      } else {
+        currentInput += op;
+      }
+      updateDisplay();
+    }
+
+    function appendFunc(func) {
+      if (currentInput === '0' || shouldResetDisplay) {
+        currentInput = func;
+        shouldResetDisplay = false;
+      } else {
+        currentInput += func;
+      }
+      updateDisplay();
+    }
+
+    function appendConstant(con) {
+      if (currentInput === '0' || shouldResetDisplay) {
+        currentInput = con;
+        shouldResetDisplay = false;
+      } else {
+        currentInput += con;
+      }
+      updateDisplay();
+    }
+
+    function clearDisplay() {
+      currentInput = '0';
+      shouldResetDisplay = false;
+      updateDisplay();
+    }
+
+    function deleteChar() {
+      if (shouldResetDisplay) {
+        clearDisplay();
+        return;
+      }
+      if (currentInput.length === 1) {
+        currentInput = '0';
+      } else {
+        currentInput = currentInput.slice(0, -1);
+      }
+      updateDisplay();
+    }
+
+    /* LocalStorage Memory */
+    function memoryStore() {
+      const value = getCurrentValue();
+      if (!isNaN(value)) {
+        memoryValue = value;
+        localStorage.setItem('calc_memory', memoryValue);
+        updateMemoryUI();
+        shouldResetDisplay = true;
+      }
+    }
+
+    function memoryRecall() {
+      if (localStorage.getItem('calc_memory') !== null) {
+        if (currentInput === '0' || shouldResetDisplay) {
+          currentInput = String(memoryValue);
+          shouldResetDisplay = false;
+        } else {
+          currentInput += String(memoryValue);
+        }
+        updateDisplay();
+      }
+    }
+
+    function memoryClear() {
+      memoryValue = 0;
+      localStorage.removeItem('calc_memory');
+      updateMemoryUI();
+    }
+
+    function memoryAdd() {
+      const value = getCurrentValue();
+      if (!isNaN(value)) {
+        memoryValue += value;
+        localStorage.setItem('calc_memory', memoryValue);
+        updateMemoryUI();
+        shouldResetDisplay = true;
+      }
+    }
+
+    function memorySubtract() {
+      const value = getCurrentValue();
+      if (!isNaN(value)) {
+        memoryValue -= value;
+        localStorage.setItem('calc_memory', memoryValue);
+        updateMemoryUI();
+        shouldResetDisplay = true;
+      }
+    }
+
+    function getCurrentValue() {
+      try {
+        return parseFloat(eval(parseExpression(currentInput)));
+      } catch (e) {
+        return NaN;
+      }
+    }
+
+    function factorial() {
+      const num = getCurrentValue();
+      if (isNaN(num) || num < 0) {
+        currentInput = 'Error';
+      } else {
+        let result = 1;
+        for (let i = 2; i <= num; i++) result *= i;
+        currentInput = String(result);
+      }
+      shouldResetDisplay = true;
+      updateDisplay();
+    }
+
+    /* Math Parsing & Execution */
+    function parseExpression(expr) {
+      let parsed = expr
+        .replace(/π/g, 'Math.PI')
+        .replace(/e/g, 'Math.E')
+        .replace(/\^/g, '**')
+        .replace(/%/g, '/100');
+
+      parsed = parsed.replace(/sqrt\(/g, 'Math.sqrt(');
+      parsed = parsed.replace(/log\(/g, 'Math.log10(');
+      parsed = parsed.replace(/ln\(/g, 'Math.log(');
+
+      parsed = parsed.replace(/sin\(([^)]+)\)/g, (match, p1) => `Math.sin(${p1})`);
+      parsed = parsed.replace(/cos\(([^)]+)\)/g, (match, p1) => `Math.cos(${p1})`);
+      parsed = parsed.replace(/tan\(([^)]+)\)/g, (match, p1) => `Math.tan(${p1})`);
+
+      return parsed;
+    }
+
+    function calculate() {
+      try {
+        let parsed = parseExpression(currentInput);
+        let result = eval(parsed);
+
+        if (!isFinite(result) || isNaN(result)) {
+          currentInput = 'Error';
+        } else {
+          currentInput = String(Number(result.toFixed(8)));
+        }
+      } catch (e) {
+        currentInput = 'Error';
+      }
+      shouldResetDisplay = true;
+      updateDisplay();
+    }
+  </script>
+</body>
+</html>
