@@ -1087,6 +1087,7 @@
     game.musicPlayerOwned = true;
     updateCounter();
     saveGame();
+    syncToSheet();
     renderShop();
     showMusicPlayer();
   }
@@ -1098,6 +1099,7 @@
     game.cursorsOwned = true;
     updateCounter();
     saveGame();
+    syncToSheet();
     renderShop();
     showCursorPicker();
   }
@@ -1109,6 +1111,7 @@
     game.bgOwned = true;
     updateCounter();
     saveGame();
+    syncToSheet();
     renderShop();
     showBgPicker();
   }
@@ -1120,6 +1123,7 @@
     game.offlineEarningsOwned = true;
     updateCounter();
     saveGame();
+    syncToSheet();
     renderShop();
   }
 
@@ -1132,6 +1136,7 @@
     game.clickPower += 1;
     updateCounter();
     saveGame();
+    syncToSheet();
     renderShop();
   }
 
@@ -1143,6 +1148,7 @@
     game.autoClickerOwned += 1;
     updateCounter();
     saveGame();
+    syncToSheet();
     renderShop();
   }
 
@@ -1153,6 +1159,7 @@
     game.dvdOwned += 1;
     updateCounter();
     saveGame();
+    syncToSheet();
     renderShop();
     spawnDvd();
   }
@@ -1165,6 +1172,7 @@
     game.amogusAlive += 1;
     updateCounter();
     saveGame();
+    syncToSheet();
     renderShop();
     spawnCrewmate();
   }
@@ -1758,7 +1766,7 @@
   const SITE_OPENS_KEY = 'fgd_site_opens';
   const SESSION_KEY = 'fgd_current_user';
   const THEME_KEY = 'fgd_last_theme';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbwQV852-JgIxvMz2zX3KVQUAdOZQEmqJQE-I02su1Vf0XBzIKPxR-syK5X8B7cxnIIxig/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbywyyctUIqcGncTrOrjxiJ9mNzN7yLRvCRbgiZ-0NOsY_9eAoFXmpJe6HzZixaKrMBaJQ/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -1816,9 +1824,18 @@
   }
 
   function syncToSheetBeacon(){
-    if (!currentUsername || !navigator.sendBeacon) return;
-    const blob = new Blob([JSON.stringify(buildSyncPayload())], { type: 'text/plain' });
-    navigator.sendBeacon(SHEET_API_URL, blob);
+    if (!currentUsername) return;
+    // navigator.sendBeacon doesn't reliably follow the redirect Apps Script
+    // Web Apps respond with, so a keepalive fetch is used instead - it
+    // survives page unload the same way but actually follows the redirect.
+    try {
+      fetch(SHEET_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(buildSyncPayload()),
+        keepalive: true
+      });
+    } catch (e) {}
   }
 
   function applyServerGameData(account){
