@@ -2184,8 +2184,20 @@
           return;
         }
 
-        // Server says this account no longer exists - clear the stale session
-        localStorage.removeItem(SESSION_KEY);
+        if (result.error === 'notfound') {
+          // Server explicitly confirms this account no longer exists.
+          localStorage.removeItem(SESSION_KEY);
+        } else {
+          // Unexpected/empty response (e.g. the Sheet's Apps Script hasn't
+          // been redeployed with the latest actions yet). Don't sign the
+          // person out over this - fall back to the cached local session.
+          currentUsername = session;
+          SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
+          applyAccountTheme(getLastTheme());
+          hideLoadingScreen();
+          startGame();
+          return;
+        }
       } catch (e) {
         // Network hiccup - fall back to the cached theme so the site still
         // works offline, rather than blocking the person out entirely.
