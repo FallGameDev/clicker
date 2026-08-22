@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FallGameDev's Page! </title>
+<title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="maksy.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -15,6 +15,8 @@
     --melon:#57ab46;
     --melon-light:#79cf67;
     --tab-color: var(--melon-light);
+    --moneys-green:#4ade80;
+    --btn-text: var(--night);
     --rind:#faf3df;
     --lavender:#c1aef0;
     --cream:#f6efdd;
@@ -144,7 +146,7 @@
     border-radius:9px;
     border:none;
     background:var(--melon-light);
-    color:var(--night);
+    color:var(--btn-text);
     font-size:14px;
     cursor:pointer;
     display:flex;
@@ -163,7 +165,7 @@
   .music-player .loop-btn.active{
     background:var(--melon-light);
     border-color:var(--melon-light);
-    color:var(--night);
+    color:var(--btn-text);
   }
 
   /* ---------- CURSOR PICKER ---------- */
@@ -284,7 +286,7 @@
   .tab-btn.active{
     background:var(--tab-color);
     border-color:var(--tab-color);
-    color:var(--night);
+    color:var(--btn-text);
   }
 
   /* ---------- LINK LIST ---------- */
@@ -374,6 +376,51 @@
     width:100%;
   }
 
+  /* ---------- STATS ---------- */
+  .stats-card{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:14px;
+    padding:28px 20px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:16px;
+  }
+  .stats-avatar{
+    width:84px;
+    height:84px;
+    border-radius:50%;
+    overflow:hidden;
+    border:3px solid var(--melon-light);
+  }
+  .stats-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .stats-name{
+    font-family:'Fredoka One', cursive;
+    font-size:18px;
+    color:var(--rind);
+    margin:0;
+  }
+  .stats-moneys{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Fredoka One', cursive;
+    font-size:20px;
+    color:var(--moneys-green);
+  }
+  .stats-moneys img{
+    width:26px;
+    height:26px;
+    object-fit:contain;
+  }
+
   /* ---------- SHOP ---------- */
   .shop-card{
     width:100%;
@@ -412,7 +459,7 @@
     flex-shrink:0;
     font-family:'Fredoka One', cursive;
     font-size:11.5px;
-    color:var(--night);
+    color:var(--btn-text);
     background:var(--melon-light);
     border:none;
     border-radius:10px;
@@ -556,7 +603,7 @@
     font-family:'Poppins', sans-serif;
     font-weight:800;
     font-size:10px;
-    color:var(--night);
+    color:var(--btn-text);
   }
 
   /* ---------- LOADING SCREEN ---------- */
@@ -693,7 +740,7 @@
     width:100%;
     font-family:'Fredoka One', cursive;
     font-size:14px;
-    color:var(--night);
+    color:var(--btn-text);
     background:var(--melon-light);
     border:none;
     border-radius:10px;
@@ -825,7 +872,7 @@
     <div class="title-layout">
       <img src="appearchar.png" class="title-char" alt="">
       <div class="title-content">
-        <h1 class="title-heading">FallGameDev's Clicker</h1>
+        <h1 class="title-heading">The Clicker Game!</h1>
         <button class="auth-btn" id="title-play-btn">Play</button>
       </div>
     </div>
@@ -838,7 +885,7 @@
       <input type="text" id="username-input" class="auth-input" placeholder="Username" autocomplete="off">
       <button class="auth-btn" id="username-submit">Submit</button>
       <p class="auth-error" id="username-error" style="display:none;">That username is taken!</p>
-      <a href="#" class="auth-link" id="have-profile-link" style="display:none;">Already have a profile?</a>
+      <a href="#" class="auth-link" id="have-profile-link">Already have an account? Log in</a>
     </div>
   </div>
 
@@ -886,6 +933,7 @@
       <input type="password" id="login-password-input" class="auth-input" placeholder="Password" autocomplete="off">
       <button class="auth-btn" id="login-submit">Log In</button>
       <p class="auth-error" id="login-error" style="display:none;">Incorrect username or password.</p>
+      <a href="#" class="auth-link" id="make-account-link">Don't have an account? Sign up</a>
     </div>
   </div>
 
@@ -984,6 +1032,7 @@
   ];
 
   const TABS = [
+    { id: "stats", label: "Stats", data: null },
     { id: "shop", label: "Shop", data: null }
   ];
 
@@ -997,6 +1046,7 @@
   /* ---------- CLICKER GAME STATE ---------- */
   let SAVE_KEY = 'fallgamedev-clicker-save';
   let currentUsername = null;
+  let currentProfileIcon = null;
 
   function defaultGame(){
     return {
@@ -1058,6 +1108,7 @@
     updateCounter();
     saveGame();
     if (activeTab === 'shop') renderShop();
+    if (activeTab === 'stats') renderStats();
   });
 
   setInterval(() => {
@@ -1066,6 +1117,7 @@
       updateCounter();
       saveGame();
       if (activeTab === 'shop') renderShop();
+      if (activeTab === 'stats') renderStats();
     }
   }, 1000);
 
@@ -1573,6 +1625,8 @@
 
         updateCounter();
         saveGame();
+        if (activeTab === 'shop') renderShop();
+        if (activeTab === 'stats') renderStats();
       }
 
       dvd.style.transform = `translate(${x}px, ${y}px)`;
@@ -1652,6 +1706,7 @@
       updateCounter();
       saveGame();
       if (activeTab === 'shop') renderShop();
+      if (activeTab === 'stats') renderStats();
       setTimeout(() => {
         el.style.transition = 'opacity 1s ease';
         el.style.opacity = '0';
@@ -1729,9 +1784,26 @@
   function renderActiveTab(){
     if (activeTab === 'shop') {
       renderShop();
+    } else if (activeTab === 'stats') {
+      renderStats();
     } else {
       renderLinks(TABS.find(t => t.id === activeTab).data);
     }
+  }
+
+  function renderStats(){
+    list.innerHTML = `
+      <div class="stats-card">
+        <div class="stats-avatar">
+          <img src="${currentProfileIcon || 'profile.png'}" alt="Profile">
+        </div>
+        <h2 class="stats-name">${currentUsername || 'Guest'}</h2>
+        <div class="stats-moneys">
+          <img src="money.png" alt="Moneys">
+          <span>${game.clicks.toLocaleString()}</span>
+        </div>
+      </div>
+    `;
   }
 
   function renderLinks(items){
@@ -1766,6 +1838,7 @@
   const SITE_OPENS_KEY = 'fgd_site_opens';
   const SESSION_KEY = 'fgd_current_user';
   const THEME_KEY = 'fgd_last_theme';
+  const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzQY685J_s7B7li6nsGr0d0khLDxiz_-CEKsBuJVwjhwfMpOxv6f45HXmG23wPK2QLTrA/exec';
 
   function getSiteOpens(){
@@ -1789,12 +1862,16 @@
   function getSession(){
     return localStorage.getItem(SESSION_KEY);
   }
-  function setSession(username, favColor){
+  function setSession(username, favColor, profileIcon){
     localStorage.setItem(SESSION_KEY, username);
     if (favColor) localStorage.setItem(THEME_KEY, favColor);
+    if (profileIcon) localStorage.setItem(PROFILE_ICON_KEY, profileIcon);
   }
   function getLastTheme(){
     return localStorage.getItem(THEME_KEY) || 'green';
+  }
+  function getLastProfileIcon(){
+    return localStorage.getItem(PROFILE_ICON_KEY) || 'profile.png';
   }
 
   function buildSyncPayload(){
@@ -1917,10 +1994,13 @@
     return `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
   }
 
+  const COOL_COLORS = ['blue', 'cyan', 'teal', 'purple', 'black', 'green'];
+
   function applyAccountTheme(color){
     document.documentElement.style.setProperty('--melon', color);
     document.documentElement.style.setProperty('--melon-light', color);
     document.documentElement.style.setProperty('--tab-color', brightenColor(color, 25, 15));
+    document.documentElement.style.setProperty('--btn-text', COOL_COLORS.includes(color) ? '#ffffff' : 'var(--night)');
     document.body.style.backgroundImage = 'none';
     document.body.style.background = color;
   }
@@ -1955,7 +2035,6 @@
     draftAccount = {};
     document.getElementById('username-input').value = '';
     document.getElementById('username-error').style.display = 'none';
-    document.getElementById('have-profile-link').style.display = 'none';
     showAuthScreen('username');
   });
 
@@ -1977,7 +2056,6 @@
 
       if (result.exists) {
         usernameError.style.display = 'block';
-        haveProfileLink.style.display = 'inline-block';
       } else {
         usernameError.style.display = 'none';
         draftAccount.username = name;
@@ -1996,6 +2074,15 @@
   haveProfileLink.addEventListener('click', (e) => {
     e.preventDefault();
     showAuthScreen('login');
+  });
+
+  const makeAccountLink = document.getElementById('make-account-link');
+  makeAccountLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    draftAccount = {};
+    usernameInput.value = '';
+    usernameError.style.display = 'none';
+    showAuthScreen('username');
   });
 
   // Password screen
@@ -2110,8 +2197,9 @@
         return;
       }
 
-      setSession(draftAccount.username, draftAccount.favColor);
+      setSession(draftAccount.username, draftAccount.favColor, draftAccount.profileIcon);
       currentUsername = draftAccount.username;
+      currentProfileIcon = draftAccount.profileIcon;
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
 
       applyAccountTheme(draftAccount.favColor);
@@ -2149,8 +2237,9 @@
 
       loginError.style.display = 'none';
       currentUsername = result.account.username;
+      currentProfileIcon = result.account.profileIcon;
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
-      setSession(currentUsername, result.account.favColor);
+      setSession(currentUsername, result.account.favColor, result.account.profileIcon);
 
       applyServerGameData(result.account);
       applyAccountTheme(result.account.favColor);
@@ -2215,8 +2304,9 @@
 
         if (result.success && result.account) {
           currentUsername = result.account.username;
+          currentProfileIcon = result.account.profileIcon;
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
-          setSession(currentUsername, result.account.favColor);
+          setSession(currentUsername, result.account.favColor, result.account.profileIcon);
           applyServerGameData(result.account);
           applyAccountTheme(result.account.favColor);
           hideLoadingScreen();
@@ -2232,6 +2322,7 @@
           // been redeployed with the latest actions yet). Don't sign the
           // person out over this - fall back to the cached local session.
           currentUsername = session;
+          currentProfileIcon = getLastProfileIcon();
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
           applyAccountTheme(getLastTheme());
           hideLoadingScreen();
@@ -2242,6 +2333,7 @@
         // Network hiccup - fall back to the cached theme so the site still
         // works offline, rather than blocking the person out entirely.
         currentUsername = session;
+        currentProfileIcon = getLastProfileIcon();
         SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
         applyAccountTheme(getLastTheme());
         hideLoadingScreen();
