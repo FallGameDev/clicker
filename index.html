@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FallGameDev's Clicker!</title>
+<title>FallGameDev's Page! </title>
 <link rel="icon" type="image/x-icon" href="maksy.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
@@ -558,6 +558,33 @@
     color:var(--night);
   }
 
+  /* ---------- LOADING SCREEN ---------- */
+  .loading-screen{
+    position:fixed;
+    inset:0;
+    z-index:6000;
+    background:var(--night);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:opacity .35s ease;
+  }
+  .loading-screen.hidden{
+    opacity:0;
+    pointer-events:none;
+  }
+  .loading-spinner{
+    width:52px;
+    height:52px;
+    border-radius:50%;
+    border:5px solid rgba(255,255,255,0.15);
+    border-top-color:var(--melon-light);
+    animation:loading-spin .8s linear infinite;
+  }
+  @keyframes loading-spin{
+    to{ transform:rotate(360deg); }
+  }
+
   /* ---------- AUTH FLOW ---------- */
   body.auth-active .page{
     display:none;
@@ -786,6 +813,10 @@
 </style>
 </head>
 <body>
+
+<div id="loading-screen" class="loading-screen">
+  <div class="loading-spinner"></div>
+</div>
 
 <div id="auth-flow" class="auth-flow">
 
@@ -1742,6 +1773,55 @@
     return localStorage.getItem(THEME_KEY) || 'green';
   }
 
+  function buildSyncPayload(){
+    return {
+      action: 'saveGameData',
+      username: currentUsername,
+      clicks: game.clicks,
+      clickBoostOwned: game.clickBoostOwned,
+      autoClickerOwned: game.autoClickerOwned,
+      dvdOwned: game.dvdOwned,
+      amogusOwned: game.amogusOwned,
+      amogusAlive: game.amogusAlive,
+      musicPlayerOwned: game.musicPlayerOwned,
+      cursorsOwned: game.cursorsOwned,
+      bgOwned: game.bgOwned,
+      offlineEarningsOwned: game.offlineEarningsOwned
+    };
+  }
+
+  async function syncToSheet(){
+    if (!currentUsername) return;
+    try {
+      await sheetRequest(buildSyncPayload());
+    } catch (e) {
+      // Network hiccup - local save already has the data, will retry next interval.
+    }
+  }
+
+  function syncToSheetBeacon(){
+    if (!currentUsername || !navigator.sendBeacon) return;
+    const blob = new Blob([JSON.stringify(buildSyncPayload())], { type: 'text/plain' });
+    navigator.sendBeacon(SHEET_API_URL, blob);
+  }
+
+  function applyServerGameData(account){
+    game = Object.assign(defaultGame(), {
+      clicks: account.clicks || 0,
+      clickBoostOwned: account.clickBoostOwned || 0,
+      clickPower: 1 + (account.clickBoostOwned || 0),
+      autoClickerOwned: account.autoClickerOwned || 0,
+      dvdOwned: account.dvdOwned || 0,
+      amogusOwned: account.amogusOwned || 0,
+      amogusAlive: account.amogusAlive || 0,
+      musicPlayerOwned: !!account.musicPlayerOwned,
+      cursorsOwned: !!account.cursorsOwned,
+      bgOwned: !!account.bgOwned,
+      offlineEarningsOwned: !!account.offlineEarningsOwned
+    });
+    saveGame();
+  }
+
   function applyAccountTheme(color){
     document.documentElement.style.setProperty('--melon', color);
     document.documentElement.style.setProperty('--melon-light', color);
@@ -1750,6 +1830,13 @@
   }
 
   const authFlow = document.getElementById('auth-flow');
+  const loadingScreenEl = document.getElementById('loading-screen');
+
+  function hideLoadingScreen(){
+    if (!loadingScreenEl) return;
+    loadingScreenEl.classList.add('hidden');
+    setTimeout(() => loadingScreenEl.remove(), 400);
+  }
 
   function showAuthScreen(name){
     document.body.classList.add('auth-active');
@@ -1904,7 +1991,17 @@
         password: draftAccount.password,
         favColor: draftAccount.favColor,
         birthday: draftAccount.birthday,
-        profileIcon: draftAccount.profileIcon
+        profileIcon: draftAccount.profileIcon,
+        clicks: 0,
+        clickBoostOwned: 0,
+        autoClickerOwned: 0,
+        dvdOwned: 0,
+        amogusOwned: 0,
+        amogusAlive: 0,
+        musicPlayerOwned: false,
+        cursorsOwned: false,
+        bgOwned: false,
+        offlineEarningsOwned: false
       });
 
       if (result.error === 'taken') {
@@ -1959,6 +2056,7 @@
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
       setSession(currentUsername, result.account.favColor);
 
+      applyServerGameData(result.account);
       applyAccountTheme(result.account.favColor);
       hideAuthFlow();
       startGame();
@@ -1986,28 +2084,63 @@
     renderTabs();
     renderActiveTab();
 
-    window.addEventListener('beforeunload', saveGame);
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') saveGame();
+    window.addEventListener('beforeunload', () => {
+      saveGame();
+      syncToSheetBeacon();
     });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        saveGame();
+        syncToSheetBeacon();
+      }
+    });
+
+    setInterval(syncToSheet, 30000);
   }
 
   /* ---------- BOOTSTRAP ---------- */
-  const openedBefore = getSiteOpens();
-  bumpSiteOpens();
+  (async function bootstrap(){
+    const openedBefore = getSiteOpens();
+    bumpSiteOpens();
 
-  const session = getSession();
+    const session = getSession();
 
-  if (session) {
-    currentUsername = session;
-    SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
-    applyAccountTheme(getLastTheme());
-    startGame();
-  } else if (openedBefore === 0) {
-    showAuthScreen('title');
-  } else {
-    showAuthScreen('login');
-  }
+    if (session) {
+      try {
+        const result = await sheetRequest({ action: 'getAccount', username: session });
+
+        if (result.success && result.account) {
+          currentUsername = result.account.username;
+          SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
+          setSession(currentUsername, result.account.favColor);
+          applyServerGameData(result.account);
+          applyAccountTheme(result.account.favColor);
+          hideLoadingScreen();
+          startGame();
+          return;
+        }
+
+        // Server says this account no longer exists - clear the stale session
+        localStorage.removeItem(SESSION_KEY);
+      } catch (e) {
+        // Network hiccup - fall back to the cached theme so the site still
+        // works offline, rather than blocking the person out entirely.
+        currentUsername = session;
+        SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
+        applyAccountTheme(getLastTheme());
+        hideLoadingScreen();
+        startGame();
+        return;
+      }
+    }
+
+    hideLoadingScreen();
+    if (openedBefore === 0) {
+      showAuthScreen('title');
+    } else {
+      showAuthScreen('login');
+    }
+  })();
 </script>
 
 </body>
