@@ -426,29 +426,6 @@
     cursor:not-allowed;
   }
 
-  .save-load-bar{
-    display:flex;
-    gap:10px;
-    width:100%;
-  }
-  .save-load-bar button{
-    flex:1;
-    font-family:'Fredoka One', cursive;
-    font-size:12px;
-    color:var(--rind);
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:10px 8px;
-    cursor:pointer;
-    transition:transform .12s ease, border-color .12s ease, color .12s ease;
-  }
-  .save-load-bar button:hover{
-    border-color:var(--melon);
-    color:var(--melon-light);
-    transform:translateY(-1px);
-  }
-
   /* ---------- DVD LOGO ---------- */
   .dvd-logo{
     position:fixed;
@@ -581,79 +558,94 @@
     color:var(--night);
   }
 
-  /* ---------- SPOOPY BUTTON ---------- */
-  .spoopy-btn{
-    position:fixed;
-    top:16px;
-    right:16px;
-    width:40px;
-    height:40px;
-    padding:0;
-    border:none;
-    background:none;
-    cursor:pointer;
-    opacity:0.25;
-    z-index:500;
-    transition:opacity .2s ease, transform .15s ease;
+  /* ---------- AUTH FLOW ---------- */
+  body.auth-active .page{
+    display:none;
   }
-  .spoopy-btn:hover{
-    opacity:0.45;
-    transform:scale(1.05);
-  }
-  .spoopy-btn img{
-    width:100%;
-    height:100%;
-    object-fit:contain;
-    display:block;
-  }
-
-  /* ---------- MYSTERY MENU ---------- */
-  .mystery-overlay{
+  .auth-flow{
     position:fixed;
     inset:0;
-    background:rgba(10,8,16,0.85);
-    backdrop-filter:blur(4px);
+    z-index:5000;
+    display:none;
+  }
+  .auth-flow.active{
+    display:block;
+  }
+  .auth-screen{
+    position:absolute;
+    inset:0;
     display:none;
     align-items:center;
     justify-content:center;
-    z-index:2000;
-    padding:20px;
+    padding:24px;
+    box-sizing:border-box;
   }
-  .mystery-overlay.visible{
+  .auth-screen.active{
     display:flex;
   }
-  .mystery-box{
+
+  #screen-title{
+    background:#57ab46;
+  }
+  .title-layout{
+    display:flex;
+    align-items:center;
+    gap:40px;
+    max-width:700px;
     width:100%;
-    max-width:340px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .title-char{
+    width:200px;
+    height:auto;
+    object-fit:contain;
+    flex-shrink:0;
+  }
+  .title-content{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:20px;
+  }
+  .title-heading{
+    font-family:'Fredoka One', cursive;
+    font-size:32px;
+    color:#fff;
+    text-align:center;
+    margin:0;
+    text-shadow:0 4px 12px rgba(0,0,0,0.25);
+  }
+
+  #screen-username, #screen-password, #screen-birthday, #screen-login, #screen-color, #screen-profile-icon{
+    background:var(--night);
+  }
+  .auth-box{
+    width:100%;
+    max-width:360px;
     background:var(--card);
     border:1px solid var(--line);
     border-radius:18px;
-    padding:28px 24px;
+    padding:32px 26px;
     text-align:center;
-    box-shadow:0 30px 60px -20px rgba(0,0,0,0.7);
-    position:relative;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
   }
-  .mystery-close{
-    position:absolute;
-    top:10px;
-    right:12px;
-    background:none;
-    border:none;
-    color:var(--muted);
-    font-size:18px;
-    cursor:pointer;
-    line-height:1;
+  .auth-box.wide{
+    max-width:480px;
   }
-  .mystery-close:hover{
-    color:var(--rind);
-  }
-  .mystery-title{
+  .auth-heading{
     font-family:'Fredoka One', cursive;
     font-size:20px;
     color:var(--rind);
-    margin:0 0 18px;
+    margin:0 0 8px;
   }
-  .mystery-input{
+  .auth-sub{
+    font-family:'Poppins', sans-serif;
+    font-size:13px;
+    color:var(--muted);
+    margin:0 0 20px;
+  }
+  .auth-input{
     width:100%;
     font-family:'Poppins', sans-serif;
     font-size:14px;
@@ -663,151 +655,121 @@
     border-radius:10px;
     padding:11px 14px;
     outline:none;
-    margin-bottom:14px;
+    margin-bottom:12px;
     box-sizing:border-box;
   }
-  .mystery-input:focus{
+  .auth-input:focus{
     border-color:var(--melon-light);
   }
-  .mystery-submit{
+  .auth-btn{
     width:100%;
     font-family:'Fredoka One', cursive;
-    font-size:13px;
+    font-size:14px;
     color:var(--night);
     background:var(--melon-light);
     border:none;
     border-radius:10px;
-    padding:11px;
+    padding:12px;
     cursor:pointer;
     transition:background .15s ease, transform .12s ease;
   }
-  .mystery-submit:hover{
+  .auth-btn:hover{
     background:var(--melon);
   }
-  .mystery-submit:active{
+  .auth-btn:active{
     transform:scale(0.97);
   }
-  .mystery-spinner{
-    width:40px;
-    height:40px;
-    margin:10px auto 0;
-    border-radius:50%;
-    border:4px solid rgba(255,255,255,0.15);
-    border-top-color:var(--melon-light);
-    animation:mystery-spin .8s linear infinite;
-  }
-  @keyframes mystery-spin{
-    to{ transform:rotate(360deg); }
-  }
-
-  /* ---------- ADMIN PANEL ---------- */
-  .admin-panel{
-    position:fixed;
-    top:90px;
-    left:16px;
-    width:260px;
-    background:var(--card);
-    border:1px solid var(--melon-light);
-    border-radius:14px;
-    box-shadow:0 24px 50px -18px rgba(0,0,0,0.7);
-    z-index:3000;
-    display:none;
-    overflow:hidden;
-  }
-  .admin-panel.visible{
-    display:block;
-  }
-  .admin-header{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    background:var(--night);
-    padding:10px 12px;
-    font-family:'Fredoka One', cursive;
-    font-size:12.5px;
-    color:var(--rind);
-    cursor:move;
-    user-select:none;
-    touch-action:none;
-  }
-  .admin-header-btns{
-    display:flex;
-    gap:6px;
-  }
-  .admin-icon-btn{
-    background:none;
-    border:none;
-    color:var(--muted);
-    font-size:15px;
-    cursor:pointer;
-    line-height:1;
-    padding:2px 4px;
-  }
-  .admin-icon-btn:hover{
-    color:var(--rind);
-  }
-  .admin-body{
-    padding:12px 14px 14px;
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    max-height:60vh;
-    overflow-y:auto;
-  }
-  .admin-panel.collapsed .admin-body{
-    display:none;
-  }
-  .admin-panel.expanded{
-    top:0 !important;
-    left:0 !important;
-    width:100vw !important;
-    max-width:100vw;
-    height:100vh;
-    border-radius:0;
-  }
-  .admin-panel.expanded .admin-body{
-    max-height:calc(100vh - 46px);
-  }
-  .admin-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:10px;
-    font-family:'Poppins', sans-serif;
-    font-size:11.5px;
-    color:var(--muted);
-  }
-  .admin-row input[type="number"]{
-    width:78px;
+  .auth-btn.secondary{
     background:var(--night);
     border:1px solid var(--line);
-    border-radius:8px;
     color:var(--rind);
-    padding:6px 8px;
-    font-family:'Poppins', sans-serif;
-    font-size:12px;
-    outline:none;
+    margin-top:12px;
   }
-  .admin-row input[type="checkbox"]{
-    width:18px;
-    height:18px;
-    accent-color:var(--melon-light);
+  .auth-btn.secondary:hover{
+    border-color:var(--melon-light);
+  }
+  .auth-error{
+    color:#ff6b6b;
+    font-family:'Poppins', sans-serif;
+    font-size:12.5px;
+    margin:10px 0 0;
+  }
+  .auth-link{
+    display:inline-block;
+    margin-top:12px;
+    font-family:'Poppins', sans-serif;
+    font-size:12.5px;
+    color:var(--melon-light);
+    text-decoration:underline;
     cursor:pointer;
   }
-  .admin-apply{
-    margin-top:4px;
-    font-family:'Fredoka One', cursive;
-    font-size:12.5px;
-    color:var(--night);
-    background:var(--melon-light);
+  .auth-link:hover{
+    color:var(--melon);
+  }
+
+  .color-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:10px;
+    margin-top:6px;
+  }
+  .color-swatch{
     border:none;
+    border-radius:12px;
+    padding:16px 8px;
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:#fff;
+    text-shadow:0 1px 3px rgba(0,0,0,0.4);
+    cursor:pointer;
+    transition:transform .12s ease;
+  }
+  .color-swatch:hover{
+    transform:translateY(-2px);
+  }
+
+  .birthday-row{
+    display:flex;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .birthday-row select{
+    flex:1;
+    font-family:'Poppins', sans-serif;
+    font-size:13px;
+    color:var(--rind);
+    background:var(--night);
+    border:1px solid var(--line);
     border-radius:10px;
     padding:10px;
-    cursor:pointer;
-    transition:background .15s ease;
+    outline:none;
   }
-  .admin-apply:hover{
-    background:var(--melon);
+
+  .icon-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px;
+    margin-top:6px;
+    margin-bottom:6px;
+  }
+  .icon-option{
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:14px;
+    padding:10px;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .12s ease;
+  }
+  .icon-option:hover{
+    border-color:var(--melon-light);
+    transform:translateY(-2px);
+  }
+  .icon-option img{
+    width:100%;
+    aspect-ratio:1;
+    object-fit:cover;
+    border-radius:8px;
+    display:block;
   }
 
   /* ---------- FOOTER ---------- */
@@ -825,9 +787,77 @@
 </head>
 <body>
 
-<button class="spoopy-btn" id="spoopy-btn" title="???">
-  <img src="spoopy.png" alt="">
-</button>
+<div id="auth-flow" class="auth-flow">
+
+  <div class="auth-screen active" data-screen="title" id="screen-title">
+    <div class="title-layout">
+      <img src="appearchar.png" class="title-char" alt="">
+      <div class="title-content">
+        <h1 class="title-heading">FallGameDev's Clicker</h1>
+        <button class="auth-btn" id="title-play-btn">Play</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-screen" data-screen="username" id="screen-username">
+    <div class="auth-box">
+      <h1 class="auth-heading">First, select a username!</h1>
+      <p class="auth-sub">This will be used for the database.</p>
+      <input type="text" id="username-input" class="auth-input" placeholder="Username" autocomplete="off">
+      <button class="auth-btn" id="username-submit">Submit</button>
+      <p class="auth-error" id="username-error" style="display:none;">That username is taken!</p>
+      <a href="#" class="auth-link" id="have-profile-link" style="display:none;">Already have a profile?</a>
+    </div>
+  </div>
+
+  <div class="auth-screen" data-screen="password" id="screen-password">
+    <div class="auth-box">
+      <h1 class="auth-heading">Choose a password!</h1>
+      <p class="auth-sub">This will be private for logging back in.</p>
+      <input type="password" id="password-input" class="auth-input" placeholder="Password" autocomplete="off">
+      <button class="auth-btn" id="password-submit">Submit</button>
+    </div>
+  </div>
+
+  <div class="auth-screen" data-screen="color" id="screen-color">
+    <div class="auth-box wide">
+      <h1 class="auth-heading">Pick a favorite color!</h1>
+      <div class="color-grid" id="color-grid"></div>
+    </div>
+  </div>
+
+  <div class="auth-screen" data-screen="birthday" id="screen-birthday">
+    <div class="auth-box">
+      <h1 class="auth-heading">When's your birthday?</h1>
+      <div class="birthday-row">
+        <select id="birthday-month"></select>
+        <select id="birthday-day"></select>
+      </div>
+      <button class="auth-btn" id="birthday-submit">Submit</button>
+    </div>
+  </div>
+
+  <div class="auth-screen" data-screen="profile-icon" id="screen-profile-icon">
+    <div class="auth-box wide">
+      <h1 class="auth-heading">Choose a profile icon!</h1>
+      <div class="icon-grid" id="icon-grid"></div>
+      <button class="auth-btn secondary" id="upload-icon-btn">Upload your own</button>
+      <input type="file" id="icon-upload-input" accept="image/*" style="display:none">
+    </div>
+  </div>
+
+  <div class="auth-screen" data-screen="login" id="screen-login">
+    <div class="auth-box">
+      <h1 class="auth-heading">Welcome back!</h1>
+      <p class="auth-sub">Log in to continue.</p>
+      <input type="text" id="login-username-input" class="auth-input" placeholder="Username" autocomplete="off">
+      <input type="password" id="login-password-input" class="auth-input" placeholder="Password" autocomplete="off">
+      <button class="auth-btn" id="login-submit">Log In</button>
+      <p class="auth-error" id="login-error" style="display:none;">Incorrect username or password.</p>
+    </div>
+  </div>
+
+</div>
 
 <div class="page">
 
@@ -846,12 +876,10 @@
     <button class="play-btn loop-btn" id="loop-btn" title="Loop">&#8635;</button>
   </div>
   <audio id="song-audio"></audio>
-  <input type="file" id="load-input" accept="application/json" style="display:none">
 
   <div class="cursor-picker" id="cursor-picker">
     <select id="cursor-select"></select>
   </div>
-  <input type="file" id="import-file-input" style="display:none">
 
   <div class="bg-picker" id="bg-picker">
     <select id="bg-select"></select>
@@ -863,66 +891,6 @@
 
   <footer>FallGameDev &mdash; made with duct tape, coffee, and a little chaos.</footer>
 
-</div>
-
-<div class="mystery-overlay" id="mystery-overlay">
-  <div class="mystery-box">
-    <button class="mystery-close" id="mystery-close">&times;</button>
-    <h1 class="mystery-title">What do you seek?</h1>
-    <input type="text" id="mystery-input" class="mystery-input" placeholder="Type here..." autocomplete="off">
-    <button class="mystery-submit" id="mystery-submit">Submit</button>
-    <div class="mystery-spinner" id="mystery-spinner" style="display:none;"></div>
-  </div>
-</div>
-
-<div class="admin-panel" id="admin-panel">
-  <div class="admin-header" id="admin-header">
-    <span>Admin Menu</span>
-    <div class="admin-header-btns">
-      <button class="admin-icon-btn" id="admin-collapse" title="Collapse">&#8722;</button>
-      <button class="admin-icon-btn" id="admin-expand" title="Expand">&#10530;</button>
-      <button class="admin-icon-btn" id="admin-close" title="Close">&times;</button>
-    </div>
-  </div>
-  <div class="admin-body" id="admin-body">
-    <div class="admin-row">
-      <label for="admin-clicks">Clicks</label>
-      <input type="number" id="admin-clicks" min="0">
-    </div>
-    <div class="admin-row">
-      <label for="admin-boost">Click Boost (owned)</label>
-      <input type="number" id="admin-boost" min="0">
-    </div>
-    <div class="admin-row">
-      <label for="admin-auto">Clicker (owned)</label>
-      <input type="number" id="admin-auto" min="0">
-    </div>
-    <div class="admin-row">
-      <label for="admin-dvd">DVD Logos</label>
-      <input type="number" id="admin-dvd" min="0">
-    </div>
-    <div class="admin-row">
-      <label for="admin-amogus">Amoguses</label>
-      <input type="number" id="admin-amogus" min="0">
-    </div>
-    <div class="admin-row">
-      <label for="admin-offline">Offline Earnings</label>
-      <input type="checkbox" id="admin-offline">
-    </div>
-    <div class="admin-row">
-      <label for="admin-bg">Background Switcher</label>
-      <input type="checkbox" id="admin-bg">
-    </div>
-    <div class="admin-row">
-      <label for="admin-cursors">Custom Cursors</label>
-      <input type="checkbox" id="admin-cursors">
-    </div>
-    <div class="admin-row">
-      <label for="admin-music">Music Player</label>
-      <input type="checkbox" id="admin-music">
-    </div>
-    <button class="admin-apply" id="admin-apply">Apply</button>
-  </div>
 </div>
 
 <script>
@@ -987,9 +955,6 @@
   ];
 
   const TABS = [
-    { id: "projects", label: "Projects", data: PROJECTS },
-    { id: "videos", label: "Videos", data: VIDEOS },
-    { id: "links", label: "Links", data: LINKS },
     { id: "shop", label: "Shop", data: null }
   ];
 
@@ -999,19 +964,10 @@
   const list = document.getElementById('link-list');
   const counterEl = document.getElementById('click-counter');
   const avatarEl = document.getElementById('avatar');
-  const loadInput = document.getElementById('load-input');
-
-  loadInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => importSave(reader.result);
-    reader.readAsText(file);
-    e.target.value = '';
-  });
 
   /* ---------- CLICKER GAME STATE ---------- */
-  const SAVE_KEY = 'fallgamedev-clicker-save';
+  let SAVE_KEY = 'fallgamedev-clicker-save';
+  let currentUsername = null;
 
   function defaultGame(){
     return {
@@ -1052,47 +1008,6 @@
       game.lastSeen = Date.now();
       localStorage.setItem(SAVE_KEY, JSON.stringify(game));
     } catch(e) {}
-  }
-
-  function clearEntities(){
-    document.querySelectorAll('.crewmate').forEach(el => el.remove());
-    document.querySelectorAll('.dvd-logo').forEach(el => el.remove());
-  }
-
-  function exportSave(){
-    const blob = new Blob([JSON.stringify(game, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'fallgamedev-save.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function importSave(jsonText){
-    let parsed;
-    try {
-      parsed = JSON.parse(jsonText);
-    } catch(e) {
-      alert("That doesn't look like a valid save file.");
-      return;
-    }
-
-    clearEntities();
-    game = Object.assign(defaultGame(), parsed);
-    if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
-    loadCustomAssets();
-
-    updateCounter();
-    saveGame();
-
-    if (game.musicPlayerOwned) showMusicPlayer();
-    if (game.cursorsOwned) showCursorPicker();
-    if (game.bgOwned) showBgPicker();
-    for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
-    for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
-
-    renderShop();
   }
 
   function updateCounter(){
@@ -1273,10 +1188,6 @@
         </div>
         <button class="buy-btn" id="buy-offline" ${game.offlineEarningsOwned ? 'disabled' : (game.clicks < OFFLINE_COST ? 'disabled' : '')}>${game.offlineEarningsOwned ? 'Owned' : 'Buy (' + OFFLINE_COST + ')'}</button>
       </div>
-      <div class="save-load-bar">
-        <button id="save-btn">Save Data</button>
-        <button id="load-btn">Load Data</button>
-      </div>
     `;
 
     document.getElementById('buy-boost').addEventListener('click', buyClickBoost);
@@ -1288,8 +1199,6 @@
     document.getElementById('buy-cursors').addEventListener('click', buyCursors);
     document.getElementById('buy-bg').addEventListener('click', buyBackground);
     document.getElementById('buy-offline').addEventListener('click', buyOfflineEarnings);
-    document.getElementById('save-btn').addEventListener('click', exportSave);
-    document.getElementById('load-btn').addEventListener('click', () => loadInput.click());
   }
 
   /* ---------- MUSIC PLAYER ---------- */
@@ -1559,67 +1468,6 @@
     saveGame();
   });
 
-  /* ---------- IMPORT (image / sound / mouse) ---------- */
-  const importFileInput = document.getElementById('import-file-input');
-  let importKind = null;
-
-  function showToast(message){
-    const banner = document.createElement('div');
-    banner.className = 'offline-banner';
-    banner.textContent = message;
-    document.body.appendChild(banner);
-    requestAnimationFrame(() => banner.classList.add('visible'));
-    setTimeout(() => {
-      banner.classList.remove('visible');
-      setTimeout(() => banner.remove(), 500);
-    }, 4000);
-  }
-
-  function openImportPicker(kind){
-    importKind = kind;
-    importFileInput.accept = (kind === 'sound') ? 'audio/*' : 'image/*';
-    importFileInput.value = '';
-    importFileInput.click();
-  }
-
-  importFileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      const label = file.name.replace(/\.[^/.]+$/, '') || 'Custom';
-
-      if (importKind === 'image') {
-        const entry = { label: label, file: dataUrl };
-        if (!BACKGROUNDS.some(b => b.file === dataUrl)) {
-          addBackgroundOption(entry);
-          game.customBackgrounds.push(entry);
-          saveGame();
-        }
-        showToast(`Added "${label}" to Background Switcher.`);
-      } else if (importKind === 'sound') {
-        const entry = { label: label, file: dataUrl };
-        if (!SONGS.some(s => s.file === dataUrl)) {
-          addSongOption(entry);
-          game.customSongs.push(entry);
-          saveGame();
-        }
-        showToast(`Added "${label}" to the Music Player.`);
-      } else if (importKind === 'mouse') {
-        const entry = { label: label, file: dataUrl };
-        if (!CURSORS.some(c => c.file === dataUrl)) {
-          addCursorOption(entry);
-          game.customCursors.push(entry);
-          saveGame();
-        }
-        showToast(`Added "${label}" to Custom Cursors.`);
-      }
-    };
-    reader.readAsDataURL(file);
-  });
-
   function showBgPicker(){
     bgPickerEl.classList.add('visible');
     bgSelect.value = game.selectedBg;
@@ -1859,263 +1707,307 @@
     });
   }
 
-    /* ---------- SPOOPY / MYSTERY MENU ---------- */
-  const spoopyBtn = document.getElementById('spoopy-btn');
-  const mysteryOverlay = document.getElementById('mystery-overlay');
-  const mysteryInput = document.getElementById('mystery-input');
-  const mysterySubmit = document.getElementById('mystery-submit');
-  const mysteryClose = document.getElementById('mystery-close');
-  const mysterySpinner = document.getElementById('mystery-spinner');
+  /* ---------- ACCOUNTS / AUTH FLOW ---------- */
+  const SITE_OPENS_KEY = 'fgd_site_opens';
+  const SESSION_KEY = 'fgd_current_user';
+  const THEME_KEY = 'fgd_last_theme';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbwQV852-JgIxvMz2zX3KVQUAdOZQEmqJQE-I02su1Vf0XBzIKPxR-syK5X8B7cxnIIxig/exec';
 
-  function openMystery(){
-    mysteryOverlay.classList.add('visible');
-    mysteryInput.value = '';
-    mysteryInput.style.display = '';
-    mysterySubmit.style.display = '';
-    mysterySpinner.style.display = 'none';
-    mysteryInput.focus();
+  function getSiteOpens(){
+    return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
+  }
+  function bumpSiteOpens(){
+    localStorage.setItem(SITE_OPENS_KEY, String(getSiteOpens() + 1));
   }
 
-  function closeMystery(){
-    mysteryOverlay.classList.remove('visible');
+  // Content-Type: text/plain avoids a CORS preflight request, which
+  // Apps Script Web Apps don't handle. The body is still valid JSON text.
+  async function sheetRequest(payload){
+    const res = await fetch(SHEET_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    return res.json();
   }
 
-  spoopyBtn.addEventListener('click', openMystery);
-  mysteryClose.addEventListener('click', closeMystery);
-  mysteryOverlay.addEventListener('click', (e) => {
-    if (e.target === mysteryOverlay) closeMystery();
+  function getSession(){
+    return localStorage.getItem(SESSION_KEY);
+  }
+  function setSession(username, favColor){
+    localStorage.setItem(SESSION_KEY, username);
+    if (favColor) localStorage.setItem(THEME_KEY, favColor);
+  }
+  function getLastTheme(){
+    return localStorage.getItem(THEME_KEY) || 'green';
+  }
+
+  function applyAccountTheme(color){
+    document.documentElement.style.setProperty('--melon', color);
+    document.documentElement.style.setProperty('--melon-light', color);
+    document.body.style.backgroundImage = 'none';
+    document.body.style.background = color;
+  }
+
+  const authFlow = document.getElementById('auth-flow');
+
+  function showAuthScreen(name){
+    document.body.classList.add('auth-active');
+    authFlow.classList.add('active');
+    document.querySelectorAll('.auth-screen').forEach(el => {
+      el.classList.toggle('active', el.dataset.screen === name);
+    });
+  }
+
+  function hideAuthFlow(){
+    document.body.classList.remove('auth-active');
+    authFlow.classList.remove('active');
+  }
+
+  let draftAccount = {};
+
+  // Title screen
+  const titlePlayBtn = document.getElementById('title-play-btn');
+  titlePlayBtn.addEventListener('click', () => {
+    draftAccount = {};
+    document.getElementById('username-input').value = '';
+    document.getElementById('username-error').style.display = 'none';
+    document.getElementById('have-profile-link').style.display = 'none';
+    showAuthScreen('username');
   });
 
-  /* ======================================================
-     PRINT COMMAND TARGETS
-     "print dvd" logs the value each function returns.
-     Add more entries here to make more things printable.
-     ====================================================== */
-  const PRINT_MAP = {
-    dvd: () => game.dvdOwned,
-    clicks: () => game.clicks,
-    boost: () => game.clickBoostOwned,
-    clicker: () => game.autoClickerOwned,
-    amogus: () => game.amogusAlive,
-    song: () => (SONGS[game.selectedSong] ? SONGS[game.selectedSong].label : game.selectedSong),
-    bg: () => game.selectedBg,
-    mouse: () => game.selectedCursor
-  };
+  // Username screen
+  const usernameInput = document.getElementById('username-input');
+  const usernameSubmit = document.getElementById('username-submit');
+  const usernameError = document.getElementById('username-error');
+  const haveProfileLink = document.getElementById('have-profile-link');
 
-  function handlePrintCommand(raw){
-    const rest = raw.replace(/^print\s+/i, '').trim();
-    const quotedMatch = rest.match(/^"([\s\S]*)"$/);
+  usernameSubmit.addEventListener('click', async () => {
+    const name = usernameInput.value.trim();
+    if (!name) return;
 
-    if (quotedMatch) {
-      console.log(quotedMatch[1]);
-      return;
+    usernameSubmit.disabled = true;
+    usernameSubmit.textContent = 'Checking...';
+
+    try {
+      const result = await sheetRequest({ action: 'checkUsername', username: name });
+
+      if (result.exists) {
+        usernameError.style.display = 'block';
+        haveProfileLink.style.display = 'inline-block';
+      } else {
+        usernameError.style.display = 'none';
+        draftAccount.username = name;
+        document.getElementById('password-input').value = '';
+        showAuthScreen('password');
+      }
+    } catch (e) {
+      usernameError.textContent = "Couldn't reach the database. Try again.";
+      usernameError.style.display = 'block';
+    } finally {
+      usernameSubmit.disabled = false;
+      usernameSubmit.textContent = 'Submit';
     }
+  });
 
-    const key = rest.toLowerCase();
-    if (Object.prototype.hasOwnProperty.call(PRINT_MAP, key)) {
-      console.log(PRINT_MAP[key]());
-    } else {
-      console.log(`print: unknown target "${rest}"`);
-    }
+  haveProfileLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    showAuthScreen('login');
+  });
+
+  // Password screen
+  const passwordInput = document.getElementById('password-input');
+  const passwordSubmit = document.getElementById('password-submit');
+
+  passwordSubmit.addEventListener('click', () => {
+    const pw = passwordInput.value;
+    if (!pw) return;
+    draftAccount.password = pw;
+    showAuthScreen('color');
+  });
+
+  // Favorite color screen
+  const COLORS = ['red', 'orange', 'yellow', 'green', 'teal', 'blue', 'cyan', 'purple', 'pink', 'black'];
+  const colorGrid = document.getElementById('color-grid');
+
+  COLORS.forEach(color => {
+    const btn = document.createElement('button');
+    btn.className = 'color-swatch';
+    btn.style.background = color;
+    btn.textContent = color.charAt(0).toUpperCase() + color.slice(1);
+    btn.addEventListener('click', () => {
+      draftAccount.favColor = color;
+      showAuthScreen('birthday');
+    });
+    colorGrid.appendChild(btn);
+  });
+
+  // Birthday screen
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const birthdayMonth = document.getElementById('birthday-month');
+  const birthdayDay = document.getElementById('birthday-day');
+  const birthdaySubmit = document.getElementById('birthday-submit');
+
+  MONTHS.forEach((m, i) => {
+    const opt = document.createElement('option');
+    opt.value = i + 1;
+    opt.textContent = m;
+    birthdayMonth.appendChild(opt);
+  });
+  for (let d = 1; d <= 31; d++) {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = d;
+    birthdayDay.appendChild(opt);
   }
 
-  function submitMysteryAnswer(){
-    const answer = mysteryInput.value.trim();
-    if (!answer) return;
+  birthdaySubmit.addEventListener('click', () => {
+    draftAccount.birthday = { month: parseInt(birthdayMonth.value, 10), day: parseInt(birthdayDay.value, 10) };
+    showAuthScreen('profile-icon');
+  });
 
-    mysteryInput.style.display = 'none';
-    mysterySubmit.style.display = 'none';
-    mysterySpinner.style.display = 'block';
+  // Profile icon screen
+  const PROFILE_ICONS = ['cat1', 'cat2', 'cat3', 'basketball', 'bovine'];
+  const iconGrid = document.getElementById('icon-grid');
+  const uploadIconBtn = document.getElementById('upload-icon-btn');
+  const iconUploadInput = document.getElementById('icon-upload-input');
 
-    /* ======================================================
-       ANSWER LOGIC GOES HERE.
-       "normalized" holds whatever was typed, lowercased.
-       Add checks like:
-         if (normalized === 'some phrase') { ...do something... }
-       Tell me what answers should do and I'll fill this in.
-       ====================================================== */
-    const normalized = answer.toLowerCase();
+  PROFILE_ICONS.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'icon-option';
+    btn.innerHTML = `<img src="profiles/${name}.png" alt="${name}">`;
+    btn.addEventListener('click', () => finishRegistration('profiles/' + name + '.png'));
+    iconGrid.appendChild(btn);
+  });
 
-    setTimeout(() => {
-      mysterySpinner.style.display = 'none';
+  uploadIconBtn.addEventListener('click', () => iconUploadInput.click());
+  iconUploadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => finishRegistration(reader.result);
+    reader.readAsDataURL(file);
+  });
 
-      if (normalized === 'menu') {
-        closeMystery();
-        openAdminPanel();
+  let registering = false;
+
+  async function finishRegistration(profileIconValue){
+    if (registering) return;
+    registering = true;
+
+    draftAccount.profileIcon = profileIconValue;
+
+    try {
+      const result = await sheetRequest({
+        action: 'register',
+        username: draftAccount.username,
+        password: draftAccount.password,
+        favColor: draftAccount.favColor,
+        birthday: draftAccount.birthday,
+        profileIcon: draftAccount.profileIcon
+      });
+
+      if (result.error === 'taken') {
+        alert('That username was just taken. Please pick another.');
+        showAuthScreen('username');
+        return;
+      }
+      if (!result.success) {
+        alert("Something went wrong creating your account. Please try again.");
         return;
       }
 
-      if (normalized.startsWith('import ')) {
-        const kind = normalized.slice(7).trim();
-        if (kind === 'image' || kind === 'sound' || kind === 'mouse') {
-          closeMystery();
-          openImportPicker(kind);
-          return;
-        }
-      }
+      setSession(draftAccount.username, draftAccount.favColor);
+      currentUsername = draftAccount.username;
+      SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
 
-      if (/^print\s+/i.test(answer)) {
-        handlePrintCommand(answer);
-      }
-
-      // Placeholder for other answers - just resets the form for now.
-      mysteryInput.style.display = '';
-      mysterySubmit.style.display = '';
-      mysteryInput.value = '';
-    }, 2000);
+      applyAccountTheme(draftAccount.favColor);
+      hideAuthFlow();
+      startGame();
+    } catch (e) {
+      alert("Couldn't reach the database. Check your connection and try again.");
+    } finally {
+      registering = false;
+    }
   }
 
-  mysterySubmit.addEventListener('click', submitMysteryAnswer);
-  mysteryInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') submitMysteryAnswer();
-  });
+  // Login screen (for returning users)
+  const loginUsernameInput = document.getElementById('login-username-input');
+  const loginPasswordInput = document.getElementById('login-password-input');
+  const loginSubmit = document.getElementById('login-submit');
+  const loginError = document.getElementById('login-error');
 
-  /* ---------- ADMIN PANEL ---------- */
-  const adminPanel = document.getElementById('admin-panel');
-  const adminHeader = document.getElementById('admin-header');
-  const adminCollapseBtn = document.getElementById('admin-collapse');
-  const adminCloseBtn = document.getElementById('admin-close');
-  const adminApplyBtn = document.getElementById('admin-apply');
+  loginSubmit.addEventListener('click', async () => {
+    const name = loginUsernameInput.value.trim();
+    const pw = loginPasswordInput.value;
+    if (!name || !pw) return;
 
-  const adminClicksInput = document.getElementById('admin-clicks');
-  const adminBoostInput = document.getElementById('admin-boost');
-  const adminAutoInput = document.getElementById('admin-auto');
-  const adminDvdInput = document.getElementById('admin-dvd');
-  const adminAmogusInput = document.getElementById('admin-amogus');
-  const adminOfflineInput = document.getElementById('admin-offline');
-  const adminBgInput = document.getElementById('admin-bg');
-  const adminCursorsInput = document.getElementById('admin-cursors');
-  const adminMusicInput = document.getElementById('admin-music');
+    loginSubmit.disabled = true;
+    loginSubmit.textContent = 'Logging in...';
 
-  function openAdminPanel(){
-    adminClicksInput.value = game.clicks;
-    adminBoostInput.value = game.clickBoostOwned;
-    adminAutoInput.value = game.autoClickerOwned;
-    adminDvdInput.value = game.dvdOwned;
-    adminAmogusInput.value = game.amogusAlive;
-    adminOfflineInput.checked = game.offlineEarningsOwned;
-    adminBgInput.checked = game.bgOwned;
-    adminCursorsInput.checked = game.cursorsOwned;
-    adminMusicInput.checked = game.musicPlayerOwned;
+    try {
+      const result = await sheetRequest({ action: 'login', username: name, password: pw });
 
-    adminPanel.classList.add('visible');
-    adminPanel.classList.remove('collapsed');
-  }
+      if (result.error || !result.success) {
+        loginError.textContent = 'Incorrect username or password.';
+        loginError.style.display = 'block';
+        return;
+      }
 
-  const adminExpandBtn = document.getElementById('admin-expand');
+      loginError.style.display = 'none';
+      currentUsername = result.account.username;
+      SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
+      setSession(currentUsername, result.account.favColor);
 
-  adminCloseBtn.addEventListener('click', () => {
-    adminPanel.classList.remove('visible', 'expanded', 'collapsed');
-    adminCollapseBtn.innerHTML = '&#8722;';
-    adminExpandBtn.innerHTML = '&#10530;';
-  });
-
-  adminCollapseBtn.addEventListener('click', () => {
-    adminPanel.classList.toggle('collapsed');
-    adminCollapseBtn.innerHTML = adminPanel.classList.contains('collapsed') ? '&#43;' : '&#8722;';
-  });
-
-  adminExpandBtn.addEventListener('click', () => {
-    adminPanel.classList.toggle('expanded');
-    const isExpanded = adminPanel.classList.contains('expanded');
-    adminExpandBtn.innerHTML = isExpanded ? '&#10529;' : '&#10530;';
-    if (isExpanded) {
-      adminPanel.classList.remove('collapsed');
-      adminCollapseBtn.innerHTML = '&#8722;';
+      applyAccountTheme(result.account.favColor);
+      hideAuthFlow();
+      startGame();
+    } catch (e) {
+      loginError.textContent = "Couldn't reach the database. Try again.";
+      loginError.style.display = 'block';
+    } finally {
+      loginSubmit.disabled = false;
+      loginSubmit.textContent = 'Log In';
     }
   });
 
-  // Dragging (mouse + touch, via pointer events)
-  let adminDragging = false;
-  let adminOffsetX = 0;
-  let adminOffsetY = 0;
-
-  adminHeader.addEventListener('pointerdown', (e) => {
-    if (e.target.closest('.admin-icon-btn')) return;
-    adminDragging = true;
-    const rect = adminPanel.getBoundingClientRect();
-    adminOffsetX = e.clientX - rect.left;
-    adminOffsetY = e.clientY - rect.top;
-    adminHeader.setPointerCapture(e.pointerId);
-  });
-
-  adminHeader.addEventListener('pointermove', (e) => {
-    if (!adminDragging) return;
-    const maxLeft = Math.max(0, window.innerWidth - adminPanel.offsetWidth);
-    const maxTop = Math.max(0, window.innerHeight - adminPanel.offsetHeight);
-    const left = Math.min(Math.max(0, e.clientX - adminOffsetX), maxLeft);
-    const top = Math.min(Math.max(0, e.clientY - adminOffsetY), maxTop);
-    adminPanel.style.left = left + 'px';
-    adminPanel.style.top = top + 'px';
-  });
-
-  adminHeader.addEventListener('pointerup', () => { adminDragging = false; });
-  adminHeader.addEventListener('pointercancel', () => { adminDragging = false; });
-
-  adminApplyBtn.addEventListener('click', () => {
-    const clicksVal = parseInt(adminClicksInput.value, 10);
-    game.clicks = isNaN(clicksVal) ? 0 : Math.max(0, clicksVal);
-
-    const boostVal = parseInt(adminBoostInput.value, 10);
-    game.clickBoostOwned = isNaN(boostVal) ? 0 : Math.max(0, boostVal);
-    game.clickPower = 1 + game.clickBoostOwned;
-
-    const autoVal = parseInt(adminAutoInput.value, 10);
-    game.autoClickerOwned = isNaN(autoVal) ? 0 : Math.max(0, autoVal);
-
-    const dvdVal = parseInt(adminDvdInput.value, 10);
-    game.dvdOwned = isNaN(dvdVal) ? 0 : Math.max(0, dvdVal);
-    document.querySelectorAll('.dvd-logo').forEach(el => el.remove());
-    for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
-
-    const amogusVal = parseInt(adminAmogusInput.value, 10);
-    const safeAmogus = isNaN(amogusVal) ? 0 : Math.max(0, amogusVal);
-    game.amogusOwned = safeAmogus;
-    game.amogusAlive = safeAmogus;
-    document.querySelectorAll('.crewmate').forEach(el => el.remove());
-    for (let i = 0; i < safeAmogus; i++) spawnCrewmate();
-
-    game.offlineEarningsOwned = adminOfflineInput.checked;
-
-    game.bgOwned = adminBgInput.checked;
-    if (game.bgOwned) showBgPicker();
-    else bgPickerEl.classList.remove('visible');
-
-    game.cursorsOwned = adminCursorsInput.checked;
-    if (game.cursorsOwned) showCursorPicker();
-    else cursorPickerEl.classList.remove('visible');
-
-    game.musicPlayerOwned = adminMusicInput.checked;
-    if (game.musicPlayerOwned) {
-      showMusicPlayer();
-    } else {
-      musicPlayerEl.classList.remove('visible');
-      songAudio.pause();
-    }
-
+  function startGame(){
+    loadGame();
+    if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
+    loadCustomAssets();
+    applyOfflineEarnings();
     updateCounter();
-    saveGame();
-    if (activeTab === 'shop') renderShop();
-  });
-
-  loadGame();
-  if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
-  loadCustomAssets();
-  applyOfflineEarnings();
-  updateCounter();
-  if (game.musicPlayerOwned) showMusicPlayer();
-  if (game.cursorsOwned) showCursorPicker();
-  if (game.bgOwned) showBgPicker();
-  for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
-  for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
+    if (game.musicPlayerOwned) showMusicPlayer();
+    if (game.cursorsOwned) showCursorPicker();
+    if (game.bgOwned) showBgPicker();
+    for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
+    for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
 
     renderTabs();
-  renderActiveTab();
+    renderActiveTab();
 
-  window.addEventListener('beforeunload', saveGame);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') saveGame();
-  });
+    window.addEventListener('beforeunload', saveGame);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') saveGame();
+    });
+  }
+
+  /* ---------- BOOTSTRAP ---------- */
+  const openedBefore = getSiteOpens();
+  bumpSiteOpens();
+
+  const session = getSession();
+
+  if (session) {
+    currentUsername = session;
+    SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
+    applyAccountTheme(getLastTheme());
+    startGame();
+  } else if (openedBefore === 0) {
+    showAuthScreen('title');
+  } else {
+    showAuthScreen('login');
+  }
 </script>
 
 </body>
