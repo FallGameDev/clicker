@@ -899,9 +899,6 @@
     <img src="profile.png" alt="FallGameDev profile picture">
   </div>
 
-  <h1 class="name">FallGameDev</h1>
-  <p class="bio">Indie game developer building weird little worlds across GameMaker, Godot, and Roblox.</p>
-
   <div class="music-player" id="music-player">
     <select id="song-select"></select>
     <button class="play-btn" id="play-btn">&#9658;</button>
@@ -921,7 +918,7 @@
 
   <div class="links" id="link-list"></div>
 
-  <footer>FallGameDev &mdash; made with duct tape, coffee, and a little chaos.</footer>
+  <footer></footer>
 
 </div>
 
@@ -1042,12 +1039,21 @@
     } catch(e) {}
   }
 
+  function playSound(file){
+    try {
+      const audio = new Audio(file);
+      audio.volume = 0.5;
+      audio.play().catch(() => {});
+    } catch (e) {}
+  }
+
   function updateCounter(){
     counterEl.textContent = game.clicks.toLocaleString() + (game.clicks === 1 ? ' click' : ' clicks');
     if (game.clicks > 0) counterEl.classList.add('visible');
   }
 
   avatarEl.addEventListener('click', () => {
+    playSound('click.mp3');
     game.clicks += game.clickPower;
     updateCounter();
     saveGame();
@@ -1076,6 +1082,7 @@
 
   function buyMusicPlayer(){
     if (game.musicPlayerOwned || game.clicks < MUSIC_PLAYER_COST) return;
+    playSound('money.mp3');
     game.clicks -= MUSIC_PLAYER_COST;
     game.musicPlayerOwned = true;
     updateCounter();
@@ -1086,6 +1093,7 @@
 
   function buyCursors(){
     if (game.cursorsOwned || game.clicks < CURSOR_COST) return;
+    playSound('money.mp3');
     game.clicks -= CURSOR_COST;
     game.cursorsOwned = true;
     updateCounter();
@@ -1096,6 +1104,7 @@
 
    function buyBackground(){
     if (game.bgOwned || game.clicks < BG_COST) return;
+    playSound('money.mp3');
     game.clicks -= BG_COST;
     game.bgOwned = true;
     updateCounter();
@@ -1106,6 +1115,7 @@
 
   function buyOfflineEarnings(){
     if (game.offlineEarningsOwned || game.clicks < OFFLINE_COST) return;
+    playSound('money.mp3');
     game.clicks -= OFFLINE_COST;
     game.offlineEarningsOwned = true;
     updateCounter();
@@ -1116,6 +1126,7 @@
   function buyClickBoost(){
     const cost = clickBoostCost();
     if (game.clicks < cost) return;
+    playSound('money.mp3');
     game.clicks -= cost;
     game.clickBoostOwned += 1;
     game.clickPower += 1;
@@ -1127,6 +1138,7 @@
   function buyAutoClicker(){
     const cost = autoClickerCost();
     if (game.clicks < cost) return;
+    playSound('money.mp3');
     game.clicks -= cost;
     game.autoClickerOwned += 1;
     updateCounter();
@@ -1136,6 +1148,7 @@
 
   function buyDvd(){
     if (game.clicks < DVD_COST) return;
+    playSound('money.mp3');
     game.clicks -= DVD_COST;
     game.dvdOwned += 1;
     updateCounter();
@@ -1146,6 +1159,7 @@
 
   function buyAmogus(){
     if (game.clicks < AMOGUS_COST) return;
+    playSound('money.mp3');
     game.clicks -= AMOGUS_COST;
     game.amogusOwned += 1;
     game.amogusAlive += 1;
@@ -1622,6 +1636,7 @@
     el.addEventListener('click', () => {
       if (dead) return;
       dead = true;
+      playSound('mogus.mp3');
       el.classList.add('dead');
       el.classList.remove('working', 'tasking', 'done');
       game.clicks += tasksDone ? 200 : 100;
@@ -2161,6 +2176,14 @@
 
     setInterval(syncToSheet, 30000);
   }
+
+  /* ---------- HOVER SOUND ---------- */
+  document.addEventListener('mouseover', (e) => {
+    const btn = e.target.closest('button, .link-card');
+    if (!btn) return;
+    if (btn.contains(e.relatedTarget)) return;
+    playSound('touch.mp3');
+  });
 
   /* ---------- BOOTSTRAP ---------- */
   (async function bootstrap(){
