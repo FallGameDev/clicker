@@ -407,6 +407,67 @@
     width:100%;
   }
 
+  /* ---------- LEADERBOARD ---------- */
+  .leaderboard-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 14px;
+  }
+  .leaderboard-row.me{
+    border-color:var(--melon-light);
+  }
+  .leaderboard-rank{
+    width:24px;
+    flex-shrink:0;
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:var(--muted);
+    text-align:center;
+  }
+  .leaderboard-avatar{
+    width:34px;
+    height:34px;
+    border-radius:50%;
+    overflow:hidden;
+    flex-shrink:0;
+    background:var(--night);
+  }
+  .leaderboard-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .leaderboard-name{
+    flex:1;
+    font-family:'Poppins', sans-serif;
+    font-weight:500;
+    font-size:13px;
+    color:var(--rind);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .leaderboard-clicks{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:var(--moneys-green);
+    flex-shrink:0;
+  }
+  .leaderboard-clicks img{
+    width:16px;
+    height:16px;
+    object-fit:contain;
+  }
+
   /* ---------- STATS ---------- */
   .stats-card{
     width:100%;
@@ -1156,6 +1217,7 @@
 
   const TABS = [
     { id: "stats", label: "Stats", data: null },
+    { id: "leaderboard", label: "Leaderboard", data: null },
     { id: "shop", label: "Shop", data: null }
   ];
 
@@ -1574,6 +1636,34 @@
         ctx.drawImage(img, 0, 0, size, size);
         try {
           resolve(canvas.toDataURL());
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  // Google Sheets cells cap out around 50,000 characters. An uncompressed
+  // uploaded photo easily blows past that, causing the Sheet save to fail
+  // silently server-side (which looks like "can't connect" client-side).
+  // This crops to a square, shrinks it, and compresses as JPEG so the
+  // resulting data URL is small enough to actually save.
+  function resizeProfileImage(src, size){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        try {
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
         } catch (e) {
           reject(e);
         }
@@ -2008,8 +2098,39 @@
       renderShop();
     } else if (activeTab === 'stats') {
       renderStats();
+    } else if (activeTab === 'leaderboard') {
+      renderLeaderboard();
     } else {
       renderLinks(TABS.find(t => t.id === activeTab).data);
+    }
+  }
+
+  async function renderLeaderboard(){
+    list.innerHTML = '<div class="empty-state">Loading leaderboard...</div>';
+
+    try {
+      const result = await sheetRequest({ action: 'getLeaderboard' });
+
+      if (!result.success || !result.leaderboard || result.leaderboard.length === 0) {
+        list.innerHTML = '<div class="empty-state">No scores yet.</div>';
+        return;
+      }
+
+      list.innerHTML = result.leaderboard.map((entry, i) => `
+        <div class="leaderboard-row${entry.username === currentUsername ? ' me' : ''}">
+          <span class="leaderboard-rank">#${i + 1}</span>
+          <div class="leaderboard-avatar">
+            <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
+          </div>
+          <span class="leaderboard-name">${entry.username}</span>
+          <span class="leaderboard-clicks">
+            <img src="money.png" alt="Moneys">
+            ${Number(entry.clicks || 0).toLocaleString()}
+          </span>
+        </div>
+      `).join('');
+    } catch (e) {
+      list.innerHTML = '<div class="empty-state">Couldn\'t reach the database. Try again.</div>';
     }
   }
 
@@ -2385,8 +2506,12 @@
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
-      editSelectedIcon = reader.result;
+    reader.onload = async () => {
+      try {
+        editSelectedIcon = await resizeProfileImage(reader.result, 128);
+      } catch (err) {
+        editSelectedIcon = reader.result;
+      }
       renderEditIconGrid();
     };
     reader.readAsDataURL(file);
@@ -2562,7 +2687,14 @@
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => finishRegistration(reader.result);
+    reader.onload = async () => {
+      try {
+        const resized = await resizeProfileImage(reader.result, 128);
+        finishRegistration(resized);
+      } catch (err) {
+        finishRegistration(reader.result);
+      }
+    };
     reader.readAsDataURL(file);
   });
 
