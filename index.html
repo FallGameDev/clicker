@@ -846,6 +846,53 @@
     border-radius:8px;
     display:block;
   }
+  .icon-option.selected{
+    border-color:var(--melon-light);
+    box-shadow:0 0 0 2px var(--melon-light) inset;
+  }
+
+  /* ---------- EDIT PROFILE ---------- */
+  .edit-profile-overlay{
+    position:fixed;
+    inset:0;
+    z-index:4000;
+    background:rgba(10,8,16,0.85);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .edit-profile-overlay.visible{
+    display:flex;
+  }
+  .edit-profile-box{
+    position:relative;
+  }
+  .edit-profile-close{
+    position:absolute;
+    top:10px;
+    right:12px;
+    background:none;
+    border:none;
+    color:var(--muted);
+    font-size:18px;
+    cursor:pointer;
+    line-height:1;
+  }
+  .edit-profile-close:hover{
+    color:var(--rind);
+  }
+  .stats-avatar, .stats-name{
+    cursor:pointer;
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .stats-avatar:hover, .stats-name:hover{
+    opacity:0.85;
+  }
+  .stats-avatar:hover{
+    transform:scale(1.03);
+  }
 
   /* ---------- FOOTER ---------- */
   footer{
@@ -937,6 +984,19 @@
     </div>
   </div>
 
+</div>
+
+<div class="edit-profile-overlay" id="edit-profile-overlay">
+  <div class="auth-box wide edit-profile-box">
+    <button class="edit-profile-close" id="edit-profile-close">&times;</button>
+    <h1 class="auth-heading">Edit Profile</h1>
+    <div class="icon-grid" id="edit-icon-grid"></div>
+    <button class="auth-btn secondary" id="edit-upload-icon-btn">Upload your own</button>
+    <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
+    <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
+    <button class="auth-btn" id="edit-profile-save">Save Changes</button>
+    <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
+  </div>
 </div>
 
 <div class="page">
@@ -1107,8 +1167,8 @@
     game.clicks += game.clickPower;
     updateCounter();
     saveGame();
-    if (activeTab === 'shop') renderShop();
-    if (activeTab === 'stats') renderStats();
+    refreshShopAffordability();
+    refreshStatsMoneys();
   });
 
   setInterval(() => {
@@ -1116,8 +1176,8 @@
       game.clicks += game.autoClickerOwned;
       updateCounter();
       saveGame();
-      if (activeTab === 'shop') renderShop();
-      if (activeTab === 'stats') renderStats();
+      refreshShopAffordability();
+      refreshStatsMoneys();
     }
   }, 1000);
 
@@ -1262,7 +1322,7 @@
       <div class="shop-card">
         <div class="shop-info">
           <h3>Amogus</h3>
-          <p>Spawns a crewmate who does 5 tasks, then wanders. Click him for 100 (or 200 once tasks are done). <span class="owned">Owned: ${game.amogusAlive}</span></p>
+          <p>Spawns a crewmate who does 5 tasks, then wanders. Click him for 100 (or 200 once tasks are done). <span class="owned" id="amogus-owned-count">Owned: ${game.amogusAlive}</span></p>
         </div>
         <button class="buy-btn" id="buy-amogus" ${game.clicks < AMOGUS_COST ? 'disabled' : ''}>Buy (${AMOGUS_COST})</button>
       </div>
@@ -1625,8 +1685,8 @@
 
         updateCounter();
         saveGame();
-        if (activeTab === 'shop') renderShop();
-        if (activeTab === 'stats') renderStats();
+        refreshShopAffordability();
+        refreshStatsMoneys();
       }
 
       dvd.style.transform = `translate(${x}px, ${y}px)`;
@@ -1705,8 +1765,10 @@
       game.amogusAlive = Math.max(0, game.amogusAlive - 1);
       updateCounter();
       saveGame();
-      if (activeTab === 'shop') renderShop();
-      if (activeTab === 'stats') renderStats();
+      refreshShopAffordability();
+      refreshStatsMoneys();
+      const ownedCountEl = document.getElementById('amogus-owned-count');
+      if (ownedCountEl) ownedCountEl.textContent = 'Owned: ' + game.amogusAlive;
       setTimeout(() => {
         el.style.transition = 'opacity 1s ease';
         el.style.opacity = '0';
@@ -1781,6 +1843,32 @@
     });
   }
 
+  function refreshShopAffordability(){
+    if (activeTab !== 'shop') return;
+    const boostBtn = document.getElementById('buy-boost');
+    if (boostBtn) { boostBtn.disabled = game.clicks < clickBoostCost(); boostBtn.textContent = 'Buy (' + clickBoostCost() + ')'; }
+    const autoBtn = document.getElementById('buy-auto');
+    if (autoBtn) { autoBtn.disabled = game.clicks < autoClickerCost(); autoBtn.textContent = 'Buy (' + autoClickerCost() + ')'; }
+    const dvdBtn = document.getElementById('buy-dvd');
+    if (dvdBtn) dvdBtn.disabled = game.clicks < DVD_COST;
+    const amogusBtn = document.getElementById('buy-amogus');
+    if (amogusBtn) amogusBtn.disabled = game.clicks < AMOGUS_COST;
+    const musicBtn = document.getElementById('buy-music');
+    if (musicBtn && !game.musicPlayerOwned) musicBtn.disabled = game.clicks < MUSIC_PLAYER_COST;
+    const cursorsBtn = document.getElementById('buy-cursors');
+    if (cursorsBtn && !game.cursorsOwned) cursorsBtn.disabled = game.clicks < CURSOR_COST;
+    const bgBtn = document.getElementById('buy-bg');
+    if (bgBtn && !game.bgOwned) bgBtn.disabled = game.clicks < BG_COST;
+    const offlineBtn = document.getElementById('buy-offline');
+    if (offlineBtn && !game.offlineEarningsOwned) offlineBtn.disabled = game.clicks < OFFLINE_COST;
+  }
+
+  function refreshStatsMoneys(){
+    if (activeTab !== 'stats') return;
+    const span = document.querySelector('.stats-moneys span');
+    if (span) span.textContent = game.clicks.toLocaleString();
+  }
+
   function renderActiveTab(){
     if (activeTab === 'shop') {
       renderShop();
@@ -1794,16 +1882,19 @@
   function renderStats(){
     list.innerHTML = `
       <div class="stats-card">
-        <div class="stats-avatar">
+        <div class="stats-avatar" id="stats-avatar-click">
           <img src="${currentProfileIcon || 'profile.png'}" alt="Profile">
         </div>
-        <h2 class="stats-name">${currentUsername || 'Guest'}</h2>
+        <h2 class="stats-name" id="stats-name-click">${currentUsername || 'Guest'}</h2>
         <div class="stats-moneys">
           <img src="money.png" alt="Moneys">
           <span>${game.clicks.toLocaleString()}</span>
         </div>
       </div>
     `;
+
+    document.getElementById('stats-avatar-click').addEventListener('click', openEditProfile);
+    document.getElementById('stats-name-click').addEventListener('click', openEditProfile);
   }
 
   function renderLinks(items){
@@ -2028,6 +2119,106 @@
   }
 
   let draftAccount = {};
+
+  /* ---------- EDIT PROFILE ---------- */
+  const editProfileOverlay = document.getElementById('edit-profile-overlay');
+  const editIconGrid = document.getElementById('edit-icon-grid');
+  const editUploadIconBtn = document.getElementById('edit-upload-icon-btn');
+  const editIconUploadInput = document.getElementById('edit-icon-upload-input');
+  const editUsernameInput = document.getElementById('edit-username-input');
+  const editProfileSaveBtn = document.getElementById('edit-profile-save');
+  const editProfileError = document.getElementById('edit-profile-error');
+  const editProfileClose = document.getElementById('edit-profile-close');
+
+  let editSelectedIcon = null;
+
+  function renderEditIconGrid(){
+    editIconGrid.innerHTML = '';
+    PROFILE_ICONS.forEach(name => {
+      const path = 'profiles/' + name + '.png';
+      const btn = document.createElement('button');
+      btn.className = 'icon-option' + (path === editSelectedIcon ? ' selected' : '');
+      btn.innerHTML = `<img src="${path}" alt="${name}">`;
+      btn.addEventListener('click', () => {
+        editSelectedIcon = path;
+        renderEditIconGrid();
+      });
+      editIconGrid.appendChild(btn);
+    });
+  }
+
+  function openEditProfile(){
+    editSelectedIcon = currentProfileIcon;
+    editUsernameInput.value = currentUsername || '';
+    editProfileError.style.display = 'none';
+    renderEditIconGrid();
+    editProfileOverlay.classList.add('visible');
+  }
+
+  function closeEditProfile(){
+    editProfileOverlay.classList.remove('visible');
+  }
+
+  editProfileClose.addEventListener('click', closeEditProfile);
+  editProfileOverlay.addEventListener('click', (e) => {
+    if (e.target === editProfileOverlay) closeEditProfile();
+  });
+
+  editUploadIconBtn.addEventListener('click', () => editIconUploadInput.click());
+  editIconUploadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      editSelectedIcon = reader.result;
+      renderEditIconGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  editProfileSaveBtn.addEventListener('click', async () => {
+    const newUsername = editUsernameInput.value.trim();
+    if (!newUsername) return;
+
+    editProfileSaveBtn.disabled = true;
+    editProfileSaveBtn.textContent = 'Saving...';
+    editProfileError.style.display = 'none';
+
+    try {
+      const result = await sheetRequest({
+        action: 'updateProfile',
+        currentUsername: currentUsername,
+        newUsername: newUsername,
+        profileIcon: editSelectedIcon || currentProfileIcon
+      });
+
+      if (result.error === 'taken') {
+        editProfileError.textContent = 'That username is already taken.';
+        editProfileError.style.display = 'block';
+        return;
+      }
+      if (!result.success) {
+        editProfileError.textContent = "Something went wrong. Please try again.";
+        editProfileError.style.display = 'block';
+        return;
+      }
+
+      currentUsername = result.account.username;
+      currentProfileIcon = result.account.profileIcon;
+      SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
+      setSession(currentUsername, getLastTheme(), currentProfileIcon);
+      saveGame();
+
+      closeEditProfile();
+      renderStats();
+    } catch (e) {
+      editProfileError.textContent = "Couldn't reach the database. Try again.";
+      editProfileError.style.display = 'block';
+    } finally {
+      editProfileSaveBtn.disabled = false;
+      editProfileSaveBtn.textContent = 'Save Changes';
+    }
+  });
 
   // Title screen
   const titlePlayBtn = document.getElementById('title-play-btn');
