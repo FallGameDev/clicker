@@ -2260,9 +2260,9 @@
     const max = Math.max(1, Math.abs(linesNow - prevLines));
 
     const phases = [
-      { text: 'Loading API...', duration: 1200 },
-      { text: 'Previewing java...', duration: 1200 },
-      { text: 'Loading assets...', duration: 1200 }
+      { text: 'Loading API...', duration: 1200, target: 25 },
+      { text: 'Previewing java...', duration: 1200, target: 50 },
+      { text: 'Loading assets...', duration: 1200, target: 75 }
     ];
 
     let phaseIndex = 0;
@@ -2272,15 +2272,19 @@
         runCodeCountPhase();
         return;
       }
-      loadingStatusEl.textContent = phases[phaseIndex].text;
+      const phase = phases[phaseIndex];
+      loadingStatusEl.textContent = phase.text;
+      loadingBarFillEl.style.transition = `width ${phase.duration / 1000}s ease-in-out`;
+      loadingBarFillEl.style.width = phase.target + '%';
       setTimeout(() => {
         phaseIndex++;
         runNextPhase();
-      }, phases[phaseIndex].duration);
+      }, phase.duration);
     }
 
     function runCodeCountPhase(){
       let much = 0;
+      loadingBarFillEl.style.transition = 'width .15s ease-out';
 
       function nextDelay(){
         const r = Math.random();
@@ -2294,7 +2298,7 @@
 
         loadingStatusEl.textContent = `Loading code... ${much}/${max}`;
 
-        const pct = much >= max ? 100 : (much / max) * 100;
+        const pct = much >= max ? 100 : 75 + (much / max) * 25;
         loadingBarFillEl.style.width = pct + '%';
 
         if (much >= max) {
