@@ -997,6 +997,35 @@
   .edit-profile-close:hover{
     color:var(--rind);
   }
+  .edit-preview{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:8px;
+    margin-top:14px;
+    padding:16px;
+    background:var(--night);
+    border:1px solid var(--line);
+    border-radius:12px;
+  }
+  .edit-preview-avatar{
+    width:64px;
+    height:64px;
+    border-radius:50%;
+    overflow:hidden;
+    border:3px solid var(--melon-light);
+  }
+  .edit-preview-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  #edit-preview-name{
+    font-family:'Fredoka One', cursive;
+    font-size:14px;
+    color:var(--rind);
+  }
   .stats-avatar, .stats-name{
     cursor:pointer;
     transition:opacity .15s ease, transform .15s ease;
@@ -1114,6 +1143,13 @@
     <button class="auth-btn secondary" id="edit-upload-icon-btn">Upload your own</button>
     <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
     <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
+    <button class="auth-btn secondary" id="edit-preview-btn">Preview</button>
+    <div class="edit-preview" id="edit-preview" style="display:none;">
+      <div class="edit-preview-avatar">
+        <img id="edit-preview-img" src="" alt="Preview">
+      </div>
+      <span id="edit-preview-name"></span>
+    </div>
     <button class="auth-btn" id="edit-profile-save">Save Changes</button>
     <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
   </div>
@@ -2185,7 +2221,8 @@
   const SESSION_KEY = 'fgd_current_user';
   const THEME_KEY = 'fgd_last_theme';
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyUJtpv-4zsM8GAlJwv5MxwrlKod6WFFF9iAn2n6zhjG8Y60w4q_f2MbpN7tF2fzXKJDQ/exec'; /* api */
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyUJtpv-4zsM8GAlJwv5MxwrlKod6WFFF9iAn2n6zhjG8Y60w4q_f2MbpN7tF2fzXKJDQ/exec';
+
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
   }
@@ -2465,8 +2502,18 @@
   const editProfileSaveBtn = document.getElementById('edit-profile-save');
   const editProfileError = document.getElementById('edit-profile-error');
   const editProfileClose = document.getElementById('edit-profile-close');
+  const editPreviewBtn = document.getElementById('edit-preview-btn');
+  const editPreviewEl = document.getElementById('edit-preview');
+  const editPreviewImg = document.getElementById('edit-preview-img');
+  const editPreviewName = document.getElementById('edit-preview-name');
 
   let editSelectedIcon = null;
+
+  editPreviewBtn.addEventListener('click', () => {
+    editPreviewImg.src = editSelectedIcon || currentProfileIcon || 'profile.png';
+    editPreviewName.textContent = editUsernameInput.value.trim() || currentUsername || 'Guest';
+    editPreviewEl.style.display = 'flex';
+  });
 
   function renderEditIconGrid(){
     editIconGrid.innerHTML = '';
@@ -2487,6 +2534,7 @@
     editSelectedIcon = currentProfileIcon;
     editUsernameInput.value = currentUsername || '';
     editProfileError.style.display = 'none';
+    editPreviewEl.style.display = 'none';
     renderEditIconGrid();
     editProfileOverlay.classList.add('visible');
   }
