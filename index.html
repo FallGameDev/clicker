@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Clicker Game!</title>
-<link rel="icon" type="image/x-icon" href="maksy.ico">
+<link rel="icon" type="image/x-icon" href="maksy.ico" id="favicon-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -72,11 +72,12 @@
   }
 
   .avatar{
-    width:150px; /* this updates the sizing */
-    height:150px;
-    border-radius:16px;
+    width:100px;
+    height:100px;
+    border-radius:50%;
     overflow:hidden;
     margin-bottom:20px;
+    box-shadow:0 0 0 3px var(--night), 0 0 0 5px var(--melon), 0 14px 30px -14px rgba(87,171,70,0.6);
     cursor:pointer;
     transition:transform .1s ease;
     user-select:none;
@@ -229,6 +230,38 @@
     cursor:pointer;
   }
    .bg-picker select option{
+    background:var(--night);
+    color:var(--rind);
+  }
+
+  .icon-picker{
+    display:none;
+    align-items:center;
+    gap:10px;
+    width:100%;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:10px 12px;
+    margin-bottom:18px;
+  }
+  .icon-picker.visible{
+    display:flex;
+  }
+  .icon-picker select{
+    flex:1;
+    font-family:'Poppins', sans-serif;
+    font-weight:500;
+    font-size:12.5px;
+    color:var(--rind);
+    background:var(--night);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:8px 10px;
+    outline:none;
+    cursor:pointer;
+  }
+  .icon-picker select option{
     background:var(--night);
     color:var(--rind);
   }
@@ -393,7 +426,7 @@
     border-radius:50%;
     overflow:hidden;
     border:3px solid var(--melon-light);
-}
+  }
   .stats-avatar img{
     width:100%;
     height:100%;
@@ -1021,6 +1054,10 @@
     <select id="bg-select"></select>
   </div>
 
+  <div class="icon-picker" id="icon-picker">
+    <select id="icon-select"></select>
+  </div>
+
   <div class="tabs" id="tab-list"></div>
 
   <div class="links" id="link-list"></div>
@@ -1128,7 +1165,9 @@
       lastSeen: null,
       customBackgrounds: [],
       customSongs: [],
-      customCursors: []
+      customCursors: [],
+      iconModifierOwned: false,
+      selectedIcon: 'profile.png'
     };
   }
 
@@ -1190,6 +1229,7 @@
   const BG_COST = 400;
   const OFFLINE_COST = 100000;
   const OFFLINE_CAP_SECONDS = 24 * 60 * 60;
+  const ICON_COST = 500;
 
   function buyMusicPlayer(){
     if (game.musicPlayerOwned || game.clicks < MUSIC_PLAYER_COST) return;
@@ -1236,6 +1276,18 @@
     saveGame();
     syncToSheet();
     renderShop();
+  }
+
+  function buyIconModifier(){
+    if (game.iconModifierOwned || game.clicks < ICON_COST) return;
+    playSound('money.mp3');
+    game.clicks -= ICON_COST;
+    game.iconModifierOwned = true;
+    updateCounter();
+    saveGame();
+    syncToSheet();
+    renderShop();
+    showIconPicker();
   }
 
   function buyClickBoost(){
@@ -1353,6 +1405,13 @@
         </div>
         <button class="buy-btn" id="buy-offline" ${game.offlineEarningsOwned ? 'disabled' : (game.clicks < OFFLINE_COST ? 'disabled' : '')}>${game.offlineEarningsOwned ? 'Owned' : 'Buy (' + OFFLINE_COST + ')'}</button>
       </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Icon Modifier</h3>
+          <p>One-time buy. Adds a picker to swap the clicker avatar and the browser tab icon.</p>
+        </div>
+        <button class="buy-btn" id="buy-icon" ${game.iconModifierOwned ? 'disabled' : (game.clicks < ICON_COST ? 'disabled' : '')}>${game.iconModifierOwned ? 'Owned' : 'Buy (' + ICON_COST + ')'}</button>
+      </div>
     `;
 
     document.getElementById('buy-boost').addEventListener('click', buyClickBoost);
@@ -1364,6 +1423,7 @@
     document.getElementById('buy-cursors').addEventListener('click', buyCursors);
     document.getElementById('buy-bg').addEventListener('click', buyBackground);
     document.getElementById('buy-offline').addEventListener('click', buyOfflineEarnings);
+    document.getElementById('buy-icon').addEventListener('click', buyIconModifier);
   }
 
   /* ---------- MUSIC PLAYER ---------- */
@@ -1639,6 +1699,49 @@
     applyBackground(game.selectedBg);
   }
 
+  /* ---------- ICON MODIFIER ----------
+     Add your own icons to this list. Each entry needs:
+       label - shown in the dropdown
+       file  - an image filename (uploaded to the server) used for both
+               the clicker avatar and the browser tab icon
+     Example:
+       { label: "Ghost", file: "ghost.png" }
+  ------------------------------------------------- */
+  const ICONS = [
+    { label: "Default", file: "profile.png" }
+  ];
+
+  const iconPickerEl = document.getElementById('icon-picker');
+  const iconSelect = document.getElementById('icon-select');
+  const faviconLink = document.getElementById('favicon-link');
+
+  function renderIconOption(entry){
+    const opt = document.createElement('option');
+    opt.value = entry.file;
+    opt.textContent = entry.label;
+    iconSelect.appendChild(opt);
+  }
+
+  ICONS.forEach(renderIconOption);
+
+  function applyIcon(file){
+    const avatarImg = document.querySelector('.avatar img');
+    if (avatarImg) avatarImg.src = file;
+    if (faviconLink) faviconLink.href = file;
+  }
+
+  iconSelect.addEventListener('change', () => {
+    game.selectedIcon = iconSelect.value;
+    applyIcon(game.selectedIcon);
+    saveGame();
+  });
+
+  function showIconPicker(){
+    iconPickerEl.classList.add('visible');
+    iconSelect.value = game.selectedIcon;
+    applyIcon(game.selectedIcon);
+  }
+
   /* ---------- DVD LOGO ---------- */
   const DVD_COLORS = ['#57ab46', '#79cf67', '#c1aef0', '#faf3df', '#ff6f9c', '#66c2ff'];
 
@@ -1860,6 +1963,8 @@
     if (bgBtn && !game.bgOwned) bgBtn.disabled = game.clicks < BG_COST;
     const offlineBtn = document.getElementById('buy-offline');
     if (offlineBtn && !game.offlineEarningsOwned) offlineBtn.disabled = game.clicks < OFFLINE_COST;
+    const iconBtn = document.getElementById('buy-icon');
+    if (iconBtn && !game.iconModifierOwned) iconBtn.disabled = game.clicks < ICON_COST;
   }
 
   function refreshStatsMoneys(){
@@ -2453,6 +2558,7 @@
     if (game.musicPlayerOwned) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
+    if (game.iconModifierOwned) showIconPicker();
     for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
     for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
 
