@@ -1395,7 +1395,8 @@
       customSongs: [],
       customCursors: [],
       iconModifierOwned: false,
-      selectedIcon: 'profile.png'
+      selectedIcon: 'profile.png',
+      autoKillOwned: false
     };
   }
 
@@ -1458,6 +1459,7 @@
   const OFFLINE_COST = 100000;
   const OFFLINE_CAP_SECONDS = 24 * 60 * 60;
   const ICON_COST = 500;
+  const AUTO_KILL_COST = 1000;
 
   function buyMusicPlayer(){
     if (game.musicPlayerOwned || game.clicks < MUSIC_PLAYER_COST) return;
@@ -1516,6 +1518,16 @@
     syncToSheet();
     renderShop();
     showIconPicker();
+  }
+
+  function buyAutoKill(){
+    if (game.autoKillOwned || game.clicks < AUTO_KILL_COST) return;
+    playSound('money.mp3');
+    game.clicks -= AUTO_KILL_COST;
+    game.autoKillOwned = true;
+    updateCounter();
+    saveGame();
+    renderShop();
   }
 
   function buyClickBoost(){
@@ -1640,6 +1652,13 @@
         </div>
         <button class="buy-btn" id="buy-icon" ${game.iconModifierOwned ? 'disabled' : (game.clicks < ICON_COST ? 'disabled' : '')}>${game.iconModifierOwned ? 'Owned' : 'Buy (' + ICON_COST + ')'}</button>
       </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Auto Kill</h3>
+          <p>One-time buy. Amoguses get taken out automatically the moment they finish their tasks, for 175 instead of the usual 200.</p>
+        </div>
+        <button class="buy-btn" id="buy-autokill" ${game.autoKillOwned ? 'disabled' : (game.clicks < AUTO_KILL_COST ? 'disabled' : '')}>${game.autoKillOwned ? 'Owned' : 'Buy (' + AUTO_KILL_COST + ')'}</button>
+      </div>
     `;
 
     document.getElementById('buy-boost').addEventListener('click', buyClickBoost);
@@ -1652,6 +1671,7 @@
     document.getElementById('buy-bg').addEventListener('click', buyBackground);
     document.getElementById('buy-offline').addEventListener('click', buyOfflineEarnings);
     document.getElementById('buy-icon').addEventListener('click', buyIconModifier);
+    document.getElementById('buy-autokill').addEventListener('click', buyAutoKill);
   }
 
   /* ---------- MUSIC PLAYER ---------- */
@@ -2116,13 +2136,13 @@
     el.classList.add('tasking');
     if (direction < 0) el.classList.add('facing-left');
 
-    el.addEventListener('click', () => {
+    function kill(reward){
       if (dead) return;
       dead = true;
       playSound('mogus.mp3');
       el.classList.add('dead');
       el.classList.remove('working', 'tasking', 'done');
-      game.clicks += tasksDone ? 200 : 100;
+      game.clicks += reward;
       game.amogusAlive = Math.max(0, game.amogusAlive - 1);
       updateCounter();
       saveGame();
@@ -2135,6 +2155,10 @@
         el.style.opacity = '0';
         setTimeout(() => el.remove(), 1000);
       }, 3000);
+    }
+
+    el.addEventListener('click', () => {
+      kill(tasksDone ? 200 : 100);
     });
 
     function walk(){
@@ -2153,6 +2177,7 @@
                 tasksDone = true;
                 el.classList.remove('tasking');
                 el.classList.add('done');
+                if (game.autoKillOwned) kill(175);
               }
             }
           } else {
@@ -2224,6 +2249,8 @@
     if (offlineBtn && !game.offlineEarningsOwned) offlineBtn.disabled = game.clicks < OFFLINE_COST;
     const iconBtn = document.getElementById('buy-icon');
     if (iconBtn && !game.iconModifierOwned) iconBtn.disabled = game.clicks < ICON_COST;
+    const autoKillBtn = document.getElementById('buy-autokill');
+    if (autoKillBtn && !game.autoKillOwned) autoKillBtn.disabled = game.clicks < AUTO_KILL_COST;
   }
 
   function refreshStatsMoneys(){
@@ -2328,7 +2355,7 @@
   const SESSION_KEY = 'fgd_current_user';
   const THEME_KEY = 'fgd_last_theme';
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbycjiMEoz4bt8Tv7X_23abcQG3G7wVlW1i7B0C_V7nKfGlfGwblvlkui-ZolqGv54MsNg/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyypJotkOjkwdCd3a4z6ibr9pNSorGMBAkmC4u_DmaR8zzQC6Dx_x9fTMdtkeQ3bjEVug/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -2377,7 +2404,8 @@
       cursorsOwned: game.cursorsOwned,
       bgOwned: game.bgOwned,
       offlineEarningsOwned: game.offlineEarningsOwned,
-      iconModifierOwned: game.iconModifierOwned
+      iconModifierOwned: game.iconModifierOwned,
+      autoKillOwned: game.autoKillOwned
     };
   }
 
@@ -2418,7 +2446,8 @@
       cursorsOwned: !!account.cursorsOwned,
       bgOwned: !!account.bgOwned,
       offlineEarningsOwned: !!account.offlineEarningsOwned,
-      iconModifierOwned: !!account.iconModifierOwned
+      iconModifierOwned: !!account.iconModifierOwned,
+      autoKillOwned: !!account.autoKillOwned
     });
     saveGame();
   }
@@ -2950,7 +2979,8 @@
         cursorsOwned: false,
         bgOwned: false,
         offlineEarningsOwned: false,
-        iconModifierOwned: false
+        iconModifierOwned: false,
+        autoKillOwned: false
       });
 
       if (result.error === 'taken') {
