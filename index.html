@@ -417,9 +417,93 @@
     border:1px solid var(--line);
     border-radius:14px;
     padding:10px 14px;
+    cursor:pointer;
+    transition:transform .12s ease, border-color .12s ease;
+  }
+  .leaderboard-row:hover{
+    transform:translateY(-2px);
+    border-color:var(--melon-light);
   }
   .leaderboard-row.me{
     border-color:var(--melon-light);
+  }
+
+  /* ---------- PUBLIC PROFILE ---------- */
+  .public-profile-overlay{
+    position:fixed;
+    inset:0;
+    z-index:4500;
+    background:rgba(10,8,16,0.85);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .public-profile-overlay.visible{
+    display:flex;
+  }
+  .public-profile-box{
+    position:relative;
+    width:100%;
+    max-width:340px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .public-profile-banner{
+    height:90px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    background:var(--melon);
+  }
+  .public-profile-avatar{
+    width:84px;
+    height:84px;
+    border-radius:50%;
+    overflow:hidden;
+    border:4px solid var(--card);
+    background:var(--night);
+    transform:translateY(42px);
+  }
+  .public-profile-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .public-profile-body{
+    padding:54px 24px 24px;
+    text-align:center;
+  }
+  .public-profile-body h2{
+    font-family:'Fredoka One', cursive;
+    font-size:18px;
+    color:var(--rind);
+    margin:0 0 8px;
+  }
+  .public-profile-detail{
+    font-family:'Poppins', sans-serif;
+    font-size:12.5px;
+    color:var(--muted);
+    margin:0 0 14px;
+  }
+  .public-profile-moneys{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    font-family:'Fredoka One', cursive;
+    font-size:16px;
+    color:var(--moneys-green);
+  }
+  .public-profile-moneys img{
+    width:20px;
+    height:20px;
+    object-fit:contain;
   }
   .leaderboard-rank{
     width:24px;
@@ -1152,6 +1236,25 @@
     </div>
     <button class="auth-btn" id="edit-profile-save">Save Changes</button>
     <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
+  </div>
+</div>
+
+<div class="public-profile-overlay" id="public-profile-overlay">
+  <div class="public-profile-box">
+    <button class="edit-profile-close" id="public-profile-close">&times;</button>
+    <div class="public-profile-banner" id="public-profile-banner">
+      <div class="public-profile-avatar">
+        <img id="public-profile-img" src="" alt="">
+      </div>
+    </div>
+    <div class="public-profile-body">
+      <h2 id="public-profile-name"></h2>
+      <p class="public-profile-detail" id="public-profile-birthday"></p>
+      <div class="public-profile-moneys">
+        <img src="money.png" alt="Moneys">
+        <span id="public-profile-clicks"></span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2153,7 +2256,7 @@
       }
 
       list.innerHTML = result.leaderboard.map((entry, i) => `
-        <div class="leaderboard-row${entry.username === currentUsername ? ' me' : ''}">
+        <div class="leaderboard-row${entry.username === currentUsername ? ' me' : ''}" data-username="${entry.username}">
           <span class="leaderboard-rank">#${i + 1}</span>
           <div class="leaderboard-avatar">
             <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
@@ -2165,6 +2268,10 @@
           </span>
         </div>
       `).join('');
+
+      list.querySelectorAll('.leaderboard-row').forEach(row => {
+        row.addEventListener('click', () => openPublicProfile(row.dataset.username));
+      });
     } catch (e) {
       list.innerHTML = '<div class="empty-state">Couldn\'t reach the database. Try again.</div>';
     }
@@ -2514,6 +2621,56 @@
     editPreviewName.textContent = editUsernameInput.value.trim() || currentUsername || 'Guest';
     editPreviewEl.style.display = 'flex';
   });
+
+  /* ---------- PUBLIC PROFILE ---------- */
+  const publicProfileOverlay = document.getElementById('public-profile-overlay');
+  const publicProfileClose = document.getElementById('public-profile-close');
+  const publicProfileBanner = document.getElementById('public-profile-banner');
+  const publicProfileImg = document.getElementById('public-profile-img');
+  const publicProfileName = document.getElementById('public-profile-name');
+  const publicProfileBirthday = document.getElementById('public-profile-birthday');
+  const publicProfileClicks = document.getElementById('public-profile-clicks');
+
+  function closePublicProfile(){
+    publicProfileOverlay.classList.remove('visible');
+  }
+
+  publicProfileClose.addEventListener('click', closePublicProfile);
+  publicProfileOverlay.addEventListener('click', (e) => {
+    if (e.target === publicProfileOverlay) closePublicProfile();
+  });
+
+  async function openPublicProfile(username){
+    if (!username) return;
+
+    publicProfileImg.src = 'profile.png';
+    publicProfileName.textContent = 'Loading...';
+    publicProfileBirthday.textContent = '';
+    publicProfileClicks.textContent = '';
+    publicProfileBanner.style.background = 'var(--melon)';
+    publicProfileOverlay.classList.add('visible');
+
+    try {
+      const result = await sheetRequest({ action: 'getAccount', username: username });
+
+      if (!result.success || !result.account) {
+        publicProfileName.textContent = 'Could not load profile.';
+        return;
+      }
+
+      const account = result.account;
+      publicProfileImg.src = account.profileIcon || 'profile.png';
+      publicProfileName.textContent = account.username;
+      publicProfileBanner.style.background = account.favColor || 'var(--melon)';
+
+      const monthName = account.birthday && MONTHS[(account.birthday.month || 1) - 1];
+      publicProfileBirthday.textContent = monthName ? `${monthName} ${account.birthday.day}` : '';
+
+      publicProfileClicks.textContent = Number(account.clicks || 0).toLocaleString();
+    } catch (e) {
+      publicProfileName.textContent = "Couldn't reach the database.";
+    }
+  }
 
   function renderEditIconGrid(){
     editIconGrid.innerHTML = '';
