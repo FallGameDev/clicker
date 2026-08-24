@@ -432,7 +432,7 @@
   .public-profile-overlay{
     position:fixed;
     inset:0;
-    z-index:4500;
+    z-index:5500;
     background:rgba(10,8,16,0.85);
     backdrop-filter:blur(4px);
     display:none;
@@ -2631,17 +2631,39 @@
   const publicProfileBirthday = document.getElementById('public-profile-birthday');
   const publicProfileClicks = document.getElementById('public-profile-clicks');
 
-  function closePublicProfile(){
+  function closePublicProfile(skipUrlUpdate){
     publicProfileOverlay.classList.remove('visible');
+    if (!skipUrlUpdate) {
+      const url = new URL(window.location);
+      if (url.searchParams.has('profile')) {
+        url.searchParams.delete('profile');
+        history.pushState({}, '', url);
+      }
+    }
   }
 
-  publicProfileClose.addEventListener('click', closePublicProfile);
+  publicProfileClose.addEventListener('click', () => closePublicProfile(false));
   publicProfileOverlay.addEventListener('click', (e) => {
-    if (e.target === publicProfileOverlay) closePublicProfile();
+    if (e.target === publicProfileOverlay) closePublicProfile(false);
   });
 
-  async function openPublicProfile(username){
+  window.addEventListener('popstate', () => {
+    const param = new URLSearchParams(window.location.search).get('profile');
+    if (param) {
+      openPublicProfile(param, true);
+    } else {
+      closePublicProfile(true);
+    }
+  });
+
+  async function openPublicProfile(username, skipUrlUpdate){
     if (!username) return;
+
+    if (!skipUrlUpdate) {
+      const url = new URL(window.location);
+      url.searchParams.set('profile', username);
+      history.pushState({ profile: username }, '', url);
+    }
 
     publicProfileImg.src = 'profile.png';
     publicProfileName.textContent = 'Loading...';
@@ -3037,6 +3059,12 @@
   });
 
   /* ---------- BOOTSTRAP ---------- */
+  const initialProfileParam = new URLSearchParams(window.location.search).get('profile');
+  if (initialProfileParam) {
+    openPublicProfile(initialProfileParam, true);
+  }
+
+
   (async function bootstrap(){
     const openedBefore = getSiteOpens();
     bumpSiteOpens();
