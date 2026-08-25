@@ -670,6 +670,91 @@
     z-index:-1;
   }
 
+  /* ---------- ROBLOX NOOB ---------- */
+  .noob{
+    position:fixed;
+    bottom:16px;
+    width:32px;
+    height:52px;
+    z-index:998;
+    pointer-events:none;
+  }
+  .noob-body{
+    position:relative;
+    width:100%;
+    height:100%;
+  }
+  .noob.jumping .noob-body{
+    animation:noob-jump .5s ease-in-out;
+  }
+  .noob.dancing .noob-body{
+    animation:noob-dance .3s ease-in-out infinite;
+  }
+  @keyframes noob-jump{
+    0%, 100%{ transform:translateY(0); }
+    50%{ transform:translateY(-18px); }
+  }
+  @keyframes noob-dance{
+    0%, 100%{ transform:rotate(0deg); }
+    25%{ transform:rotate(-12deg); }
+    75%{ transform:rotate(12deg); }
+  }
+  .noob-head{
+    position:absolute;
+    top:0;
+    left:4px;
+    width:24px;
+    height:20px;
+    background:#f5cd30;
+    border-radius:3px;
+  }
+  .noob-torso{
+    position:absolute;
+    top:20px;
+    left:2px;
+    width:28px;
+    height:20px;
+    background:#1a5fb4;
+    border-radius:2px;
+  }
+  .noob-legs{
+    position:absolute;
+    top:40px;
+    left:2px;
+    width:28px;
+    height:12px;
+    background:#2e7d32;
+    border-radius:0 0 2px 2px;
+  }
+  .noob-bubble{
+    position:absolute;
+    bottom:58px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#fff;
+    color:#111;
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    font-weight:600;
+    padding:4px 8px;
+    border-radius:8px;
+    white-space:nowrap;
+    opacity:0;
+    transition:opacity .2s ease;
+  }
+  .noob-bubble.visible{
+    opacity:1;
+  }
+  .noob-bubble::after{
+    content:"";
+    position:absolute;
+    bottom:-5px;
+    left:50%;
+    transform:translateX(-50%);
+    border:5px solid transparent;
+    border-top-color:#fff;
+  }
+
   /* ---------- CREWMATE ---------- */
   .crewmate{
     position:fixed;
@@ -1396,7 +1481,8 @@
       customCursors: [],
       iconModifierOwned: false,
       selectedIcon: 'profile.png',
-      autoKillOwned: false
+      autoKillOwned: false,
+      noobOwned: 0
     };
   }
 
@@ -1460,6 +1546,7 @@
   const OFFLINE_CAP_SECONDS = 24 * 60 * 60;
   const ICON_COST = 500;
   const AUTO_KILL_COST = 1000;
+  const NOOB_COST = 250;
 
   function buyMusicPlayer(){
     if (game.musicPlayerOwned || game.clicks < MUSIC_PLAYER_COST) return;
@@ -1528,6 +1615,18 @@
     updateCounter();
     saveGame();
     renderShop();
+  }
+
+  function buyNoob(){
+    if (game.clicks < NOOB_COST) return;
+    playSound('money.mp3');
+    game.clicks -= NOOB_COST;
+    game.noobOwned += 1;
+    updateCounter();
+    saveGame();
+    syncToSheet();
+    renderShop();
+    spawnNoob();
   }
 
   function buyClickBoost(){
@@ -1659,6 +1758,13 @@
         </div>
         <button class="buy-btn" id="buy-autokill" ${game.autoKillOwned ? 'disabled' : (game.clicks < AUTO_KILL_COST ? 'disabled' : '')}>${game.autoKillOwned ? 'Owned' : 'Buy (' + AUTO_KILL_COST + ')'}</button>
       </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Roblox Noob</h3>
+          <p>Spawns a noob who walks, jumps, dances, and chats. Pays out like a DVD logo every time he bounces off a wall. <span class="owned">Owned: ${game.noobOwned}</span></p>
+        </div>
+        <button class="buy-btn" id="buy-noob" ${game.clicks < NOOB_COST ? 'disabled' : ''}>Buy (${NOOB_COST})</button>
+      </div>
     `;
 
     document.getElementById('buy-boost').addEventListener('click', buyClickBoost);
@@ -1672,6 +1778,7 @@
     document.getElementById('buy-offline').addEventListener('click', buyOfflineEarnings);
     document.getElementById('buy-icon').addEventListener('click', buyIconModifier);
     document.getElementById('buy-autokill').addEventListener('click', buyAutoKill);
+    document.getElementById('buy-noob').addEventListener('click', buyNoob);
   }
 
   /* ---------- MUSIC PLAYER ---------- */
@@ -2107,6 +2214,85 @@
     });
   }
 
+  /* ---------- ROBLOX NOOB ---------- */
+  const NOOB_CHATS = ["Yeah!", "oof", "Confirm\u26a1\ufe0e", "Haha!", "oo look at me walk oo"];
+
+  function spawnNoob(){
+    const el = document.createElement('div');
+    el.className = 'noob';
+    el.innerHTML = `
+      <div class="noob-bubble"></div>
+      <div class="noob-body">
+        <div class="noob-head"></div>
+        <div class="noob-torso"></div>
+        <div class="noob-legs"></div>
+      </div>
+    `;
+    document.body.appendChild(el);
+
+    const bubble = el.querySelector('.noob-bubble');
+
+    let x = Math.random() * (window.innerWidth - 32);
+    let direction = Math.random() < 0.5 ? -1 : 1;
+    const speed = 0.5 + Math.random() * 0.7;
+
+    el.style.left = x + 'px';
+
+    function walk(){
+      if (!document.body.contains(el)) return;
+
+      x += direction * speed;
+      const maxX = window.innerWidth - 32;
+      let bounced = false;
+
+      if (x <= 0) { x = 0; direction = 1; bounced = true; }
+      if (x >= maxX) { x = maxX; direction = -1; bounced = true; }
+
+      if (bounced) {
+        game.clicks += game.clickPower;
+        updateCounter();
+        saveGame();
+        refreshShopAffordability();
+        refreshStatsMoneys();
+      }
+
+      el.style.left = x + 'px';
+      requestAnimationFrame(walk);
+    }
+    requestAnimationFrame(walk);
+
+    function scheduleJump(){
+      setTimeout(() => {
+        if (!document.body.contains(el)) return;
+        el.classList.add('jumping');
+        setTimeout(() => el.classList.remove('jumping'), 500);
+        scheduleJump();
+      }, 2000 + Math.random() * 4000);
+    }
+    scheduleJump();
+
+    function scheduleChat(){
+      setTimeout(() => {
+        if (!document.body.contains(el)) return;
+        bubble.textContent = NOOB_CHATS[Math.floor(Math.random() * NOOB_CHATS.length)];
+        bubble.classList.add('visible');
+        setTimeout(() => bubble.classList.remove('visible'), 1800);
+        scheduleChat();
+      }, 3000 + Math.random() * 5000);
+    }
+    scheduleChat();
+
+    function scheduleDance(){
+      setTimeout(() => {
+        if (!document.body.contains(el)) return;
+        el.classList.add('dancing');
+        setTimeout(() => el.classList.remove('dancing'), 1500 + Math.random() * 1000);
+        scheduleDance();
+      }, 5000 + Math.random() * 8000);
+    }
+    scheduleDance();
+  }
+
   function spawnCrewmate(){
     ensureTaskMarkers();
 
@@ -2251,6 +2437,8 @@
     if (iconBtn && !game.iconModifierOwned) iconBtn.disabled = game.clicks < ICON_COST;
     const autoKillBtn = document.getElementById('buy-autokill');
     if (autoKillBtn && !game.autoKillOwned) autoKillBtn.disabled = game.clicks < AUTO_KILL_COST;
+    const noobBtn = document.getElementById('buy-noob');
+    if (noobBtn) noobBtn.disabled = game.clicks < NOOB_COST;
   }
 
   function refreshStatsMoneys(){
@@ -2355,7 +2543,7 @@
   const SESSION_KEY = 'fgd_current_user';
   const THEME_KEY = 'fgd_last_theme';
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyypJotkOjkwdCd3a4z6ibr9pNSorGMBAkmC4u_DmaR8zzQC6Dx_x9fTMdtkeQ3bjEVug/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzHEELeVMwh2zjhV4Sa3MieorcJOR1j42uDt8fGlPP0T-EO0GT4K4xFXVGQwneOOyE5cg/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -2405,8 +2593,8 @@
       bgOwned: game.bgOwned,
       offlineEarningsOwned: game.offlineEarningsOwned,
       iconModifierOwned: game.iconModifierOwned,
-      autoKillOwned: game.autoKillOwned
-    };
+      autoKillOwned: game.autoKillOwned,
+      noobOwned: game.noobOwned    };
   }
 
   async function syncToSheet(){
@@ -2447,7 +2635,8 @@
       bgOwned: !!account.bgOwned,
       offlineEarningsOwned: !!account.offlineEarningsOwned,
       iconModifierOwned: !!account.iconModifierOwned,
-      autoKillOwned: !!account.autoKillOwned
+      autoKillOwned: !!account.autoKillOwned,
+      noobOwned: account.noobOwned || 0
     });
     saveGame();
   }
@@ -2980,7 +3169,8 @@
         bgOwned: false,
         offlineEarningsOwned: false,
         iconModifierOwned: false,
-        autoKillOwned: false
+        autoKillOwned: false,
+        noobOwned: 0
       });
 
       if (result.error === 'taken') {
@@ -3062,6 +3252,7 @@
     if (game.iconModifierOwned) showIconPicker();
     for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
     for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
+    for (let i = 0; i < game.noobOwned; i++) spawnNoob();
 
     renderTabs();
     renderActiveTab();
