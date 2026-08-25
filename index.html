@@ -708,13 +708,12 @@
     background:#f5cd30;
     border-radius:3px;
   }
-  .noob-torso{
+   .noob-torso{
     position:absolute;
     top:20px;
     left:2px;
     width:28px;
     height:20px;
-    background:#1a5fb4;
     border-radius:2px;
   }
   .noob-legs{
@@ -723,7 +722,6 @@
     left:2px;
     width:28px;
     height:12px;
-    background:#2e7d32;
     border-radius:0 0 2px 2px;
   }
   .noob-bubble{
@@ -2229,6 +2227,12 @@
       </div>
     `;
     document.body.appendChild(el);
+
+    const NOOB_TORSO_COLORS = ['#1a5fb4', '#c0392b', '#8e44ad', '#e67e22', '#16a085', '#e91e63', '#795548'];
+    const NOOB_LEG_COLORS = ['#2e7d32', '#1a1a1a', '#5d4037', '#455a64', '#3949ab', '#00838f', '#6d4c41'];
+
+    el.querySelector('.noob-torso').style.background = NOOB_TORSO_COLORS[Math.floor(Math.random() * NOOB_TORSO_COLORS.length)];
+    el.querySelector('.noob-legs').style.background = NOOB_LEG_COLORS[Math.floor(Math.random() * NOOB_LEG_COLORS.length)];
 
     const bubble = el.querySelector('.noob-bubble');
 
