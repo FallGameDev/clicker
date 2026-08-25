@@ -320,6 +320,36 @@
     color:var(--btn-text);
   }
 
+  .shop-category-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    width:100%;
+    margin-bottom:14px;
+  }
+  .shop-category-btn{
+    flex:1;
+    min-width:70px;
+    font-family:'Fredoka One', cursive;
+    font-size:11.5px;
+    color:var(--muted);
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:8px 6px;
+    cursor:pointer;
+    transition:transform .15s ease, background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .shop-category-btn:hover{
+    color:var(--rind);
+    transform:translateY(-1px);
+  }
+  .shop-category-btn.active{
+    background:var(--tab-color);
+    border-color:var(--tab-color);
+    color:var(--btn-text);
+  }
+
   /* ---------- LINK LIST ---------- */
   .links{
     width:100%;
@@ -708,12 +738,13 @@
     background:#f5cd30;
     border-radius:3px;
   }
-   .noob-torso{
+  .noob-torso{
     position:absolute;
     top:20px;
     left:2px;
     width:28px;
     height:20px;
+    background:#1a5fb4;
     border-radius:2px;
   }
   .noob-legs{
@@ -722,6 +753,7 @@
     left:2px;
     width:28px;
     height:12px;
+    background:#2e7d32;
     border-radius:0 0 2px 2px;
   }
   .noob-bubble{
@@ -1444,6 +1476,7 @@
   ];
 
   let activeTab = TABS[0].id;
+  let shopCategory = 'all';
 
   const tabBar = document.getElementById('tab-list');
   const list = document.getElementById('link-list');
@@ -1652,11 +1685,10 @@
     renderShop();
   }
 
-    function buyDvd(){
+  function buyDvd(){
     if (game.clicks < DVD_COST) return;
     playSound('money.mp3');
     game.clicks -= DVD_COST;
-    if (game.dvdOwned === 0) game.dvdBehind = true;
     game.dvdOwned += 1;
     updateCounter();
     saveGame();
@@ -1678,106 +1710,144 @@
     spawnCrewmate();
   }
 
+  const SHOP_CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'visuals', label: 'Visuals' },
+    { id: 'customization', label: 'Customization' },
+    { id: 'plain', label: 'Plain' }
+  ];
+
   function renderShop(){
-    list.innerHTML = `
+    const cards = [
+      { category: 'plain', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Click Boost</h3>
           <p>+1 click power per click. <span class="owned">Owned: ${game.clickBoostOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-boost" ${game.clicks < clickBoostCost() ? 'disabled' : ''}>Buy (${clickBoostCost()})</button>
-      </div>
+      </div>` },
+      { category: 'plain', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Clicker</h3>
           <p>+1 click every second, automatically. <span class="owned">Owned: ${game.autoClickerOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-auto" ${game.clicks < autoClickerCost() ? 'disabled' : ''}>Buy (${autoClickerCost()})</button>
-      </div>
+      </div>` },
+      { category: 'visuals', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>DVD Logo</h3>
           <p>Spawns a bouncing logo that changes color on every wall bounce. <span class="owned">Owned: ${game.dvdOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-dvd" ${game.clicks < DVD_COST ? 'disabled' : ''}>Buy (${DVD_COST})</button>
-      </div>
+      </div>` },
+      { category: 'visuals', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>DVD Layer</h3>
           <p>Send the DVD logos behind the page, or bring them back to the front.</p>
         </div>
         <button class="buy-btn" id="toggle-dvd-layer">${game.dvdBehind ? 'Bring Front' : 'Send Back'}</button>
-      </div>
+      </div>` },
+      { category: 'visuals', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Amogus</h3>
           <p>Spawns a crewmate who does 5 tasks, then wanders. Click him for 100 (or 200 once tasks are done). <span class="owned" id="amogus-owned-count">Owned: ${game.amogusAlive}</span></p>
         </div>
         <button class="buy-btn" id="buy-amogus" ${game.clicks < AMOGUS_COST ? 'disabled' : ''}>Buy (${AMOGUS_COST})</button>
-      </div>
+      </div>` },
+      { category: 'customization', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Music Player</h3>
           <p>One-time buy. Adds a song picker to the top of the page.</p>
         </div>
         <button class="buy-btn" id="buy-music" ${game.musicPlayerOwned ? 'disabled' : (game.clicks < MUSIC_PLAYER_COST ? 'disabled' : '')}>${game.musicPlayerOwned ? 'Owned' : 'Buy (' + MUSIC_PLAYER_COST + ')'}</button>
-      </div>
+      </div>` },
+      { category: 'customization', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Custom Cursors</h3>
           <p>One-time buy. Adds a cursor picker to the top of the page.</p>
         </div>
         <button class="buy-btn" id="buy-cursors" ${game.cursorsOwned ? 'disabled' : (game.clicks < CURSOR_COST ? 'disabled' : '')}>${game.cursorsOwned ? 'Owned' : 'Buy (' + CURSOR_COST + ')'}</button>
-      </div>
+      </div>` },
+      { category: 'customization', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Background Switcher</h3>
           <p>One-time buy. Adds a background picker to the top of the page.</p>
         </div>
                <button class="buy-btn" id="buy-bg" ${game.bgOwned ? 'disabled' : (game.clicks < BG_COST ? 'disabled' : '')}>${game.bgOwned ? 'Owned' : 'Buy (' + BG_COST + ')'}</button>
-      </div>
+      </div>` },
+      { category: 'plain', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Offline Earnings</h3>
           <p>One-time buy. Keeps your Clicker upgrades earning clicks while the page is closed (capped at 24 hours away).</p>
         </div>
         <button class="buy-btn" id="buy-offline" ${game.offlineEarningsOwned ? 'disabled' : (game.clicks < OFFLINE_COST ? 'disabled' : '')}>${game.offlineEarningsOwned ? 'Owned' : 'Buy (' + OFFLINE_COST + ')'}</button>
-      </div>
+      </div>` },
+      { category: 'customization', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Icon Modifier</h3>
           <p>One-time buy. Adds a picker to swap the clicker avatar and the browser tab icon.</p>
         </div>
         <button class="buy-btn" id="buy-icon" ${game.iconModifierOwned ? 'disabled' : (game.clicks < ICON_COST ? 'disabled' : '')}>${game.iconModifierOwned ? 'Owned' : 'Buy (' + ICON_COST + ')'}</button>
-      </div>
+      </div>` },
+      { category: 'plain', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Auto Kill</h3>
           <p>One-time buy. Amoguses get taken out automatically the moment they finish their tasks, for 175 instead of the usual 200.</p>
         </div>
         <button class="buy-btn" id="buy-autokill" ${game.autoKillOwned ? 'disabled' : (game.clicks < AUTO_KILL_COST ? 'disabled' : '')}>${game.autoKillOwned ? 'Owned' : 'Buy (' + AUTO_KILL_COST + ')'}</button>
-      </div>
+      </div>` },
+      { category: 'visuals', html: `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Roblox Noob</h3>
           <p>Spawns a noob who walks, jumps, dances, and chats. Pays out like a DVD logo every time he bounces off a wall. <span class="owned">Owned: ${game.noobOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-noob" ${game.clicks < NOOB_COST ? 'disabled' : ''}>Buy (${NOOB_COST})</button>
-      </div>
-    `;
+      </div>` }
+    ];
 
-    document.getElementById('buy-boost').addEventListener('click', buyClickBoost);
-    document.getElementById('buy-auto').addEventListener('click', buyAutoClicker);
-    document.getElementById('buy-dvd').addEventListener('click', buyDvd);
-    document.getElementById('toggle-dvd-layer').addEventListener('click', toggleDvdLayer);
-    document.getElementById('buy-amogus').addEventListener('click', buyAmogus);
-    document.getElementById('buy-music').addEventListener('click', buyMusicPlayer);
-    document.getElementById('buy-cursors').addEventListener('click', buyCursors);
-    document.getElementById('buy-bg').addEventListener('click', buyBackground);
-    document.getElementById('buy-offline').addEventListener('click', buyOfflineEarnings);
-    document.getElementById('buy-icon').addEventListener('click', buyIconModifier);
-    document.getElementById('buy-autokill').addEventListener('click', buyAutoKill);
-    document.getElementById('buy-noob').addEventListener('click', buyNoob);
+    const categoryBar = SHOP_CATEGORIES.map(cat =>
+      `<button class="shop-category-btn${shopCategory === cat.id ? ' active' : ''}" data-category="${cat.id}">${cat.label}</button>`
+    ).join('');
+
+    const visibleCards = cards
+      .filter(c => shopCategory === 'all' || c.category === shopCategory)
+      .map(c => c.html)
+      .join('');
+
+    list.innerHTML = `<div class="shop-category-bar">${categoryBar}</div>${visibleCards}`;
+
+    list.querySelectorAll('.shop-category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        shopCategory = btn.dataset.category;
+        renderShop();
+      });
+    });
+
+    const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+    bind('buy-boost', buyClickBoost);
+    bind('buy-auto', buyAutoClicker);
+    bind('buy-dvd', buyDvd);
+    bind('toggle-dvd-layer', toggleDvdLayer);
+    bind('buy-amogus', buyAmogus);
+    bind('buy-music', buyMusicPlayer);
+    bind('buy-cursors', buyCursors);
+    bind('buy-bg', buyBackground);
+    bind('buy-offline', buyOfflineEarnings);
+    bind('buy-icon', buyIconModifier);
+    bind('buy-autokill', buyAutoKill);
+    bind('buy-noob', buyNoob);
   }
 
   /* ---------- MUSIC PLAYER ---------- */
@@ -2228,12 +2298,6 @@
       </div>
     `;
     document.body.appendChild(el);
-
-    const NOOB_TORSO_COLORS = ['#1a5fb4', '#c0392b', '#8e44ad', '#e67e22', '#16a085', '#e91e63', '#795548'];
-    const NOOB_LEG_COLORS = ['#2e7d32', '#1a1a1a', '#5d4037', '#455a64', '#3949ab', '#00838f', '#6d4c41'];
-
-    el.querySelector('.noob-torso').style.background = NOOB_TORSO_COLORS[Math.floor(Math.random() * NOOB_TORSO_COLORS.length)];
-    el.querySelector('.noob-legs').style.background = NOOB_LEG_COLORS[Math.floor(Math.random() * NOOB_LEG_COLORS.length)];
 
     const bubble = el.querySelector('.noob-bubble');
 
