@@ -1652,10 +1652,11 @@
     renderShop();
   }
 
-  function buyDvd(){
+    function buyDvd(){
     if (game.clicks < DVD_COST) return;
     playSound('money.mp3');
     game.clicks -= DVD_COST;
+    if (game.dvdOwned === 0) game.dvdBehind = true;
     game.dvdOwned += 1;
     updateCounter();
     saveGame();
