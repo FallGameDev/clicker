@@ -8,6 +8,19 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+  @font-face{
+    font-family:'PusabFont';
+    src:url('Pusab.ttf') format('truetype');
+  }
+  @font-face{
+    font-family:'PixelatedFont';
+    src:url('pixelated.ttf') format('truetype');
+  }
+  @font-face{
+    font-family:'MeFontCustom';
+    src:url('MeFont.ttf') format('truetype');
+  }
+
   :root{
     --night:#181428;
     --card:#221c38;
@@ -2549,7 +2562,7 @@
           <div class="leaderboard-avatar">
             <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
           </div>
-          <span class="leaderboard-name">${entry.username}</span>
+          <span class="leaderboard-name" style="font-family:${getUserFont(entry.username) || 'inherit'}">${entry.username}</span>
           <span class="leaderboard-clicks">
             <img src="money.png" alt="Moneys">
             ${Number(entry.clicks || 0).toLocaleString()}
@@ -2962,6 +2975,7 @@
 
     publicProfileImg.src = 'profile.png';
     publicProfileName.textContent = 'Loading...';
+    publicProfileName.style.fontFamily = '';
     publicProfileBirthday.textContent = '';
     publicProfileClicks.textContent = '';
     publicProfileBanner.style.background = 'var(--melon)';
@@ -2978,6 +2992,7 @@
       const account = result.account;
       publicProfileImg.src = account.profileIcon || 'profile.png';
       publicProfileName.textContent = account.username;
+      publicProfileName.style.fontFamily = getUserFont(account.username) || '';
       publicProfileBanner.style.background = account.favColor || 'var(--melon)';
 
       const monthName = account.birthday && MONTHS[(account.birthday.month || 1) - 1];
@@ -3004,11 +3019,26 @@
     });
   }
 
+  const USER_FONTS = {
+    'jfor': "'PusabFont', cursive",
+    'brissanna': "'PixelatedFont', cursive",
+    'fallgamedev': "'MeFontCustom', cursive",
+    'miggy': "'MeFontCustom', cursive"
+  };
+
+  function getUserFont(username){
+    if (!username) return '';
+    return USER_FONTS[username.toLowerCase()] || '';
+  }
+
   function openEditProfile(){
     editSelectedIcon = currentProfileIcon;
     editUsernameInput.value = currentUsername || '';
     editProfileError.style.display = 'none';
     editPreviewEl.style.display = 'none';
+    const userFont = getUserFont(currentUsername);
+    editUsernameInput.style.fontFamily = userFont || '';
+    editPreviewName.style.fontFamily = userFont || '';
     renderEditIconGrid();
     editProfileOverlay.classList.add('visible');
   }
