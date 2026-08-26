@@ -2584,7 +2584,7 @@
         <div class="stats-avatar" id="stats-avatar-click">
           <img src="${currentProfileIcon || 'profile.png'}" alt="Profile">
         </div>
-        <h2 class="stats-name" id="stats-name-click">${currentUsername || 'Guest'}</h2>
+        <h2 class="stats-name" id="stats-name-click" style="font-family:${getUserFont(currentUsername) || 'inherit'}">${currentUsername || 'Guest'}</h2>
         <div class="stats-moneys">
           <img src="money.png" alt="Moneys">
           <span>${game.clicks.toLocaleString()}</span>
