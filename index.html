@@ -2562,7 +2562,7 @@
           <div class="leaderboard-avatar">
             <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
           </div>
-          <span class="leaderboard-name" style="font-family:${getUserFont(entry.username) || 'inherit'}">${entry.username}</span>
+          <span class="leaderboard-name" style="font-family:${getUserFont(entry.username) || 'inherit'};color:${getUserColor(entry.username) || 'inherit'}">${entry.username}</span>
           <span class="leaderboard-clicks">
             <img src="money.png" alt="Moneys">
             ${Number(entry.clicks || 0).toLocaleString()}
@@ -2584,7 +2584,7 @@
         <div class="stats-avatar" id="stats-avatar-click">
           <img src="${currentProfileIcon || 'profile.png'}" alt="Profile">
         </div>
-        <h2 class="stats-name" id="stats-name-click" style="font-family:${getUserFont(currentUsername) || 'inherit'}">${currentUsername || 'Guest'}</h2>
+        <h2 class="stats-name" id="stats-name-click" style="font-family:${getUserFont(currentUsername) || 'inherit'};color:${getUserColor(currentUsername) || 'inherit'}">${currentUsername || 'Guest'}</h2>
         <div class="stats-moneys">
           <img src="money.png" alt="Moneys">
           <span>${game.clicks.toLocaleString()}</span>
@@ -2976,6 +2976,7 @@
     publicProfileImg.src = 'profile.png';
     publicProfileName.textContent = 'Loading...';
     publicProfileName.style.fontFamily = '';
+    publicProfileName.style.color = '';
     publicProfileBirthday.textContent = '';
     publicProfileClicks.textContent = '';
     publicProfileBanner.style.background = 'var(--melon)';
@@ -2993,6 +2994,7 @@
       publicProfileImg.src = account.profileIcon || 'profile.png';
       publicProfileName.textContent = account.username;
       publicProfileName.style.fontFamily = getUserFont(account.username) || '';
+      publicProfileName.style.color = getUserColor(account.username) || '';
       publicProfileBanner.style.background = account.favColor || 'var(--melon)';
 
       const monthName = account.birthday && MONTHS[(account.birthday.month || 1) - 1];
@@ -3031,14 +3033,24 @@
     return USER_FONTS[username.toLowerCase()] || '';
   }
 
+  function getUserColor(username){
+    if (!username) return '';
+    const key = username.toLowerCase();
+    if (!USER_FONTS[key]) return '';
+    return key === 'fallgamedev' ? 'lime' : 'yellow';
+  }
+
   function openEditProfile(){
     editSelectedIcon = currentProfileIcon;
     editUsernameInput.value = currentUsername || '';
     editProfileError.style.display = 'none';
     editPreviewEl.style.display = 'none';
     const userFont = getUserFont(currentUsername);
+    const userColor = getUserColor(currentUsername);
     editUsernameInput.style.fontFamily = userFont || '';
+    editUsernameInput.style.color = userColor || '';
     editPreviewName.style.fontFamily = userFont || '';
+    editPreviewName.style.color = userColor || '';
     renderEditIconGrid();
     editProfileOverlay.classList.add('visible');
   }
