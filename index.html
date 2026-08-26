@@ -2799,6 +2799,10 @@
   }
 
   function actuallyHideLoadingScreen(){
+    game.dvdBehind = true;
+    document.querySelectorAll('.dvd-logo').forEach(el => el.classList.add('behind'));
+    saveGame();
+
     if (!loadingScreenEl) return;
     loadingScreenEl.classList.add('hidden');
     setTimeout(() => loadingScreenEl.remove(), 400);
