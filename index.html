@@ -1498,6 +1498,8 @@
   let SAVE_KEY = 'fallgamedev-clicker-save';
   let currentUsername = null;
   let currentProfileIcon = null;
+  let currentAuth = 'none';
+  let currentFont = 'Default';
 
   function defaultGame(){
     return {
@@ -1771,13 +1773,13 @@
         </div>
         <button class="buy-btn" id="buy-amogus" ${game.clicks < AMOGUS_COST ? 'disabled' : ''}>Buy (${AMOGUS_COST})</button>
       </div>` },
-      { category: 'customization', html: `
+      { category: 'visuals', html: `
       <div class="shop-card">
         <div class="shop-info">
-          <h3>Music Player</h3>
-          <p>One-time buy. Adds a song picker to the top of the page.</p>
+          <h3>Roblox Noob</h3>
+          <p>Spawns a noob who walks, jumps, dances, and chats. Pays out like a DVD logo every time he bounces off a wall. <span class="owned">Owned: ${game.noobOwned}</span></p>
         </div>
-        <button class="buy-btn" id="buy-music" ${game.musicPlayerOwned ? 'disabled' : (game.clicks < MUSIC_PLAYER_COST ? 'disabled' : '')}>${game.musicPlayerOwned ? 'Owned' : 'Buy (' + MUSIC_PLAYER_COST + ')'}</button>
+        <button class="buy-btn" id="buy-noob" ${game.clicks < NOOB_COST ? 'disabled' : ''}>Buy (${NOOB_COST})</button>
       </div>` },
       { category: 'customization', html: `
       <div class="shop-card">
@@ -1795,13 +1797,13 @@
         </div>
                <button class="buy-btn" id="buy-bg" ${game.bgOwned ? 'disabled' : (game.clicks < BG_COST ? 'disabled' : '')}>${game.bgOwned ? 'Owned' : 'Buy (' + BG_COST + ')'}</button>
       </div>` },
-      { category: 'plain', html: `
+      { category: 'customization', html: `
       <div class="shop-card">
         <div class="shop-info">
-          <h3>Offline Earnings</h3>
-          <p>One-time buy. Keeps your Clicker upgrades earning clicks while the page is closed (capped at 24 hours away).</p>
+          <h3>Music Player</h3>
+          <p>One-time buy. Adds a song picker to the top of the page.</p>
         </div>
-        <button class="buy-btn" id="buy-offline" ${game.offlineEarningsOwned ? 'disabled' : (game.clicks < OFFLINE_COST ? 'disabled' : '')}>${game.offlineEarningsOwned ? 'Owned' : 'Buy (' + OFFLINE_COST + ')'}</button>
+        <button class="buy-btn" id="buy-music" ${game.musicPlayerOwned ? 'disabled' : (game.clicks < MUSIC_PLAYER_COST ? 'disabled' : '')}>${game.musicPlayerOwned ? 'Owned' : 'Buy (' + MUSIC_PLAYER_COST + ')'}</button>
       </div>` },
       { category: 'customization', html: `
       <div class="shop-card">
@@ -1819,13 +1821,13 @@
         </div>
         <button class="buy-btn" id="buy-autokill" ${game.autoKillOwned ? 'disabled' : (game.clicks < AUTO_KILL_COST ? 'disabled' : '')}>${game.autoKillOwned ? 'Owned' : 'Buy (' + AUTO_KILL_COST + ')'}</button>
       </div>` },
-      { category: 'visuals', html: `
+      { category: 'plain', html: `
       <div class="shop-card">
         <div class="shop-info">
-          <h3>Roblox Noob</h3>
-          <p>Spawns a noob who walks, jumps, dances, and chats. Pays out like a DVD logo every time he bounces off a wall. <span class="owned">Owned: ${game.noobOwned}</span></p>
+          <h3>Offline Earnings</h3>
+          <p>One-time buy. Keeps your Clicker upgrades earning clicks while the page is closed (capped at 24 hours away).</p>
         </div>
-        <button class="buy-btn" id="buy-noob" ${game.clicks < NOOB_COST ? 'disabled' : ''}>Buy (${NOOB_COST})</button>
+        <button class="buy-btn" id="buy-offline" ${game.offlineEarningsOwned ? 'disabled' : (game.clicks < OFFLINE_COST ? 'disabled' : '')}>${game.offlineEarningsOwned ? 'Owned' : 'Buy (' + OFFLINE_COST + ')'}</button>
       </div>` }
     ];
 
@@ -2562,7 +2564,7 @@
           <div class="leaderboard-avatar">
             <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
           </div>
-          <span class="leaderboard-name" style="font-family:${getUserFont(entry.username) || 'inherit'};color:${getUserColor(entry.username) || 'inherit'}">${entry.username}</span>
+          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}</span>
           <span class="leaderboard-clicks">
             <img src="money.png" alt="Moneys">
             ${Number(entry.clicks || 0).toLocaleString()}
@@ -2572,6 +2574,14 @@
 
       list.querySelectorAll('.leaderboard-row').forEach(row => {
         row.addEventListener('click', () => openPublicProfile(row.dataset.username));
+      });
+
+      result.leaderboard.forEach(entry => {
+        ensureFontLoaded(entry.font).then(family => {
+          if (!family) return;
+          const nameEl = list.querySelector(`.leaderboard-name[data-username="${CSS.escape(entry.username)}"]`);
+          if (nameEl) nameEl.style.fontFamily = `'${family}'`;
+        });
       });
     } catch (e) {
       list.innerHTML = '<div class="empty-state">Couldn\'t reach the database. Try again.</div>';
@@ -2584,7 +2594,7 @@
         <div class="stats-avatar" id="stats-avatar-click">
           <img src="${currentProfileIcon || 'profile.png'}" alt="Profile">
         </div>
-        <h2 class="stats-name" id="stats-name-click" style="font-family:${getUserFont(currentUsername) || 'inherit'};color:${getUserColor(currentUsername) || 'inherit'}">${currentUsername || 'Guest'}</h2>
+        <h2 class="stats-name" id="stats-name-click" style="color:${authColor(currentAuth)}">${currentUsername || 'Guest'}</h2>
         <div class="stats-moneys">
           <img src="money.png" alt="Moneys">
           <span>${game.clicks.toLocaleString()}</span>
@@ -2594,6 +2604,12 @@
 
     document.getElementById('stats-avatar-click').addEventListener('click', openEditProfile);
     document.getElementById('stats-name-click').addEventListener('click', openEditProfile);
+
+    ensureFontLoaded(currentFont).then(family => {
+      if (!family) return;
+      const nameEl = document.getElementById('stats-name-click');
+      if (nameEl) nameEl.style.fontFamily = `'${family}'`;
+    });
   }
 
   function renderLinks(items){
@@ -2629,7 +2645,9 @@
   const SESSION_KEY = 'fgd_current_user';
   const THEME_KEY = 'fgd_last_theme';
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzHEELeVMwh2zjhV4Sa3MieorcJOR1j42uDt8fGlPP0T-EO0GT4K4xFXVGQwneOOyE5cg/exec';
+  const AUTH_KEY = 'fgd_last_auth';
+  const FONT_KEY = 'fgd_last_font';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxvhIMKtOlij2Cx5vtANrKKfpsVjuL4RouTZkXhAVQJMmkHLTfTkQq4NLB4QuhyUC1mFA/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -2652,16 +2670,24 @@
   function getSession(){
     return localStorage.getItem(SESSION_KEY);
   }
-  function setSession(username, favColor, profileIcon){
+  function setSession(username, favColor, profileIcon, auth, font){
     localStorage.setItem(SESSION_KEY, username);
     if (favColor) localStorage.setItem(THEME_KEY, favColor);
     if (profileIcon) localStorage.setItem(PROFILE_ICON_KEY, profileIcon);
+    if (auth) localStorage.setItem(AUTH_KEY, auth);
+    if (font) localStorage.setItem(FONT_KEY, font);
   }
   function getLastTheme(){
     return localStorage.getItem(THEME_KEY) || 'green';
   }
   function getLastProfileIcon(){
     return localStorage.getItem(PROFILE_ICON_KEY) || 'profile.png';
+  }
+  function getLastAuth(){
+    return localStorage.getItem(AUTH_KEY) || 'none';
+  }
+  function getLastFont(){
+    return localStorage.getItem(FONT_KEY) || 'Default';
   }
 
   function buildSyncPayload(){
@@ -2993,9 +3019,12 @@
       const account = result.account;
       publicProfileImg.src = account.profileIcon || 'profile.png';
       publicProfileName.textContent = account.username;
-      publicProfileName.style.fontFamily = getUserFont(account.username) || '';
-      publicProfileName.style.color = getUserColor(account.username) || '';
+      publicProfileName.style.color = authColor(account.auth);
       publicProfileBanner.style.background = account.favColor || 'var(--melon)';
+
+      ensureFontLoaded(account.font).then(family => {
+        if (family) publicProfileName.style.fontFamily = `'${family}'`;
+      });
 
       const monthName = account.birthday && MONTHS[(account.birthday.month || 1) - 1];
       publicProfileBirthday.textContent = monthName ? `${monthName} ${account.birthday.day}` : '';
@@ -3021,23 +3050,31 @@
     });
   }
 
-  const USER_FONTS = {
-    'jfor': "'PusabFont', cursive",
-    'brissanna': "'PixelatedFont', cursive",
-    'fallgamedev': "'MeFontCustom', cursive",
-    'miggy': "'MeFontCustom', cursive"
-  };
+  const loadedFontFamilies = new Map();
 
-  function getUserFont(username){
-    if (!username) return '';
-    return USER_FONTS[username.toLowerCase()] || '';
+  function ensureFontLoaded(fontFile){
+    if (!fontFile || String(fontFile).toLowerCase() === 'default') return Promise.resolve('');
+    if (loadedFontFamilies.has(fontFile)) return Promise.resolve(loadedFontFamilies.get(fontFile) || '');
+
+    const familyName = 'CustomFont_' + fontFile.replace(/[^a-zA-Z0-9]/g, '_');
+    const face = new FontFace(familyName, `url('${fontFile}')`);
+
+    return face.load().then(loaded => {
+      document.fonts.add(loaded);
+      loadedFontFamilies.set(fontFile, familyName);
+      return familyName;
+    }).catch(() => {
+      loadedFontFamilies.set(fontFile, null);
+      return '';
+    });
   }
 
-  function getUserColor(username){
-    if (!username) return '';
-    const key = username.toLowerCase();
-    if (!USER_FONTS[key]) return '';
-    return key === 'fallgamedev' ? 'lime' : 'yellow';
+  function authColor(auth){
+    const key = String(auth || 'none').toLowerCase();
+    if (key === 'ver') return 'yellow';
+    if (key === 'fam') return 'cyan';
+    if (key === 'owner') return 'lime';
+    return 'white';
   }
 
   function openEditProfile(){
@@ -3045,12 +3082,15 @@
     editUsernameInput.value = currentUsername || '';
     editProfileError.style.display = 'none';
     editPreviewEl.style.display = 'none';
-    const userFont = getUserFont(currentUsername);
-    const userColor = getUserColor(currentUsername);
-    editUsernameInput.style.fontFamily = userFont || '';
-    editUsernameInput.style.color = userColor || '';
-    editPreviewName.style.fontFamily = userFont || '';
-    editPreviewName.style.color = userColor || '';
+    editUsernameInput.style.fontFamily = '';
+    editUsernameInput.style.color = authColor(currentAuth);
+    editPreviewName.style.fontFamily = '';
+    editPreviewName.style.color = authColor(currentAuth);
+    ensureFontLoaded(currentFont).then(family => {
+      if (!family) return;
+      editUsernameInput.style.fontFamily = `'${family}'`;
+      editPreviewName.style.fontFamily = `'${family}'`;
+    });
     renderEditIconGrid();
     editProfileOverlay.classList.add('visible');
   }
@@ -3289,7 +3329,9 @@
         offlineEarningsOwned: false,
         iconModifierOwned: false,
         autoKillOwned: false,
-        noobOwned: 0
+        noobOwned: 0,
+        auth: 'none',
+        font: 'Default'
       });
 
       if (result.error === 'taken') {
@@ -3302,9 +3344,11 @@
         return;
       }
 
-      setSession(draftAccount.username, draftAccount.favColor, draftAccount.profileIcon);
+      setSession(draftAccount.username, draftAccount.favColor, draftAccount.profileIcon, 'none', 'Default');
       currentUsername = draftAccount.username;
       currentProfileIcon = draftAccount.profileIcon;
+      currentAuth = 'none';
+      currentFont = 'Default';
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
 
       applyAccountTheme(draftAccount.favColor);
@@ -3343,8 +3387,10 @@
       loginError.style.display = 'none';
       currentUsername = result.account.username;
       currentProfileIcon = result.account.profileIcon;
+      currentAuth = result.account.auth || 'none';
+      currentFont = result.account.font || 'Default';
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
-      setSession(currentUsername, result.account.favColor, result.account.profileIcon);
+      setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
 
       applyServerGameData(result.account);
       applyAccountTheme(result.account.favColor);
@@ -3418,8 +3464,10 @@
         if (result.success && result.account) {
           currentUsername = result.account.username;
           currentProfileIcon = result.account.profileIcon;
+          currentAuth = result.account.auth || 'none';
+          currentFont = result.account.font || 'Default';
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
-          setSession(currentUsername, result.account.favColor, result.account.profileIcon);
+          setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
           applyServerGameData(result.account);
           applyAccountTheme(result.account.favColor);
           hideLoadingScreen();
@@ -3436,6 +3484,8 @@
           // person out over this - fall back to the cached local session.
           currentUsername = session;
           currentProfileIcon = getLastProfileIcon();
+          currentAuth = getLastAuth();
+          currentFont = getLastFont();
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
           applyAccountTheme(getLastTheme());
           hideLoadingScreen();
@@ -3447,6 +3497,8 @@
         // works offline, rather than blocking the person out entirely.
         currentUsername = session;
         currentProfileIcon = getLastProfileIcon();
+        currentAuth = getLastAuth();
+        currentFont = getLastFont();
         SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
         applyAccountTheme(getLastTheme());
         hideLoadingScreen();
