@@ -1060,6 +1060,11 @@
   .auth-input:focus{
     border-color:var(--melon-light);
   }
+  .edit-description{
+    font-family:'Poppins', sans-serif;
+    resize:vertical;
+    min-height:64px;
+  }
   .auth-btn{
     width:100%;
     font-family:'Fredoka One', cursive;
@@ -1353,6 +1358,7 @@
     <button class="auth-btn secondary" id="edit-upload-icon-btn">Upload your own</button>
     <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
     <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
+    <textarea id="edit-description-input" class="auth-input edit-description" placeholder="Account description..." maxlength="280" rows="3"></textarea>
     <button class="auth-btn secondary" id="edit-preview-btn">Preview</button>
     <div class="edit-preview" id="edit-preview" style="display:none;">
       <div class="edit-preview-avatar">
@@ -1500,6 +1506,7 @@
   let currentProfileIcon = null;
   let currentAuth = 'none';
   let currentFont = 'Default';
+  let currentDescription = '';
 
   function defaultGame(){
     return {
@@ -2647,7 +2654,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxvhIMKtOlij2Cx5vtANrKKfpsVjuL4RouTZkXhAVQJMmkHLTfTkQq4NLB4QuhyUC1mFA/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzr3oIYreS5f9W1fyE564i5u_XDtjVuwrqBQK9CmXZZUpoeS3os0GYTuMinH2YRNefYMw/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -2940,6 +2947,7 @@
   const editUploadIconBtn = document.getElementById('edit-upload-icon-btn');
   const editIconUploadInput = document.getElementById('edit-icon-upload-input');
   const editUsernameInput = document.getElementById('edit-username-input');
+  const editDescriptionInput = document.getElementById('edit-description-input');
   const editProfileSaveBtn = document.getElementById('edit-profile-save');
   const editProfileError = document.getElementById('edit-profile-error');
   const editProfileClose = document.getElementById('edit-profile-close');
@@ -3018,7 +3026,7 @@
 
       const account = result.account;
       publicProfileImg.src = account.profileIcon || 'profile.png';
-      publicProfileName.textContent = account.username;
+      publicProfileName.textContent = 'Player ID: ' + (account.playerId != null ? account.playerId : '?');
       publicProfileName.style.color = authColor(account.auth);
       publicProfileBanner.style.background = account.favColor || 'var(--melon)';
 
@@ -3080,6 +3088,7 @@
   function openEditProfile(){
     editSelectedIcon = currentProfileIcon;
     editUsernameInput.value = currentUsername || '';
+    editDescriptionInput.value = currentDescription || '';
     editProfileError.style.display = 'none';
     editPreviewEl.style.display = 'none';
     editUsernameInput.style.fontFamily = '';
@@ -3133,7 +3142,8 @@
         action: 'updateProfile',
         currentUsername: currentUsername,
         newUsername: newUsername,
-        profileIcon: editSelectedIcon || currentProfileIcon
+        profileIcon: editSelectedIcon || currentProfileIcon,
+        description: editDescriptionInput.value.trim()
       });
 
       if (result.error === 'taken') {
@@ -3149,8 +3159,9 @@
 
       currentUsername = result.account.username;
       currentProfileIcon = result.account.profileIcon;
+      currentDescription = result.account.description || '';
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
-      setSession(currentUsername, getLastTheme(), currentProfileIcon);
+      setSession(currentUsername, getLastTheme(), currentProfileIcon, currentAuth, currentFont);
       saveGame();
 
       closeEditProfile();
@@ -3389,6 +3400,7 @@
       currentProfileIcon = result.account.profileIcon;
       currentAuth = result.account.auth || 'none';
       currentFont = result.account.font || 'Default';
+      currentDescription = result.account.description || '';
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
       setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
 
@@ -3466,6 +3478,7 @@
           currentProfileIcon = result.account.profileIcon;
           currentAuth = result.account.auth || 'none';
           currentFont = result.account.font || 'Default';
+          currentDescription = result.account.description || '';
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
           setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
           applyServerGameData(result.account);
