@@ -1382,6 +1382,7 @@
     <div class="public-profile-body">
       <h2 id="public-profile-name"></h2>
       <p class="public-profile-detail" id="public-profile-birthday"></p>
+      <p class="public-profile-detail" id="public-profile-description"></p>
       <div class="public-profile-moneys">
         <img src="money.png" alt="Moneys">
         <span id="public-profile-clicks"></span>
@@ -2654,7 +2655,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzr3oIYreS5f9W1fyE564i5u_XDtjVuwrqBQK9CmXZZUpoeS3os0GYTuMinH2YRNefYMw/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzcx9sCUlLyvEqZ93q78zlPY9oHvfiwXW1TDlD0Szf-Y8C4LFldB8_TZn-X65PkoXePPA/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -2972,6 +2973,7 @@
   const publicProfileName = document.getElementById('public-profile-name');
   const publicProfileBirthday = document.getElementById('public-profile-birthday');
   const publicProfileClicks = document.getElementById('public-profile-clicks');
+  const publicProfileDescription = document.getElementById('public-profile-description');
 
   function closePublicProfile(skipUrlUpdate){
     publicProfileOverlay.classList.remove('visible');
@@ -2998,14 +3000,8 @@
     }
   });
 
-  async function openPublicProfile(username, skipUrlUpdate){
-    if (!username) return;
-
-    if (!skipUrlUpdate) {
-      const url = new URL(window.location);
-      url.searchParams.set('profile', username);
-      history.pushState({ profile: username }, '', url);
-    }
+  async function openPublicProfile(identifier, skipUrlUpdate){
+    if (!identifier) return;
 
     publicProfileImg.src = 'profile.png';
     publicProfileName.textContent = 'Loading...';
@@ -3013,11 +3009,17 @@
     publicProfileName.style.color = '';
     publicProfileBirthday.textContent = '';
     publicProfileClicks.textContent = '';
+    publicProfileDescription.textContent = '';
     publicProfileBanner.style.background = 'var(--melon)';
     publicProfileOverlay.classList.add('visible');
 
     try {
-      const result = await sheetRequest({ action: 'getAccount', username: username });
+      const isId = /^\d+$/.test(String(identifier));
+      const result = await sheetRequest(
+        isId
+          ? { action: 'getAccountById', playerId: identifier }
+          : { action: 'getAccount', username: identifier }
+      );
 
       if (!result.success || !result.account) {
         publicProfileName.textContent = 'Could not load profile.';
@@ -3026,9 +3028,10 @@
 
       const account = result.account;
       publicProfileImg.src = account.profileIcon || 'profile.png';
-      publicProfileName.textContent = 'Player ID: ' + (account.playerId != null ? account.playerId : '?');
+      publicProfileName.textContent = account.username;
       publicProfileName.style.color = authColor(account.auth);
       publicProfileBanner.style.background = account.favColor || 'var(--melon)';
+      publicProfileDescription.textContent = account.description || '';
 
       ensureFontLoaded(account.font).then(family => {
         if (family) publicProfileName.style.fontFamily = `'${family}'`;
@@ -3038,6 +3041,12 @@
       publicProfileBirthday.textContent = monthName ? `${monthName} ${account.birthday.day}` : '';
 
       publicProfileClicks.textContent = Number(account.clicks || 0).toLocaleString();
+
+      if (!skipUrlUpdate && account.playerId != null) {
+        const url = new URL(window.location);
+        url.searchParams.set('profile', account.playerId);
+        history.pushState({ profile: account.playerId }, '', url);
+      }
     } catch (e) {
       publicProfileName.textContent = "Couldn't reach the database.";
     }
