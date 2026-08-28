@@ -2903,7 +2903,8 @@
       function tick(){
         much++;
 
-        loadingStatusEl.textContent = `Loading code... ${much}/${max}`;
+        const displayEnd = Math.round(max / much) || max;
+        loadingStatusEl.textContent = `Loading code... ${much}/${displayEnd}`;
 
         const pct = much >= max ? 100 : 75 + (much / max) * 25;
         loadingBarFillEl.style.width = pct + '%';
