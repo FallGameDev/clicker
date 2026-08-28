@@ -2864,7 +2864,9 @@
     const linesNow = countCodeLines();
     const storedPrev = parseInt(localStorage.getItem(LINE_COUNT_KEY), 10);
     const prevLines = isNaN(storedPrev) ? linesNow : storedPrev;
-    const max = Math.max(1, Math.abs(linesNow - prevLines));
+    const realMax = Math.max(1, Math.abs(linesNow - prevLines));
+    const firstDigit = parseInt(String(realMax)[0], 10) || 1;
+    const max = Math.max(1, Math.round(realMax / firstDigit));
 
     const phases = [
       { text: 'Loading API...', duration: 1200, target: 25 },
@@ -2903,8 +2905,7 @@
       function tick(){
         much++;
 
-        const displayEnd = Math.round(max / much) || max;
-        loadingStatusEl.textContent = `Loading code... ${much}/${displayEnd}`;
+        loadingStatusEl.textContent = `Loading code... ${much}/${max}`;
 
         const pct = much >= max ? 100 : 75 + (much / max) * 25;
         loadingBarFillEl.style.width = pct + '%';
