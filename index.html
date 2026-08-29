@@ -43,6 +43,10 @@
     cursor:inherit !important;
   }
 
+  body.cursor-hidden, body.cursor-hidden *{
+    cursor:none !important;
+  }
+
   body{
     margin:0;
     min-height:100vh;
@@ -1212,6 +1216,40 @@
   .edit-profile-close:hover{
     color:var(--rind);
   }
+
+  /* ---------- CONFIRM OVERLAY ---------- */
+  .confirm-overlay{
+    position:fixed;
+    inset:0;
+    z-index:4800;
+    background:rgba(10,8,16,0.85);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .confirm-overlay.visible{
+    display:flex;
+  }
+
+  /* ---------- AUTH BADGE ---------- */
+  .auth-badge{
+    width:16px;
+    height:16px;
+    object-fit:contain;
+    margin-left:5px;
+    vertical-align:middle;
+    display:inline-block;
+  }
+  .auth-badge-unknown{
+    font-family:'Fredoka One', cursive;
+    font-size:12px;
+    color:var(--muted);
+    margin-left:5px;
+    vertical-align:middle;
+  }
+
   .edit-preview{
     display:flex;
     flex-direction:column;
@@ -1391,6 +1429,10 @@
   </div>
 </div>
 
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="auth-box confirm-box" id="confirm-box"></div>
+</div>
+
 <div class="page">
 
   <div class="click-counter" id="click-counter">0 clicks</div>
@@ -1490,7 +1532,8 @@
   const TABS = [
     { id: "stats", label: "Stats", data: null },
     { id: "leaderboard", label: "Leaderboard", data: null },
-    { id: "shop", label: "Shop", data: null }
+    { id: "shop", label: "Shop", data: null },
+    { id: "settings", label: "Settings", data: null }
   ];
 
   let activeTab = TABS[0].id;
@@ -1534,7 +1577,9 @@
       iconModifierOwned: false,
       selectedIcon: 'profile.png',
       autoKillOwned: false,
-      noobOwned: 0
+      noobOwned: 0,
+      hideCursor: false,
+      sfxMuted: false
     };
   }
 
@@ -1555,6 +1600,7 @@
   }
 
   function playSound(file){
+    if (game.sfxMuted) return;
     try {
       const audio = new Audio(file);
       audio.volume = 0.5;
@@ -2550,6 +2596,8 @@
       renderStats();
     } else if (activeTab === 'leaderboard') {
       renderLeaderboard();
+    } else if (activeTab === 'settings') {
+      renderSettings();
     } else {
       renderLinks(TABS.find(t => t.id === activeTab).data);
     }
@@ -2572,7 +2620,7 @@
           <div class="leaderboard-avatar">
             <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
           </div>
-          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}</span>
+          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}${authBadge(entry.auth)}</span>
           <span class="leaderboard-clicks">
             <img src="money.png" alt="Moneys">
             ${Number(entry.clicks || 0).toLocaleString()}
@@ -2602,7 +2650,7 @@
         <div class="stats-avatar" id="stats-avatar-click">
           <img src="${currentProfileIcon || 'profile.png'}" alt="Profile">
         </div>
-        <h2 class="stats-name" id="stats-name-click" style="color:${authColor(currentAuth)}">${currentUsername || 'Guest'}</h2>
+        <h2 class="stats-name" id="stats-name-click" style="color:${authColor(currentAuth)}">${currentUsername || 'Guest'}${authBadge(currentAuth)}</h2>
         <div class="stats-moneys">
           <img src="money.png" alt="Moneys">
           <span>${game.clicks.toLocaleString()}</span>
@@ -3030,7 +3078,7 @@
 
       const account = result.account;
       publicProfileImg.src = account.profileIcon || 'profile.png';
-      publicProfileName.textContent = account.username;
+      publicProfileName.innerHTML = account.username + authBadge(account.auth);
       publicProfileName.style.color = authColor(account.auth);
       publicProfileBanner.style.background = account.favColor || 'var(--melon)';
       publicProfileDescription.textContent = account.description || '';
@@ -3094,6 +3142,15 @@
     if (key === 'fam') return 'cyan';
     if (key === 'owner') return 'lime';
     return 'white';
+  }
+
+  function authBadge(auth){
+    const key = String(auth || 'none').toLowerCase();
+    if (key === 'fam') return `<img src="fam.png" class="auth-badge" alt="fam">`;
+    if (key === 'ver') return `<img src="ver.png" class="auth-badge" alt="ver">`;
+    if (key === 'owner') return `<img src="owner.png" class="auth-badge" alt="owner">`;
+    if (key === 'none') return '';
+    return `<span class="auth-badge-unknown">?</span>`;
   }
 
   function openEditProfile(){
