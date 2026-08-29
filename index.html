@@ -1929,7 +1929,7 @@
     { label: "Good to Be Alive", file: "gtba.mp3" },
     { label: "Show Yourself", file: "sy.mp3" },
     { label: "Masquerade Party", file: "mp.mp3" },
-    { label: "keep me going (BIRDBRAIN)", file: "birdbrain.mp3" }
+    { label: "Keep Me Going (BIRDBRAIN)", file: "birdbrain.mp3" }
   ];
 
   const musicPlayerEl = document.getElementById('music-player');
@@ -2914,8 +2914,12 @@
     const storedPrev = parseInt(localStorage.getItem(LINE_COUNT_KEY), 10);
     const prevLines = isNaN(storedPrev) ? linesNow : storedPrev;
     const realMax = Math.max(1, Math.abs(linesNow - prevLines));
-    const firstDigit = parseInt(String(realMax)[0], 10) || 1;
-    const max = Math.max(1, Math.round(realMax / firstDigit));
+    const realMaxStr = String(realMax);
+    // 3 digits -> use first 1, 4 digits -> first 2, 5 digits -> first 3, etc.
+    const divisor = realMaxStr.length <= 2
+      ? 1
+      : (parseInt(realMaxStr.slice(0, realMaxStr.length - 2), 10) || 1);
+    const max = Math.max(1, Math.round(realMax / divisor));
 
     const phases = [
       { text: 'Loading API...', duration: 1200, target: 25 },
@@ -3152,6 +3156,184 @@
     if (key === 'owner') return `<img src="owner.png" class="auth-badge" alt="owner">`;
     if (key === 'none') return '';
     return `<span class="auth-badge-unknown">?</span>`;
+  }
+
+  /* ---------- SETTINGS ---------- */
+  function applyCursorVisibility(){
+    document.body.classList.toggle('cursor-hidden', !!game.hideCursor);
+  }
+
+  function renderSettings(){
+    list.innerHTML = `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Hide Cursor</h3>
+          <p>Hide the mouse cursor while playing.</p>
+        </div>
+        <button class="buy-btn" id="toggle-hide-cursor">${game.hideCursor ? 'Show Cursor' : 'Hide Cursor'}</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Sound Effects</h3>
+          <p>Mute all sound effects (everything except background music).</p>
+        </div>
+        <button class="buy-btn" id="toggle-mute-sfx">${game.sfxMuted ? 'Unmute' : 'Mute'}</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Reset Data</h3>
+          <p>Wipe your clicks and upgrades back to zero.</p>
+        </div>
+        <button class="buy-btn" id="open-reset-data">Reset</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Delete Account</h3>
+          <p>Permanently delete your account from the database.</p>
+        </div>
+        <button class="buy-btn" id="open-delete-account">Delete</button>
+      </div>
+    `;
+
+    document.getElementById('toggle-hide-cursor').addEventListener('click', () => {
+      game.hideCursor = !game.hideCursor;
+      applyCursorVisibility();
+      saveGame();
+      renderSettings();
+    });
+
+    document.getElementById('toggle-mute-sfx').addEventListener('click', () => {
+      game.sfxMuted = !game.sfxMuted;
+      saveGame();
+      renderSettings();
+    });
+
+    document.getElementById('open-reset-data').addEventListener('click', openConfirmReset);
+    document.getElementById('open-delete-account').addEventListener('click', openConfirmDelete);
+  }
+
+  /* ---------- CONFIRM OVERLAY (Reset Data / Delete Account) ---------- */
+  const confirmOverlay = document.getElementById('confirm-overlay');
+  const confirmBox = document.getElementById('confirm-box');
+  let deletePassword = '';
+  let deleteStep = 1;
+
+  function closeConfirm(){
+    confirmOverlay.classList.remove('visible');
+  }
+
+  confirmOverlay.addEventListener('click', (e) => {
+    if (e.target === confirmOverlay) closeConfirm();
+  });
+
+  function openConfirmReset(){
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Reset Data?</h1>
+      <p class="auth-sub">Are you sure you want to do this? This can't be undone.</p>
+      <button class="auth-btn" id="confirm-reset-yes">Yes, reset everything</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+    `;
+    document.getElementById('confirm-reset-yes').addEventListener('click', doResetData);
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    confirmOverlay.classList.add('visible');
+  }
+
+  function doResetData(){
+    document.querySelectorAll('.dvd-logo, .crewmate, .noob').forEach(el => el.remove());
+    game = defaultGame();
+    saveGame();
+    syncToSheet();
+    updateCounter();
+    closeConfirm();
+    renderActiveTab();
+  }
+
+  function openConfirmDelete(){
+    deleteStep = 1;
+    deletePassword = '';
+    renderDeleteStep();
+    confirmOverlay.classList.add('visible');
+  }
+
+  function renderDeleteStep(){
+    if (deleteStep === 1) {
+      confirmBox.innerHTML = `
+        <h1 class="auth-heading">Delete Account?</h1>
+        <p class="auth-sub">Are you sure you want to do this? This can't be undone.</p>
+        <button class="auth-btn" id="confirm-delete-next">Yes, continue</button>
+        <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      `;
+      document.getElementById('confirm-delete-next').addEventListener('click', () => {
+        deleteStep = 2;
+        renderDeleteStep();
+      });
+      document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+
+    } else if (deleteStep === 2) {
+      confirmBox.innerHTML = `
+        <h1 class="auth-heading">Confirm Password</h1>
+        <p class="auth-sub">Type your password to continue.</p>
+        <input type="password" id="confirm-delete-password" class="auth-input" placeholder="Password">
+        <button class="auth-btn" id="confirm-delete-password-next">Continue</button>
+        <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+        <p class="auth-error" id="confirm-delete-error" style="display:none;"></p>
+      `;
+      document.getElementById('confirm-delete-password-next').addEventListener('click', () => {
+        const pw = document.getElementById('confirm-delete-password').value;
+        if (!pw) return;
+        deletePassword = pw;
+        deleteStep = 3;
+        renderDeleteStep();
+      });
+      document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+
+    } else if (deleteStep === 3) {
+      confirmBox.innerHTML = `
+        <h1 class="auth-heading">Final Confirmation</h1>
+        <p class="auth-sub">Type "I want to delete my account." exactly to confirm.</p>
+        <input type="text" id="confirm-delete-phrase" class="auth-input" placeholder="I want to delete my account.">
+        <button class="auth-btn" id="confirm-delete-final">Delete My Account</button>
+        <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+        <p class="auth-error" id="confirm-delete-error" style="display:none;"></p>
+      `;
+      document.getElementById('confirm-delete-final').addEventListener('click', doDeleteAccount);
+      document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    }
+  }
+
+  async function doDeleteAccount(){
+    const phraseInput = document.getElementById('confirm-delete-phrase');
+    const errorEl = document.getElementById('confirm-delete-error');
+
+    if (phraseInput.value !== 'I want to delete my account.') {
+      errorEl.textContent = 'Please type the phrase exactly as shown.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    try {
+      const result = await sheetRequest({
+        action: 'deleteAccount',
+        username: currentUsername,
+        password: deletePassword
+      });
+
+      if (!result.success) {
+        errorEl.textContent = result.error === 'invalid' ? 'Incorrect password.' : 'Something went wrong.';
+        errorEl.style.display = 'block';
+        return;
+      }
+
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(THEME_KEY);
+      localStorage.removeItem(PROFILE_ICON_KEY);
+      localStorage.removeItem(AUTH_KEY);
+      localStorage.removeItem(FONT_KEY);
+      location.reload();
+    } catch (e) {
+      errorEl.textContent = "Couldn't reach the database. Try again.";
+      errorEl.style.display = 'block';
+    }
   }
 
   function openEditProfile(){
@@ -3492,6 +3674,7 @@
     loadCustomAssets();
     applyOfflineEarnings();
     updateCounter();
+    applyCursorVisibility();
     if (game.musicPlayerOwned) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
