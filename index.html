@@ -734,15 +734,19 @@
     font-family:'Fredoka One', cursive;
     font-size:11.5px;
     color:var(--btn-text);
-    background:var(--melon-light);
+    background:linear-gradient(135deg, var(--tab-color), var(--melon-light));
     border:none;
     border-radius:10px;
     padding:9px 12px;
     cursor:pointer;
-    transition:transform .12s ease, background .12s ease, opacity .12s ease;
+    box-shadow:0 4px 14px -6px rgba(0,0,0,0.4);
+    transition:transform .12s ease, box-shadow .15s ease, opacity .12s ease;
   }
-  .buy-btn:hover:not(:disabled){transform:translateY(-1px); background:var(--melon);}
-  .buy-btn:active:not(:disabled){transform:translateY(0);}
+  .buy-btn:hover:not(:disabled){
+    transform:translateY(-2px) scale(1.02);
+    box-shadow:0 8px 20px -6px var(--melon-light);
+  }
+  .buy-btn:active:not(:disabled){transform:translateY(0) scale(1);}
   .buy-btn:disabled{
     opacity:0.4;
     cursor:not-allowed;
@@ -1351,6 +1355,39 @@
   @media (prefers-reduced-motion: reduce){
     *{transition:none !important;}
     .link-card:hover{transform:none;}
+  }
+
+  @media (max-width:480px){
+    .page{ padding:0 16px; }
+    .tab-btn{
+      font-size:11px;
+      padding:12px 6px;
+      min-height:40px;
+    }
+    .shop-category-btn{
+      font-size:11px;
+      padding:10px 6px;
+      min-height:38px;
+    }
+    .buy-btn{
+      font-size:13px;
+      padding:12px 14px;
+      min-height:40px;
+    }
+    .shop-card, .leaderboard-row, .achievement-card, .stats-card{
+      padding:14px;
+    }
+    .shop-info h3{ font-size:14px; }
+    .shop-info p{ font-size:12px; line-height:1.5; }
+    .auth-input, .auth-btn{
+      font-size:15px;
+      padding:13px 14px;
+      min-height:44px;
+    }
+    .color-grid{ grid-template-columns:repeat(2, 1fr); gap:8px; }
+    .icon-grid{ grid-template-columns:repeat(3, 1fr); gap:8px; }
+    .leaderboard-name{ font-size:13px; }
+    .stats-name{ font-size:16px; }
   }
 </style>
 </head>
@@ -1993,6 +2030,19 @@
   const songAudio = document.getElementById('song-audio');
   const playBtn = document.getElementById('play-btn');
   const loopBtn = document.getElementById('loop-btn');
+  const defaultBgAudio = document.getElementById('default-bg-audio');
+
+  function updateDefaultBgVolume(){
+    if (!defaultBgAudio) return;
+    const songPlaying = songAudio && !songAudio.paused;
+    defaultBgAudio.volume = (game.sfxMuted || songPlaying) ? 0 : 0.3;
+  }
+
+  function startDefaultBgSong(){
+    if (!defaultBgAudio) return;
+    updateDefaultBgVolume();
+    defaultBgAudio.play().catch(() => {});
+  }
 
   function renderSongOption(song, index){
     const opt = document.createElement('option');
@@ -2031,8 +2081,8 @@
     }
   });
 
-  songAudio.addEventListener('play', () => { playBtn.innerHTML = '&#10074;&#10074;'; });
-  songAudio.addEventListener('pause', () => { playBtn.innerHTML = '&#9658;'; });
+  songAudio.addEventListener('play', () => { playBtn.innerHTML = '&#10074;&#10074;'; updateDefaultBgVolume(); });
+  songAudio.addEventListener('pause', () => { playBtn.innerHTML = '&#9658;'; updateDefaultBgVolume(); });
 
   function updateLoopBtn(){
     loopBtn.classList.toggle('active', songAudio.loop);
@@ -3837,6 +3887,8 @@
     updateCounter();
     applyCursorVisibility();
     if (game.hideCursor) showCursorHint();
+    applyLightMode();
+    startDefaultBgSong();
     if (game.musicPlayerOwned) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
