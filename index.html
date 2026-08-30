@@ -37,6 +37,15 @@
     --line: rgba(255,255,255,0.06);
   }
 
+  body.light-mode{
+    --night:#f2f0f9;
+    --card:#ffffff;
+    --card-hover:#ece9f7;
+    --rind:#221c38;
+    --muted: rgba(34,28,56,0.62);
+    --line: rgba(34,28,56,0.1);
+  }
+
   *{box-sizing:border-box;}
 
   body.custom-cursor-active *{
@@ -642,6 +651,48 @@
     width:26px;
     height:26px;
     object-fit:contain;
+  }
+
+  /* ---------- ACHIEVEMENTS ---------- */
+  .achievement-card{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px 16px;
+    opacity:0.45;
+  }
+  .achievement-card.unlocked{
+    opacity:1;
+    border-color:var(--melon-light);
+  }
+  .achievement-icon{
+    width:36px;
+    height:36px;
+    flex-shrink:0;
+    border-radius:10px;
+    background:var(--night);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Fredoka One', cursive;
+    font-size:16px;
+    color:var(--melon-light);
+  }
+  .achievement-info h3{
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:var(--rind);
+    margin:0 0 2px;
+  }
+  .achievement-info p{
+    font-family:'Poppins', sans-serif;
+    font-size:11.5px;
+    color:var(--muted);
+    margin:0;
   }
 
   /* ---------- SHOP ---------- */
@@ -1447,6 +1498,7 @@
     <button class="play-btn loop-btn" id="loop-btn" title="Loop">&#8635;</button>
   </div>
   <audio id="song-audio"></audio>
+  <audio id="default-bg-audio" src="lofi.mp3" loop></audio>
 
   <div class="cursor-picker" id="cursor-picker">
     <select id="cursor-select"></select>
@@ -1533,6 +1585,7 @@
     { id: "stats", label: "Stats", data: null },
     { id: "leaderboard", label: "Leaderboard", data: null },
     { id: "shop", label: "Shop", data: null },
+    { id: "achievements", label: "Achievements", data: null },
     { id: "settings", label: "Settings", data: null }
   ];
 
@@ -1579,7 +1632,9 @@
       autoKillOwned: false,
       noobOwned: 0,
       hideCursor: false,
-      sfxMuted: false
+      sfxMuted: false,
+      lightMode: false,
+      unlockedAchievements: []
     };
   }
 
@@ -1611,6 +1666,7 @@
   function updateCounter(){
     counterEl.textContent = game.clicks.toLocaleString() + (game.clicks === 1 ? ' click' : ' clicks');
     if (game.clicks > 0) counterEl.classList.add('visible');
+    checkAchievements();
   }
 
   avatarEl.addEventListener('click', () => {
@@ -2599,6 +2655,8 @@
       renderLeaderboard();
     } else if (activeTab === 'settings') {
       renderSettings();
+    } else if (activeTab === 'achievements') {
+      renderAchievements();
     } else {
       renderLinks(TABS.find(t => t.id === activeTab).data);
     }
@@ -3158,6 +3216,77 @@
     return `<span class="auth-badge-unknown">?</span>`;
   }
 
+  /* ======================================================
+     ACHIEVEMENTS
+     Add more entries here any time. Each needs:
+       id    - unique, never change once players may have it
+       icon  - a short bit of text/emoji shown in the icon box
+       label - title shown to the player
+       desc  - description shown to the player
+       check - function(game) that returns true once earned
+     ====================================================== */
+  const ACHIEVEMENTS = [
+    { id: 'first_click', icon: '1', label: 'First Click', desc: 'Click the avatar for the first time.', check: g => g.clicks >= 1 },
+    { id: 'click_100', icon: '100', label: 'Getting Started', desc: 'Reach 100 total clicks.', check: g => g.clicks >= 100 },
+    { id: 'click_1000', icon: '1K', label: 'Clicking Along', desc: 'Reach 1,000 total clicks.', check: g => g.clicks >= 1000 },
+    { id: 'click_10000', icon: '10K', label: 'Big Spender', desc: 'Reach 10,000 total clicks.', check: g => g.clicks >= 10000 },
+    { id: 'click_100000', icon: '100K', label: 'Clicking Legend', desc: 'Reach 100,000 total clicks.', check: g => g.clicks >= 100000 },
+    { id: 'first_boost', icon: '\u26a1', label: 'Power Up', desc: 'Buy your first Click Boost.', check: g => g.clickBoostOwned >= 1 },
+    { id: 'first_auto', icon: '\u23f1', label: 'Set It and Forget It', desc: 'Buy your first Clicker.', check: g => g.autoClickerOwned >= 1 },
+    { id: 'first_dvd', icon: 'DVD', label: 'Bouncing Around', desc: 'Buy your first DVD Logo.', check: g => g.dvdOwned >= 1 },
+    { id: 'corner_hit', icon: '\ud83c\udfaf', label: 'Perfect Corner', desc: 'Land a DVD logo corner hit.', check: g => g.clicks >= 10000 && g.dvdOwned >= 1 },
+    { id: 'first_amogus', icon: '?', label: 'Sus', desc: 'Buy your first Amogus.', check: g => g.amogusOwned >= 1 },
+    { id: 'first_noob', icon: 'N', label: 'Oof', desc: 'Buy your first Roblox Noob.', check: g => g.noobOwned >= 1 },
+    { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
+    { id: 'auto_kill', icon: '\ud83d\udc80', label: 'No Mercy', desc: 'Buy Auto Kill.', check: g => g.autoKillOwned },
+    { id: 'offline_earner', icon: '\ud83d\udcb0', label: 'Set for Life', desc: 'Buy Offline Earnings.', check: g => g.offlineEarningsOwned }
+  ];
+
+  function checkAchievements(){
+    if (!game.unlockedAchievements) game.unlockedAchievements = [];
+    const newlyUnlocked = [];
+
+    ACHIEVEMENTS.forEach(a => {
+      if (!game.unlockedAchievements.includes(a.id) && a.check(game)) {
+        game.unlockedAchievements.push(a.id);
+        newlyUnlocked.push(a);
+      }
+    });
+
+    if (newlyUnlocked.length > 0) {
+      saveGame();
+      newlyUnlocked.forEach(a => showAchievementToast(a));
+      if (activeTab === 'achievements') renderAchievements();
+    }
+  }
+
+  function showAchievementToast(a){
+    const banner = document.createElement('div');
+    banner.className = 'offline-banner';
+    banner.textContent = `Achievement Unlocked: ${a.label}`;
+    document.body.appendChild(banner);
+    requestAnimationFrame(() => banner.classList.add('visible'));
+    setTimeout(() => {
+      banner.classList.remove('visible');
+      setTimeout(() => banner.remove(), 500);
+    }, 4000);
+  }
+
+  function renderAchievements(){
+    list.innerHTML = ACHIEVEMENTS.map(a => {
+      const unlocked = (game.unlockedAchievements || []).includes(a.id);
+      return `
+        <div class="achievement-card${unlocked ? ' unlocked' : ''}">
+          <div class="achievement-icon">${a.icon}</div>
+          <div class="achievement-info">
+            <h3>${unlocked ? a.label : '???'}</h3>
+            <p>${unlocked ? a.desc : 'Not yet unlocked.'}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
   /* ---------- SETTINGS ---------- */
   function applyCursorVisibility(){
     document.body.classList.toggle('cursor-hidden', !!game.hideCursor);
@@ -3187,9 +3316,16 @@
       <div class="shop-card">
         <div class="shop-info">
           <h3>Sound Effects</h3>
-          <p>Mute all sound effects (everything except background music).</p>
+          <p>Mute all sound effects and the default background song (everything except a song you pick in the Music Player).</p>
         </div>
         <button class="buy-btn" id="toggle-mute-sfx">${game.sfxMuted ? 'Unmute' : 'Mute'}</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Theme</h3>
+          <p>Switch between dark mode and light mode.</p>
+        </div>
+        <button class="buy-btn" id="toggle-theme">${game.lightMode ? 'Switch to Dark' : 'Switch to Light'}</button>
       </div>
       <div class="shop-card">
         <div class="shop-info">
@@ -3219,10 +3355,22 @@
       game.sfxMuted = !game.sfxMuted;
       saveGame();
       renderSettings();
+      updateDefaultBgVolume();
+    });
+
+    document.getElementById('toggle-theme').addEventListener('click', () => {
+      game.lightMode = !game.lightMode;
+      applyLightMode();
+      saveGame();
+      renderSettings();
     });
 
     document.getElementById('open-reset-data').addEventListener('click', openConfirmReset);
     document.getElementById('open-delete-account').addEventListener('click', openConfirmDelete);
+  }
+
+  function applyLightMode(){
+    document.body.classList.toggle('light-mode', !!game.lightMode);
   }
 
   /* ---------- CONFIRM OVERLAY (Reset Data / Delete Account) ---------- */
