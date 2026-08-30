@@ -1807,7 +1807,7 @@
       <div class="shop-card">
         <div class="shop-info">
           <h3>DVD Logo</h3>
-          <p>Spawns a bouncing logo that gives you money on each bounce. <span class="owned">Owned: ${game.dvdOwned}</span></p>
+          <p>Spawns a bouncing logo that changes color on every wall bounce. <span class="owned">Owned: ${game.dvdOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-dvd" ${game.clicks < DVD_COST ? 'disabled' : ''}>Buy (${DVD_COST})</button>
       </div>` },
@@ -3163,6 +3163,18 @@
     document.body.classList.toggle('cursor-hidden', !!game.hideCursor);
   }
 
+  function showCursorHint(){
+    const banner = document.createElement('div');
+    banner.className = 'offline-banner';
+    banner.textContent = 'Press Fn+M to show.';
+    document.body.appendChild(banner);
+    requestAnimationFrame(() => banner.classList.add('visible'));
+    setTimeout(() => {
+      banner.classList.remove('visible');
+      setTimeout(() => banner.remove(), 500);
+    }, 3000);
+  }
+
   function renderSettings(){
     list.innerHTML = `
       <div class="shop-card">
@@ -3200,6 +3212,7 @@
       applyCursorVisibility();
       saveGame();
       renderSettings();
+      if (game.hideCursor) showCursorHint();
     });
 
     document.getElementById('toggle-mute-sfx').addEventListener('click', () => {
@@ -3675,6 +3688,7 @@
     applyOfflineEarnings();
     updateCounter();
     applyCursorVisibility();
+    if (game.hideCursor) showCursorHint();
     if (game.musicPlayerOwned) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
