@@ -1322,6 +1322,15 @@
     margin:0 auto 14px;
     display:block;
   }
+  .tutorial-progress{
+    font-family:'Fredoka One', cursive;
+    font-size:11px;
+    color:var(--tab-color);
+    margin:0 0 8px;
+  }
+  .tutorial-hint{
+    color:var(--tab-color) !important;
+  }
 
   /* ---------- AUTH BADGE ---------- */
   .auth-badge{
@@ -1559,8 +1568,10 @@
 <div class="tutorial-overlay" id="tutorial-overlay">
   <div class="auth-box tutorial-box">
     <img src="tutorial-guide.png" alt="" class="tutorial-char">
+    <p class="tutorial-progress" id="tutorial-progress"></p>
     <h1 class="auth-heading" id="tutorial-title"></h1>
     <p class="auth-sub" id="tutorial-text"></p>
+    <p class="auth-error tutorial-hint" id="tutorial-hint" style="display:none;"></p>
     <button class="auth-btn" id="tutorial-next">Next</button>
   </div>
 </div>
@@ -2692,6 +2703,8 @@
   }
 
   /* ---------- TABS ---------- */
+  const tutorialVisitedTabs = new Set();
+
   function renderTabs(){
     tabBar.innerHTML = "";
 
@@ -2701,6 +2714,7 @@
       btn.textContent = tab.label;
       btn.addEventListener('click', () => {
         activeTab = tab.id;
+        tutorialVisitedTabs.add(tab.id);
         renderTabs();
         renderActiveTab();
       });
@@ -3594,7 +3608,7 @@
   /* ---------- TUTORIAL ---------- */
   const TUTORIAL_SEEN_KEY = 'fgd_tutorial_seen';
   const TUTORIAL_STEPS = [
-    { title: "Hey there!", text: "This is your Clicker. Click him to earn moneys!" },
+    { title: "Hey there!", text: "Welcome to the Clicker Game! Click the little green guy to get moneys!" },
     { title: "Spend Your Moneys", text: "Head to the Shop tab to buy upgrades - some boost your clicks, some are just for fun." },
     { title: "Keep an Eye Out", text: "Check Stats, Leaderboard, and Achievements to track your progress and see how you stack up." },
     { title: "That's It!", text: "Everything else you'll figure out by playing. Have fun!" }
