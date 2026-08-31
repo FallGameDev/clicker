@@ -104,8 +104,13 @@
     overflow:hidden;
     margin-bottom:20px;
     cursor:pointer;
-    transition:transform .1s ease;
+    transition:transform .1s ease, box-shadow .3s ease;
     user-select:none;
+    animation:avatar-glow 2.4s ease-in-out infinite;
+  }
+  @keyframes avatar-glow{
+    0%, 100%{ box-shadow:0 0 0 0 rgba(255,255,255,0); }
+    50%{ box-shadow:0 0 22px 4px var(--tab-color); }
   }
   .avatar:active{transform:scale(0.93);}
   .avatar img{
@@ -344,6 +349,7 @@
     background:var(--tab-color);
     border-color:var(--tab-color);
     color:var(--btn-text);
+    box-shadow:0 4px 16px -4px var(--tab-color);
   }
 
   .shop-category-bar{
@@ -1129,15 +1135,17 @@
     font-family:'Fredoka One', cursive;
     font-size:14px;
     color:var(--btn-text);
-    background:var(--melon-light);
+    background:linear-gradient(135deg, var(--tab-color), var(--melon-light));
     border:none;
     border-radius:10px;
     padding:12px;
     cursor:pointer;
-    transition:background .15s ease, transform .12s ease;
+    box-shadow:0 4px 14px -6px rgba(0,0,0,0.4);
+    transition:box-shadow .15s ease, transform .12s ease;
   }
   .auth-btn:hover{
-    background:var(--melon);
+    box-shadow:0 8px 20px -6px var(--melon-light);
+    transform:translateY(-1px);
   }
   .auth-btn:active{
     transform:scale(0.97);
@@ -1147,6 +1155,7 @@
     border:1px solid var(--line);
     color:var(--rind);
     margin-top:12px;
+    box-shadow:none;
   }
   .auth-btn.secondary:hover{
     border-color:var(--melon-light);
@@ -1286,6 +1295,32 @@
   }
   .confirm-overlay.visible{
     display:flex;
+  }
+
+  /* ---------- TUTORIAL ---------- */
+  .tutorial-overlay{
+    position:fixed;
+    inset:0;
+    z-index:4900;
+    background:rgba(10,8,16,0.88);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .tutorial-overlay.visible{
+    display:flex;
+  }
+  .tutorial-box{
+    text-align:center;
+  }
+  .tutorial-char{
+    width:84px;
+    height:84px;
+    object-fit:contain;
+    margin:0 auto 14px;
+    display:block;
   }
 
   /* ---------- AUTH BADGE ---------- */
@@ -1519,6 +1554,15 @@
 
 <div class="confirm-overlay" id="confirm-overlay">
   <div class="auth-box confirm-box" id="confirm-box"></div>
+</div>
+
+<div class="tutorial-overlay" id="tutorial-overlay">
+  <div class="auth-box tutorial-box">
+    <img src="tutorial-guide.png" alt="" class="tutorial-char">
+    <h1 class="auth-heading" id="tutorial-title"></h1>
+    <p class="auth-sub" id="tutorial-text"></p>
+    <button class="auth-btn" id="tutorial-next">Next</button>
+  </div>
 </div>
 
 <div class="page">
@@ -3547,6 +3591,45 @@
     }
   }
 
+  /* ---------- TUTORIAL ---------- */
+  const TUTORIAL_SEEN_KEY = 'fgd_tutorial_seen';
+  const TUTORIAL_STEPS = [
+    { title: "Hey there!", text: "This is your Clicker. Click him to earn moneys!" },
+    { title: "Spend Your Moneys", text: "Head to the Shop tab to buy upgrades - some boost your clicks, some are just for fun." },
+    { title: "Keep an Eye Out", text: "Check Stats, Leaderboard, and Achievements to track your progress and see how you stack up." },
+    { title: "That's It!", text: "Everything else you'll figure out by playing. Have fun!" }
+  ];
+
+  const tutorialOverlay = document.getElementById('tutorial-overlay');
+  const tutorialTitle = document.getElementById('tutorial-title');
+  const tutorialText = document.getElementById('tutorial-text');
+  const tutorialNextBtn = document.getElementById('tutorial-next');
+  let tutorialStepIndex = 0;
+
+  function renderTutorialStep(){
+    const step = TUTORIAL_STEPS[tutorialStepIndex];
+    tutorialTitle.textContent = step.title;
+    tutorialText.textContent = step.text;
+    tutorialNextBtn.textContent = (tutorialStepIndex === TUTORIAL_STEPS.length - 1) ? "Got it!" : "Next";
+  }
+
+  tutorialNextBtn.addEventListener('click', () => {
+    tutorialStepIndex++;
+    if (tutorialStepIndex >= TUTORIAL_STEPS.length) {
+      tutorialOverlay.classList.remove('visible');
+      localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
+      return;
+    }
+    renderTutorialStep();
+  });
+
+  function maybeShowTutorial(){
+    if (localStorage.getItem(TUTORIAL_SEEN_KEY)) return;
+    tutorialStepIndex = 0;
+    renderTutorialStep();
+    tutorialOverlay.classList.add('visible');
+  }
+
   function openEditProfile(){
     editSelectedIcon = currentProfileIcon;
     editUsernameInput.value = currentUsername || '';
@@ -3899,6 +3982,7 @@
 
     renderTabs();
     renderActiveTab();
+    maybeShowTutorial();
 
     window.addEventListener('beforeunload', () => {
       saveGame();
