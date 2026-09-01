@@ -3726,6 +3726,7 @@
     tutorialTitle.textContent = step.title;
     tutorialText.textContent = step.text;
     tutorialNextBtn.textContent = (tutorialStepIndex === TUTORIAL_STEPS.length - 1) ? "Got it!" : "Next";
+    tutorialOverlay.classList.toggle('action-step', !!step.requirement);
     updateTutorialButtonState();
 
     clearInterval(tutorialPollTimer);
