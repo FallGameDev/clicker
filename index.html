@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="maksy.ico" id="favicon-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -46,7 +46,7 @@
     --line: rgba(34,28,56,0.1);
   }
 
-  *{box-sizing:border-box; touch-action:manipulation;}
+  *{box-sizing:border-box;}
 
   body.custom-cursor-active *{
     cursor:inherit !important;
@@ -3605,112 +3605,31 @@
     }
   }
 
-  /* ---------- TUTORIAL ----------
-     Most steps require an action (requirement) before "Next" enables.
-     requirement: function returning true once satisfied, or null for
-     a step that just needs reading (always enabled).
-     ------------------------------------------------- */
+  /* ---------- TUTORIAL ---------- */
   const TUTORIAL_SEEN_KEY = 'fgd_tutorial_seen';
   const TUTORIAL_STEPS = [
-    {
-      title: "Welcome to The Clicker Game!",
-      text: "So glad you're here! This little guy is your Clicker - every tap earns you moneys. Let's get you started!",
-      requirement: null
-    },
-    {
-      title: "Try It Out!",
-      text: "Go ahead, give the avatar a click and watch your very first moneys roll in!",
-      hint: "I'm waiting right here for your first click...",
-      requirement: () => game.clicks >= 1
-    },
-    {
-      title: "You're a Natural!",
-      text: "Nice work! Keep that momentum going and get your total up to 10 clicks.",
-      hint: "0/10 so far - you've got this!",
-      requirement: () => game.clicks >= 10
-    },
-    {
-      title: "Time to Shop!",
-      text: "Now for the fun part. Hop over to the Shop tab and see what's waiting for you.",
-      hint: "Whenever you're ready, tap the Shop tab above.",
-      requirement: () => tutorialVisitedTabs.has('shop')
-    },
-    {
-      title: "Treat Yourself!",
-      text: "Pick up a Click Boost - it makes every single click worth even more. Totally worth it!",
-      hint: "Grab a Click Boost whenever you're ready.",
-      requirement: () => game.clickBoostOwned >= 1
-    },
-    {
-      title: "Feel That Power!",
-      text: "Now try reaching 50 clicks - you'll notice it flies by so much faster with your new boost!",
-      hint: "0/50 so far - look at you go!",
-      requirement: () => game.clicks >= 50
-    },
-    {
-      title: "Meet Your Stats",
-      text: "The Stats tab is your little home base - your profile, your moneys, all in one place.",
-      hint: "Take a peek - tap the Stats tab above.",
-      requirement: () => tutorialVisitedTabs.has('stats')
-    },
-    {
-      title: "See Who's Winning!",
-      text: "Curious how you stack up against everyone else? The Leaderboard has all the answers.",
-      hint: "Check it out - tap the Leaderboard tab above.",
-      requirement: () => tutorialVisitedTabs.has('leaderboard')
-    },
-    {
-      title: "A Few Surprises Await",
-      text: "The Achievements tab tracks fun milestones as you play - some are secret until you unlock them!",
-      hint: "Go take a look - tap the Achievements tab above.",
-      requirement: () => tutorialVisitedTabs.has('achievements')
-    },
-    {
-      title: "You're All Set!",
-      text: "That's everything you need to know! There's plenty more to discover on your own - Settings, more upgrades, surprises galore. Have a blast!",
-      requirement: null
-    }
+    { title: "Hey there!", text: "Welcome to the Clicker Game! Click the little green guy to get moneys!" },
+    { title: "Spend Your Moneys", text: "Head to the Shop tab to buy upgrades - some boost your clicks, some are just for fun." },
+    { title: "Keep an Eye Out", text: "Check Stats, Leaderboard, and Achievements to track your progress and see how you stack up." },
+    { title: "That's It!", text: "Everything else you'll figure out by playing. Have fun!" }
   ];
 
   const tutorialOverlay = document.getElementById('tutorial-overlay');
   const tutorialTitle = document.getElementById('tutorial-title');
   const tutorialText = document.getElementById('tutorial-text');
-  const tutorialHint = document.getElementById('tutorial-hint');
-  const tutorialProgress = document.getElementById('tutorial-progress');
   const tutorialNextBtn = document.getElementById('tutorial-next');
   let tutorialStepIndex = 0;
-  let tutorialPollTimer = null;
-
-  function tutorialStepDone(step){
-    return !step.requirement || step.requirement();
-  }
-
-  function updateTutorialButtonState(){
-    const step = TUTORIAL_STEPS[tutorialStepIndex];
-    const done = tutorialStepDone(step);
-    tutorialNextBtn.disabled = !done;
-    tutorialHint.style.display = (!done && step.hint) ? 'block' : 'none';
-    if (!done && step.hint) tutorialHint.textContent = step.hint;
-  }
 
   function renderTutorialStep(){
     const step = TUTORIAL_STEPS[tutorialStepIndex];
-    tutorialProgress.textContent = `Step ${tutorialStepIndex + 1} of ${TUTORIAL_STEPS.length}`;
     tutorialTitle.textContent = step.title;
     tutorialText.textContent = step.text;
     tutorialNextBtn.textContent = (tutorialStepIndex === TUTORIAL_STEPS.length - 1) ? "Got it!" : "Next";
-    updateTutorialButtonState();
-
-    clearInterval(tutorialPollTimer);
-    tutorialPollTimer = setInterval(updateTutorialButtonState, 400);
   }
 
   tutorialNextBtn.addEventListener('click', () => {
-    if (tutorialNextBtn.disabled) return;
-
     tutorialStepIndex++;
     if (tutorialStepIndex >= TUTORIAL_STEPS.length) {
-      clearInterval(tutorialPollTimer);
       tutorialOverlay.classList.remove('visible');
       localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
       return;
