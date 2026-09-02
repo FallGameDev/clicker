@@ -2800,7 +2800,7 @@
           <div class="leaderboard-avatar">
             <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
           </div>
-          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}${authBadge(entry.auth)}</span>
+          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${['owner','mod','admin','dev'].includes(String(entry.auth || '').toLowerCase()) ? 'Hidden' : entry.username}${authBadge(entry.auth)}</span>
           <span class="leaderboard-clicks">
             <img src="money.png" alt="Moneys">
             ${Number(entry.clicks || 0).toLocaleString()}
@@ -3322,16 +3322,22 @@
 
   function authColor(auth){
     const key = String(auth || 'none').toLowerCase();
-    if (key === 'ver') return 'yellow';
     if (key === 'fam') return 'cyan';
-    if (key === 'owner') return 'lime';
+    if (key === 'cc') return 'red';
+    if (key === 'mod') return 'yellow';
+    if (key === 'admin') return 'purple';
+    if (key === 'dev') return 'lime';
+    if (key === 'owner') return 'green';
     return 'white';
   }
 
   function authBadge(auth){
     const key = String(auth || 'none').toLowerCase();
     if (key === 'fam') return `<img src="fam.png" class="auth-badge" alt="fam">`;
-    if (key === 'ver') return `<img src="ver.png" class="auth-badge" alt="ver">`;
+    if (key === 'cc') return `<img src="cc.png" class="auth-badge" alt="cc">`;
+    if (key === 'mod') return `<img src="mod.png" class="auth-badge" alt="mod">`;
+    if (key === 'admin') return `<img src="admin.png" class="auth-badge" alt="admin">`;
+    if (key === 'dev') return `<img src="dev.png" class="auth-badge" alt="dev">`;
     if (key === 'owner') return `<img src="owner.png" class="auth-badge" alt="owner">`;
     if (key === 'none') return '';
     return `<span class="auth-badge-unknown">?</span>`;
@@ -3457,6 +3463,13 @@
       </div>
       <div class="shop-card">
         <div class="shop-info">
+          <h3>View Applications</h3>
+          <p>Apply for a role on the team.</p>
+        </div>
+        <button class="buy-btn" id="open-applications">View</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
           <h3>Log Out</h3>
           <p>Sign out of your account on this device.</p>
         </div>
@@ -3494,6 +3507,7 @@
     });
 
     document.getElementById('open-reset-data').addEventListener('click', openConfirmReset);
+    document.getElementById('open-applications').addEventListener('click', openApplicationsMenu);
     document.getElementById('open-logout').addEventListener('click', doLogout);
     document.getElementById('open-delete-account').addEventListener('click', openConfirmDelete);
   }
@@ -3502,6 +3516,24 @@
     saveGame();
     localStorage.removeItem(SESSION_KEY);
     location.reload();
+  }
+
+  function openApplicationsMenu(){
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">View Applications</h1>
+      <p class="auth-sub">Pick a role to open its application form.</p>
+      <button class="auth-btn" id="apply-cc">Content Creator</button>
+      <button class="auth-btn" id="apply-mod">Moderator</button>
+      <button class="auth-btn" id="apply-director">Director</button>
+      <button class="auth-btn" id="apply-dev">Developer</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Close</button>
+    `;
+    document.getElementById('apply-cc').addEventListener('click', () => window.open('https://forms.gle/iXHZkLKDxuC5MTrn7', '_blank'));
+    document.getElementById('apply-mod').addEventListener('click', () => window.open('https://forms.gle/nhzgcHDCDT1quMWP8', '_blank'));
+    document.getElementById('apply-director').addEventListener('click', () => window.open('https://forms.gle/gYycdibnS6vtFsn46', '_blank'));
+    document.getElementById('apply-dev').addEventListener('click', () => window.open('https://forms.gle/XHrQKDJLLhH377BF7', '_blank'));
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    confirmOverlay.classList.add('visible');
   }
 
   function applyLightMode(){
