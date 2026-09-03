@@ -3251,6 +3251,12 @@
   const publicProfileBirthday = document.getElementById('public-profile-birthday');
   const publicProfileClicks = document.getElementById('public-profile-clicks');
   const publicProfileDescription = document.getElementById('public-profile-description');
+  const publicProfileModActions = document.getElementById('public-profile-mod-actions');
+  const modBtnModerate = document.getElementById('mod-btn-moderate');
+  const modBtnWarn = document.getElementById('mod-btn-warn');
+  const modBtnBan = document.getElementById('mod-btn-ban');
+  const STAFF_AUTHS = ['owner', 'mod', 'director', 'dev', 'admin'];
+  let currentViewedProfile = null;
 
   function closePublicProfile(skipUrlUpdate){
     publicProfileOverlay.classList.remove('visible');
