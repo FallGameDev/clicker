@@ -515,6 +515,34 @@
     overflow:hidden;
     box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
   }
+  .mod-actions-row{
+    display:flex;
+    gap:6px;
+    justify-content:flex-end;
+    padding:10px 40px 0 12px;
+  }
+  .mod-action-btn{
+    font-family:'Fredoka One', cursive;
+    font-size:10px;
+    padding:5px 8px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    cursor:pointer;
+    background:var(--night);
+    color:var(--rind);
+  }
+  .mod-action-btn:hover{
+    border-color:var(--melon-light);
+  }
+  .mod-action-ban{
+    background:#c0392b;
+    color:#fff;
+    border-color:#c0392b;
+  }
+  .mod-action-ban:hover{
+    background:#e74c3c;
+    border-color:#e74c3c;
+  }
   .public-profile-banner{
     height:90px;
     display:flex;
@@ -1557,6 +1585,11 @@
 <div class="public-profile-overlay" id="public-profile-overlay">
   <div class="public-profile-box">
     <button class="edit-profile-close" id="public-profile-close">&times;</button>
+    <div class="mod-actions-row" id="public-profile-mod-actions" style="display:none;">
+      <button class="mod-action-btn" id="mod-btn-moderate">Moderate</button>
+      <button class="mod-action-btn" id="mod-btn-warn">Warn</button>
+      <button class="mod-action-btn mod-action-ban" id="mod-btn-ban">Ban</button>
+    </div>
     <div class="public-profile-banner" id="public-profile-banner">
       <div class="public-profile-avatar">
         <img id="public-profile-img" src="" alt="">
@@ -1571,6 +1604,16 @@
         <span id="public-profile-clicks"></span>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="notice-overlay">
+  <div class="auth-box confirm-box" id="notice-box">
+    <h1 class="auth-heading" id="notice-title"></h1>
+    <p class="auth-sub" id="notice-reason-text"></p>
+    <p class="auth-sub" id="notice-time-text"></p>
+    <p class="auth-sub" id="notice-sender-text"></p>
+    <button class="auth-btn" id="notice-close">OK</button>
   </div>
 </div>
 
