@@ -3013,6 +3013,12 @@
   }
 
   function applyServerGameData(account){
+    let previousLastSeen = null;
+    try {
+      const savedRaw = JSON.parse(localStorage.getItem(SAVE_KEY));
+      if (savedRaw && savedRaw.lastSeen) previousLastSeen = savedRaw.lastSeen;
+    } catch (e) {}
+
     game = Object.assign(defaultGame(), {
       clicks: account.clicks || 0,
       clickBoostOwned: account.clickBoostOwned || 0,
@@ -3029,7 +3035,14 @@
       autoKillOwned: !!account.autoKillOwned,
       noobOwned: account.noobOwned || 0
     });
-    saveGame();
+
+    // Preserve the real lastSeen so applyOfflineEarnings() (called later in
+    // startGame) can still measure real elapsed time. Don't use saveGame()
+    // here - it would stamp lastSeen to "now" before that check runs.
+    game.lastSeen = previousLastSeen;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+    } catch (e) {}
   }
 
   function resolveColorToRgb(colorStr){
