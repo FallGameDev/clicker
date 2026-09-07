@@ -2153,17 +2153,36 @@
     defaultBgAudio.volume = (game.sfxMuted || songPlaying) ? 0 : 0.3;
   }
 
+  function armBgAudioResumeOnInteraction(){
+    if (!defaultBgAudio) return;
+    const resume = () => {
+      defaultBgAudio.play().catch(() => {});
+      document.removeEventListener('click', resume);
+      document.removeEventListener('keydown', resume);
+      document.removeEventListener('touchstart', resume);
+    };
+    document.addEventListener('click', resume, { once: true });
+    document.addEventListener('keydown', resume, { once: true });
+    document.addEventListener('touchstart', resume, { once: true });
+  }
+
   function startDefaultBgSong(){
     if (!defaultBgAudio) return;
     updateDefaultBgVolume();
-    defaultBgAudio.play().catch(() => {});
+    const playPromise = defaultBgAudio.play();
+    if (playPromise && playPromise.catch) {
+      playPromise.catch(() => armBgAudioResumeOnInteraction());
+    }
   }
 
   function switchBgSong(src){
     if (!defaultBgAudio) return;
     defaultBgAudio.src = src;
     updateDefaultBgVolume();
-    defaultBgAudio.play().catch(() => {});
+    const playPromise = defaultBgAudio.play();
+    if (playPromise && playPromise.catch) {
+      playPromise.catch(() => armBgAudioResumeOnInteraction());
+    }
   }
 
   function renderSongOption(song, index){
@@ -2854,7 +2873,7 @@
           <div class="leaderboard-avatar">
             <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
           </div>
-          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${['owner','mod','admin','dev','dir','director'].includes(String(entry.auth || '').toLowerCase()) ? 'Hidden' : entry.username}${authBadge(entry.auth)}</span>
+          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}${authBadge(entry.auth)}</span>
           <span class="leaderboard-clicks">
             <img src="money.png" alt="Moneys">
             ${Number(entry.clicks || 0).toLocaleString()}
@@ -2937,7 +2956,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbx2gFu6zh2WKj-r4YSRUDMWn7gpb4WWvQEOUWFUaIkG56yzyg3h157nAuTiIWmjkkIwxA/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbz3zbpoRzi6as9dQvpaZLt1G5rm5OwIYZ6G7WLbVY9ez18MmAUZ0rG9NYqP9_4buAMI3g/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
