@@ -2144,6 +2144,9 @@
   const loopBtn = document.getElementById('loop-btn');
   const defaultBgAudio = document.getElementById('default-bg-audio');
 
+  const DEFAULT_BG_SONG = 'manthishotelreallysucksidontgetcoolmusicoranythingimjuststuckwithBAHABAHAHABAHABAHAB.mp3';
+  const TUTORIAL_BG_SONG = 'yourhired.mp3';
+
   function updateDefaultBgVolume(){
     if (!defaultBgAudio) return;
     const songPlaying = songAudio && !songAudio.paused;
@@ -2152,6 +2155,13 @@
 
   function startDefaultBgSong(){
     if (!defaultBgAudio) return;
+    updateDefaultBgVolume();
+    defaultBgAudio.play().catch(() => {});
+  }
+
+  function switchBgSong(src){
+    if (!defaultBgAudio) return;
+    defaultBgAudio.src = src;
     updateDefaultBgVolume();
     defaultBgAudio.play().catch(() => {});
   }
@@ -2844,7 +2854,7 @@
           <div class="leaderboard-avatar">
             <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
           </div>
-          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${['owner','mod','admin','dev'].includes(String(entry.auth || '').toLowerCase()) ? 'Hidden' : entry.username}${authBadge(entry.auth)}</span>
+          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${['owner','mod','admin','dev','dir','director'].includes(String(entry.auth || '').toLowerCase()) ? 'Hidden' : entry.username}${authBadge(entry.auth)}</span>
           <span class="leaderboard-clicks">
             <img src="money.png" alt="Moneys">
             ${Number(entry.clicks || 0).toLocaleString()}
@@ -3836,6 +3846,7 @@
       clearInterval(tutorialPollTimer);
       tutorialOverlay.classList.remove('visible');
       localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
+      switchBgSong(DEFAULT_BG_SONG);
       return;
     }
     renderTutorialStep();
@@ -3846,6 +3857,7 @@
     tutorialStepIndex = 0;
     renderTutorialStep();
     tutorialOverlay.classList.add('visible');
+    switchBgSong(TUTORIAL_BG_SONG);
   }
 
   function openEditProfile(){
