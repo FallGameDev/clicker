@@ -3141,7 +3141,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyxmiRyDvhQHtsVMr-lXRrZlG3ZikbwPeKJ8EcjUcUkMV4URBYIMLo2Nj4kwnA8rXnjeA/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxQVZQEDVQGAwvQtA6b1bsqzkVnWL58FrXaqjYGiNlRMzOcW-a5cFypYH4yaKlMlvJwpw/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -4582,7 +4582,19 @@
   const noticeTimeText = document.getElementById('notice-time-text');
   const noticeSenderText = document.getElementById('notice-sender-text');
   const noticeClose = document.getElementById('notice-close');
-  noticeClose.addEventListener('click', () => noticeOverlay.classList.remove('visible'));
+
+  let noticeQueue = [];
+  let pendingAckUsername = null;
+
+  noticeClose.addEventListener('click', () => {
+    noticeOverlay.classList.remove('visible');
+    if (noticeQueue.length) {
+      showNextQueuedNotice();
+    } else if (pendingAckUsername) {
+      sheetRequest({ action: 'ackActions', username: pendingAckUsername }).catch(() => {});
+      pendingAckUsername = null;
+    }
+  });
 
   function showBanNotice(ban){
     noticeTitle.textContent = 'You Have Been Banned';
@@ -4601,6 +4613,32 @@
     }
     noticeSenderText.textContent = 'Issued by: ' + (ban.mod || 'Unknown');
     noticeOverlay.classList.add('visible');
+  }
+
+  function showActionNotice(action){
+    if (action.type === 'warn') {
+      noticeTitle.textContent = 'You Have Been Warned';
+      noticeReasonText.textContent = 'Reason: ' + (action.reason || 'No reason given');
+      noticeTimeText.textContent = '';
+    } else if (action.type === 'moderate') {
+      noticeTitle.textContent = 'Your Profile Was Moderated';
+      noticeReasonText.textContent = (action.target || 'Your profile') + ' was reset. Reason: ' + (action.reason || 'No reason given');
+      noticeTimeText.textContent = '';
+    }
+    noticeSenderText.textContent = 'Issued by: ' + (action.mod || 'Unknown');
+    noticeOverlay.classList.add('visible');
+  }
+
+  function showNextQueuedNotice(){
+    if (!noticeQueue.length) return;
+    showActionNotice(noticeQueue.shift());
+  }
+
+  function queueUnseenNotices(account){
+    if (!account || !account.unseenActions || !account.unseenActions.length) return;
+    noticeQueue = account.unseenActions.slice();
+    pendingAckUsername = account.username;
+    showNextQueuedNotice();
   }
 
   loginSubmit.addEventListener('click', async () => {
@@ -4639,6 +4677,7 @@
       applyAccountTheme(result.account.favColor);
       hideAuthFlow();
       startGame();
+      queueUnseenNotices(result.account);
     } catch (e) {
       loginError.textContent = "Couldn't reach the database. Try again.";
       loginError.style.display = 'block';
@@ -4729,6 +4768,7 @@
           applyAccountTheme(result.account.favColor);
           hideLoadingScreen();
           startGame();
+          queueUnseenNotices(result.account);
           return;
         }
 
