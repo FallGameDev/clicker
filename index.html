@@ -895,6 +895,9 @@
   body.low-perf #screen-title{
     background:#57ab46;
   }
+  .dvd-logo.perf-hidden{
+    visibility:hidden;
+  }
 
   #fps-counter{
     display:none;
@@ -1722,6 +1725,9 @@
       <button class="mod-action-btn" id="mod-btn-warn">Warn</button>
       <button class="mod-action-btn mod-action-ban" id="mod-btn-ban">Ban</button>
     </div>
+    <div class="mod-actions-row" id="public-profile-restore-row" style="display:none;">
+      <button class="mod-action-btn" id="mod-btn-restore">Restore Data</button>
+    </div>
     <div class="public-profile-banner" id="public-profile-banner">
       <div class="public-profile-avatar">
         <img id="public-profile-img" src="" alt="">
@@ -2126,7 +2132,8 @@
     saveGame();
     syncToSheet();
     renderShop();
-    refreshDvdLogos();
+    spawnDvd();
+    updateDvdVisibility();
   }
 
   function buyAmogus(){
@@ -2684,19 +2691,12 @@
     return Math.floor(total / divisor);
   }
 
-  function visibleDvdCount(){
-    return isLowPerfMode() ? lowPerfDvdCount(game.dvdOwned) : game.dvdOwned;
-  }
-
-  function refreshDvdLogos(){
-    const target = visibleDvdCount();
+  function updateDvdVisibility(){
     const nodes = document.querySelectorAll('.dvd-logo');
-    const current = nodes.length;
-    if (current < target) {
-      for (let i = 0; i < target - current; i++) spawnDvd();
-    } else if (current > target) {
-      for (let i = 0; i < current - target; i++) nodes[i].remove();
-    }
+    const visibleCount = isLowPerfMode() ? lowPerfDvdCount(nodes.length) : nodes.length;
+    nodes.forEach((el, i) => {
+      el.classList.toggle('perf-hidden', i >= visibleCount);
+    });
   }
 
   function spawnDvd(){
@@ -3141,7 +3141,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbz3zbpoRzi6as9dQvpaZLt1G5rm5OwIYZ6G7WLbVY9ez18MmAUZ0rG9NYqP9_4buAMI3g/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyxmiRyDvhQHtsVMr-lXRrZlG3ZikbwPeKJ8EcjUcUkMV4URBYIMLo2Nj4kwnA8rXnjeA/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -3480,10 +3480,13 @@
   const publicProfileClicks = document.getElementById('public-profile-clicks');
   const publicProfileDescription = document.getElementById('public-profile-description');
   const publicProfileModActions = document.getElementById('public-profile-mod-actions');
+  const publicProfileRestoreRow = document.getElementById('public-profile-restore-row');
   const modBtnModerate = document.getElementById('mod-btn-moderate');
   const modBtnWarn = document.getElementById('mod-btn-warn');
   const modBtnBan = document.getElementById('mod-btn-ban');
-  const STAFF_AUTHS = ['owner', 'mod', 'director', 'dev', 'admin'];
+  const modBtnRestore = document.getElementById('mod-btn-restore');
+  const STAFF_AUTHS = ['owner', 'mod', 'director', 'dev', 'admin', 'dir'];
+  const PROTECTED_AUTHS = ['owner', 'fam'];
   let currentViewedProfile = null;
 
   function closePublicProfile(skipUrlUpdate){
@@ -3522,6 +3525,8 @@
     publicProfileClicks.textContent = '';
     publicProfileDescription.textContent = '';
     publicProfileBanner.style.background = 'var(--melon)';
+    publicProfileModActions.style.display = 'none';
+    publicProfileRestoreRow.style.display = 'none';
     publicProfileOverlay.classList.add('visible');
 
     try {
@@ -3538,11 +3543,19 @@
       }
 
       const account = result.account;
+      currentViewedProfile = account;
       publicProfileImg.src = account.profileIcon || 'profile.png';
       publicProfileName.innerHTML = account.username + authBadge(account.auth);
       publicProfileName.style.color = authColor(account.auth);
       publicProfileBanner.style.background = account.favColor || 'var(--melon)';
       publicProfileDescription.textContent = account.description || '';
+
+      const viewerAuth = String(currentAuth || 'none').trim().toLowerCase();
+      const targetAuth = String(account.auth || 'none').trim().toLowerCase();
+      const isSelf = String(account.username || '').toLowerCase() === String(currentUsername || '').toLowerCase();
+      const canModerate = STAFF_AUTHS.indexOf(viewerAuth) !== -1 && PROTECTED_AUTHS.indexOf(targetAuth) === -1 && !isSelf;
+      publicProfileModActions.style.display = canModerate ? 'flex' : 'none';
+      publicProfileRestoreRow.style.display = (viewerAuth === 'owner' && !isSelf) ? 'flex' : 'none';
 
       ensureFontLoaded(account.font).then(family => {
         if (family) publicProfileName.style.fontFamily = `'${family}'`;
@@ -3562,6 +3575,198 @@
       publicProfileName.textContent = "Couldn't reach the database.";
     }
   }
+
+  /* ---------- MODERATION ---------- */
+  function modErrorMessage(err){
+    if (err === 'forbidden') return "You don't have permission to do that.";
+    if (err === 'protected') return "This account can't be moderated.";
+    if (err === 'self') return "You can't moderate yourself.";
+    if (err === 'nosave') return 'There is no saved data to restore for this account.';
+    if (err === 'notfound') return 'Account not found.';
+    return "Couldn't reach the database.";
+  }
+
+  function openBanDialog(){
+    if (!currentViewedProfile) return;
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Ban ${currentViewedProfile.username}</h1>
+      <select id="mod-ban-length" class="auth-input">
+        <option>1 Hour</option>
+        <option>5 Hours</option>
+        <option>1 Day</option>
+        <option>3 Days</option>
+        <option>1 Week</option>
+        <option>Permanent</option>
+      </select>
+      <input type="text" id="mod-ban-reason" class="auth-input" placeholder="Reason">
+      <button class="auth-btn" id="mod-action-submit">Submit</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="mod-action-error" style="display:none;"></p>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('mod-action-submit').addEventListener('click', submitBan);
+    confirmOverlay.classList.add('visible');
+  }
+
+  async function submitBan(){
+    const length = document.getElementById('mod-ban-length').value;
+    const reason = document.getElementById('mod-ban-reason').value.trim();
+    const errorEl = document.getElementById('mod-action-error');
+    if (!reason) {
+      errorEl.textContent = 'Please enter a reason.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    try {
+      const result = await sheetRequest({
+        action: 'modBan',
+        targetUsername: currentViewedProfile.username,
+        modUsername: currentUsername,
+        reason,
+        length
+      });
+      if (result.success) {
+        closeConfirm();
+      } else {
+        errorEl.textContent = modErrorMessage(result.error);
+        errorEl.style.display = 'block';
+      }
+    } catch (e) {
+      errorEl.textContent = "Couldn't reach the database.";
+      errorEl.style.display = 'block';
+    }
+  }
+
+  function openWarnDialog(){
+    if (!currentViewedProfile) return;
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Warn ${currentViewedProfile.username}</h1>
+      <input type="text" id="mod-warn-reason" class="auth-input" placeholder="Reason">
+      <button class="auth-btn" id="mod-action-submit">Submit</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="mod-action-error" style="display:none;"></p>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('mod-action-submit').addEventListener('click', submitWarn);
+    confirmOverlay.classList.add('visible');
+  }
+
+  async function submitWarn(){
+    const reason = document.getElementById('mod-warn-reason').value.trim();
+    const errorEl = document.getElementById('mod-action-error');
+    if (!reason) {
+      errorEl.textContent = 'Please enter a reason.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    try {
+      const result = await sheetRequest({
+        action: 'modWarn',
+        targetUsername: currentViewedProfile.username,
+        modUsername: currentUsername,
+        reason
+      });
+      if (result.success) {
+        closeConfirm();
+      } else {
+        errorEl.textContent = modErrorMessage(result.error);
+        errorEl.style.display = 'block';
+      }
+    } catch (e) {
+      errorEl.textContent = "Couldn't reach the database.";
+      errorEl.style.display = 'block';
+    }
+  }
+
+  function openModerateDialog(){
+    if (!currentViewedProfile) return;
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Moderate ${currentViewedProfile.username}</h1>
+      <select id="mod-moderate-target" class="auth-input">
+        <option>Name</option>
+        <option>Description</option>
+        <option>PFP</option>
+        <option>Stats</option>
+      </select>
+      <input type="text" id="mod-moderate-reason" class="auth-input" placeholder="Reason">
+      <button class="auth-btn" id="mod-action-submit">Submit</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="mod-action-error" style="display:none;"></p>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('mod-action-submit').addEventListener('click', submitModerate);
+    confirmOverlay.classList.add('visible');
+  }
+
+  async function submitModerate(){
+    const target = document.getElementById('mod-moderate-target').value;
+    const reason = document.getElementById('mod-moderate-reason').value.trim();
+    const errorEl = document.getElementById('mod-action-error');
+    if (!reason) {
+      errorEl.textContent = 'Please enter a reason.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    try {
+      const result = await sheetRequest({
+        action: 'modModerate',
+        targetUsername: currentViewedProfile.username,
+        modUsername: currentUsername,
+        target,
+        reason
+      });
+      if (result.success) {
+        closeConfirm();
+        openPublicProfile(currentViewedProfile.playerId, true);
+      } else {
+        errorEl.textContent = modErrorMessage(result.error);
+        errorEl.style.display = 'block';
+      }
+    } catch (e) {
+      errorEl.textContent = "Couldn't reach the database.";
+      errorEl.style.display = 'block';
+    }
+  }
+
+  function openRestoreDialog(){
+    if (!currentViewedProfile) return;
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Restore Data</h1>
+      <p class="auth-sub">Restore ${currentViewedProfile.username}'s data back to how it was right before their last moderation action?</p>
+      <button class="auth-btn" id="mod-action-submit">Restore</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="mod-action-error" style="display:none;"></p>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('mod-action-submit').addEventListener('click', submitRestore);
+    confirmOverlay.classList.add('visible');
+  }
+
+  async function submitRestore(){
+    const errorEl = document.getElementById('mod-action-error');
+    try {
+      const result = await sheetRequest({
+        action: 'modRestore',
+        targetUsername: currentViewedProfile.username,
+        modUsername: currentUsername
+      });
+      if (result.success) {
+        closeConfirm();
+        openPublicProfile(currentViewedProfile.playerId, true);
+      } else {
+        errorEl.textContent = modErrorMessage(result.error);
+        errorEl.style.display = 'block';
+      }
+    } catch (e) {
+      errorEl.textContent = "Couldn't reach the database.";
+      errorEl.style.display = 'block';
+    }
+  }
+
+  modBtnBan.addEventListener('click', openBanDialog);
+  modBtnWarn.addEventListener('click', openWarnDialog);
+  modBtnModerate.addEventListener('click', openModerateDialog);
+  modBtnRestore.addEventListener('click', openRestoreDialog);
 
   function renderEditIconGrid(){
     editIconGrid.innerHTML = '';
@@ -3793,7 +3998,7 @@
     document.getElementById('toggle-low-perf').addEventListener('click', () => {
       localStorage.setItem(LOW_PERF_KEY, isLowPerfMode() ? '0' : '1');
       applyLowPerfMode();
-      refreshDvdLogos();
+      updateDvdVisibility();
       renderSettings();
     });
 
@@ -4371,6 +4576,33 @@
   const loginSubmit = document.getElementById('login-submit');
   const loginError = document.getElementById('login-error');
 
+  const noticeOverlay = document.getElementById('notice-overlay');
+  const noticeTitle = document.getElementById('notice-title');
+  const noticeReasonText = document.getElementById('notice-reason-text');
+  const noticeTimeText = document.getElementById('notice-time-text');
+  const noticeSenderText = document.getElementById('notice-sender-text');
+  const noticeClose = document.getElementById('notice-close');
+  noticeClose.addEventListener('click', () => noticeOverlay.classList.remove('visible'));
+
+  function showBanNotice(ban){
+    noticeTitle.textContent = 'You Have Been Banned';
+    noticeReasonText.textContent = 'Reason: ' + (ban.reason || 'No reason given');
+    if (ban.length === 'Permanent') {
+      noticeTimeText.textContent = 'This ban is permanent.';
+    } else {
+      const expires = new Date(ban.startTime).getTime() + ({
+        '1 Hour': 60 * 60 * 1000,
+        '5 Hours': 5 * 60 * 60 * 1000,
+        '1 Day': 24 * 60 * 60 * 1000,
+        '3 Days': 3 * 24 * 60 * 60 * 1000,
+        '1 Week': 7 * 24 * 60 * 60 * 1000
+      }[ban.length] || 0);
+      noticeTimeText.textContent = 'Expires: ' + new Date(expires).toLocaleString();
+    }
+    noticeSenderText.textContent = 'Issued by: ' + (ban.mod || 'Unknown');
+    noticeOverlay.classList.add('visible');
+  }
+
   loginSubmit.addEventListener('click', async () => {
     const name = loginUsernameInput.value.trim();
     const pw = loginPasswordInput.value;
@@ -4381,6 +4613,12 @@
 
     try {
       const result = await sheetRequest({ action: 'login', username: name, password: pw });
+
+      if (result.error === 'banned') {
+        loginError.style.display = 'none';
+        showBanNotice(result.ban);
+        return;
+      }
 
       if (result.error || !result.success) {
         loginError.textContent = 'Incorrect username or password.';
@@ -4424,7 +4662,8 @@
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
     if (game.iconModifierOwned) showIconPicker();
-    refreshDvdLogos();
+    for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
+    updateDvdVisibility();
     for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
     for (let i = 0; i < game.noobOwned; i++) spawnNoob();
 
@@ -4472,6 +4711,13 @@
         const result = await sheetRequest({ action: 'getAccount', username: session });
 
         if (result.success && result.account) {
+          if (result.account.activeBan) {
+            localStorage.removeItem(SESSION_KEY);
+            hideLoadingScreen();
+            showBanNotice(result.account.activeBan);
+            return;
+          }
+
           currentUsername = result.account.username;
           currentProfileIcon = result.account.profileIcon;
           currentAuth = result.account.auth || 'none';
