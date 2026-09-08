@@ -169,7 +169,7 @@
   .music-player{
     display:none;
     align-items:center;
-    gap:10px;
+    gap:8px;
     width:100%;
     background:var(--card);
     border:2px solid var(--ink);
@@ -177,12 +177,15 @@
     padding:10px 12px;
     margin-bottom:18px;
     box-shadow:var(--pop-sm);
+    box-sizing:border-box;
   }
   .music-player.visible{
     display:flex;
   }
   .music-player select{
-    flex:1;
+    flex:1 1 auto;
+    min-width:0;
+    max-width:100%;
     font-family:'Poppins', sans-serif;
     font-weight:500;
     font-size:12.5px;
@@ -193,25 +196,29 @@
     padding:8px 10px;
     outline:none;
     cursor:pointer;
+    text-overflow:ellipsis;
+    box-sizing:border-box;
   }
   .music-player select option{
     background:var(--night);
     color:var(--rind);
   }
   .music-player .play-btn{
-    flex-shrink:0;
-    width:38px;
-    height:38px;
+    flex:0 0 auto;
+    width:34px;
+    height:34px;
     border-radius:10px;
     border:2px solid var(--ink);
     background:var(--brand-gradient);
     color:var(--night);
-    font-size:14px;
+    font-size:13px;
     cursor:pointer;
     display:flex;
     align-items:center;
     justify-content:center;
     box-shadow:var(--pop-sm);
+    box-sizing:border-box;
+    padding:0;
     transition:transform .12s ease, box-shadow .12s ease;
   }
   .music-player .play-btn:hover{transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink);}
@@ -857,6 +864,59 @@
   }
   .dvd-logo.behind{
     z-index:-1;
+  }
+
+  /* ---------- LOW PERFORMANCE MODE ---------- */
+  body.low-perf{
+    --brand-gradient: var(--melon-light);
+    --hero-gradient: var(--melon-light);
+  }
+  body.low-perf .dvd-logo{
+    display:none;
+  }
+  body.low-perf .crewmate .visor,
+  body.low-perf .crewmate .backpack,
+  body.low-perf .crewmate .legs{
+    display:none;
+  }
+  body.low-perf .crewmate .shell{
+    border-radius:50%;
+    box-shadow:none;
+  }
+  body.low-perf .crewmate.dead::after{
+    display:none;
+  }
+  body.low-perf .noob-head,
+  body.low-perf .noob-torso,
+  body.low-perf .noob-legs{
+    display:none;
+  }
+  body.low-perf .noob-body{
+    background:#f5cd30;
+    border-radius:2px;
+  }
+  body.low-perf #screen-title{
+    background:#57ab46;
+  }
+
+  #fps-counter{
+    display:none;
+    position:fixed;
+    top:8px;
+    left:8px;
+    z-index:9999;
+    font-family:'Poppins', sans-serif;
+    font-size:12px;
+    font-weight:600;
+    color:#6bff6b;
+    background:rgba(0,0,0,0.6);
+    padding:4px 9px;
+    border-radius:6px;
+    pointer-events:none;
+    user-select:none;
+  }
+  body.low-perf #fps-counter{
+    display:block;
   }
 
   /* ---------- ROBLOX NOOB ---------- */
@@ -1696,6 +1756,8 @@
   <div class="auth-box confirm-box" id="confirm-box"></div>
 </div>
 
+<div id="fps-counter">FPS: 0</div>
+
 <div class="tutorial-overlay" id="tutorial-overlay">
   <div class="auth-box tutorial-box">
     <img src="tutorial-guide.png" alt="" class="tutorial-char">
@@ -1744,6 +1806,32 @@
 </div>
 
 <script>
+  /* ---------- LOW PERFORMANCE MODE ---------- */
+  const LOW_PERF_KEY = 'lowPerfMode';
+  function isLowPerfMode(){
+    return localStorage.getItem(LOW_PERF_KEY) === '1';
+  }
+  function applyLowPerfMode(){
+    document.body.classList.toggle('low-perf', isLowPerfMode());
+  }
+  applyLowPerfMode();
+
+  (function fpsLoop(){
+    const fpsEl = document.getElementById('fps-counter');
+    let frames = 0;
+    let lastTime = performance.now();
+    function tick(now){
+      frames++;
+      if (now - lastTime >= 1000) {
+        if (fpsEl) fpsEl.textContent = 'FPS: ' + frames;
+        frames = 0;
+        lastTime = now;
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+
   /* ======================================================
      EDIT THESE LISTS TO ADD / REMOVE / CHANGE ENTRIES
      Each entry needs:
@@ -3623,6 +3711,13 @@
       </div>
       <div class="shop-card">
         <div class="shop-info">
+          <h3>Low Performance Mode</h3>
+          <p>Simplifies amoguses and noobs, flattens gradients, hides DVD logos, and shows an FPS counter. Saved on this device.</p>
+        </div>
+        <button class="buy-btn" id="toggle-low-perf">${isLowPerfMode() ? 'Turn Off' : 'Turn On'}</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
           <h3>Reset Data</h3>
           <p>Wipe your clicks and upgrades back to zero.</p>
         </div>
@@ -3670,6 +3765,12 @@
       game.lightMode = !game.lightMode;
       applyLightMode();
       saveGame();
+      renderSettings();
+    });
+
+    document.getElementById('toggle-low-perf').addEventListener('click', () => {
+      localStorage.setItem(LOW_PERF_KEY, isLowPerfMode() ? '0' : '1');
+      applyLowPerfMode();
       renderSettings();
     });
 
