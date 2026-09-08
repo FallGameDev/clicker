@@ -871,9 +871,6 @@
     --brand-gradient: var(--melon-light);
     --hero-gradient: var(--melon-light);
   }
-  body.low-perf .dvd-logo{
-    display:none;
-  }
   body.low-perf .crewmate .visor,
   body.low-perf .crewmate .backpack,
   body.low-perf .crewmate .legs{
@@ -892,7 +889,7 @@
     display:none;
   }
   body.low-perf .noob-body{
-    background:#f5cd30;
+    background:var(--noob-color, #f5cd30);
     border-radius:2px;
   }
   body.low-perf #screen-title{
@@ -2129,7 +2126,7 @@
     saveGame();
     syncToSheet();
     renderShop();
-    spawnDvd();
+    refreshDvdLogos();
   }
 
   function buyAmogus(){
@@ -2679,6 +2676,29 @@
   /* ---------- DVD LOGO ---------- */
   const DVD_COLORS = ['#57ab46', '#79cf67', '#c1aef0', '#faf3df', '#ff6f9c', '#66c2ff'];
 
+  function lowPerfDvdCount(total){
+    if (total <= 0) return 0;
+    const digits = String(total).length;
+    if (digits <= 2) return total;
+    const divisor = Math.pow(10, digits - 2);
+    return Math.floor(total / divisor);
+  }
+
+  function visibleDvdCount(){
+    return isLowPerfMode() ? lowPerfDvdCount(game.dvdOwned) : game.dvdOwned;
+  }
+
+  function refreshDvdLogos(){
+    const target = visibleDvdCount();
+    const nodes = document.querySelectorAll('.dvd-logo');
+    const current = nodes.length;
+    if (current < target) {
+      for (let i = 0; i < target - current; i++) spawnDvd();
+    } else if (current > target) {
+      for (let i = 0; i < current - target; i++) nodes[i].remove();
+    }
+  }
+
   function spawnDvd(){
     const dvd = document.createElement('div');
     dvd.className = 'dvd-logo';
@@ -2780,8 +2800,10 @@
 
     const NOOB_TORSO_COLORS = ['#1a5fb4', '#c0392b', '#8e44ad', '#e67e22', '#16a085', '#e91e63', '#795548'];
     const NOOB_LEG_COLORS = ['#2e7d32', '#1a1a1a', '#5d4037', '#455a64', '#3949ab', '#00838f', '#6d4c41'];
-    el.querySelector('.noob-torso').style.background = NOOB_TORSO_COLORS[Math.floor(Math.random() * NOOB_TORSO_COLORS.length)];
+    const torsoColor = NOOB_TORSO_COLORS[Math.floor(Math.random() * NOOB_TORSO_COLORS.length)];
+    el.querySelector('.noob-torso').style.background = torsoColor;
     el.querySelector('.noob-legs').style.background = NOOB_LEG_COLORS[Math.floor(Math.random() * NOOB_LEG_COLORS.length)];
+    el.querySelector('.noob-body').style.setProperty('--noob-color', torsoColor);
 
     const bubble = el.querySelector('.noob-bubble');
 
@@ -3771,6 +3793,7 @@
     document.getElementById('toggle-low-perf').addEventListener('click', () => {
       localStorage.setItem(LOW_PERF_KEY, isLowPerfMode() ? '0' : '1');
       applyLowPerfMode();
+      refreshDvdLogos();
       renderSettings();
     });
 
@@ -4401,7 +4424,7 @@
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
     if (game.iconModifierOwned) showIconPicker();
-    for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
+    refreshDvdLogos();
     for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
     for (let i = 0; i < game.noobOwned; i++) spawnNoob();
 
