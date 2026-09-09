@@ -1948,7 +1948,9 @@
       hideCursor: false,
       sfxMuted: false,
       lightMode: false,
-      unlockedAchievements: []
+      unlockedAchievements: [],
+      prestige: 0,
+      boosts: 0
     };
   }
 
@@ -1983,9 +1985,19 @@
     checkAchievements();
   }
 
+  function boostMultiplier(){
+    return 1 + 0.5 * (game.boosts || 0);
+  }
+
+  function earnClicks(amount){
+    const boosted = Math.round(amount * boostMultiplier());
+    game.clicks += boosted;
+    return boosted;
+  }
+
   avatarEl.addEventListener('click', () => {
     playSound('click.mp3');
-    game.clicks += game.clickPower;
+    earnClicks(game.clickPower);
     updateCounter();
     saveGame();
     refreshShopAffordability();
@@ -1994,7 +2006,7 @@
 
   setInterval(() => {
     if (game.autoClickerOwned > 0) {
-      game.clicks += game.autoClickerOwned;
+      earnClicks(game.autoClickerOwned);
       updateCounter();
       saveGame();
       refreshShopAffordability();
@@ -2149,12 +2161,25 @@
     spawnCrewmate();
   }
 
+  function buyBoost(){
+    if ((game.prestige || 0) < 1) return;
+    playSound('money.mp3');
+    game.prestige -= 1;
+    game.boosts = (game.boosts || 0) + 1;
+    saveGame();
+    syncToSheet();
+    renderShop();
+  }
+
   const SHOP_CATEGORIES = [
     { id: 'all', label: 'All' },
     { id: 'visuals', label: 'Visuals' },
     { id: 'customization', label: 'Customization' },
-    { id: 'plain', label: 'Plain' }
+    { id: 'plain', label: 'Plain' },
+    { id: 'prestige', label: 'Prestige' }
   ];
+
+  const PRESTIGE_COST = 100000000;
 
   function renderShop(){
     const cards = [
@@ -2253,6 +2278,22 @@
           <p>One-time buy. Keeps your Clicker upgrades earning clicks while the page is closed (capped at 24 hours away).</p>
         </div>
         <button class="buy-btn" id="buy-offline" ${game.offlineEarningsOwned ? 'disabled' : (game.clicks < OFFLINE_COST ? 'disabled' : '')}>${game.offlineEarningsOwned ? 'Owned' : 'Buy (' + OFFLINE_COST + ')'}</button>
+      </div>` },
+      { category: 'prestige', html: `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Prestige</h3>
+          <p>Resets all your progress in exchange for 1 Prestige, a permanent currency that carries over. Requires ${PRESTIGE_COST.toLocaleString()} clicks. <span class="owned">Prestige: ${game.prestige || 0}</span></p>
+        </div>
+        <button class="buy-btn" id="do-prestige" ${game.clicks < PRESTIGE_COST ? 'disabled' : ''}>Prestige</button>
+      </div>` },
+      { category: 'prestige', html: `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Boost</h3>
+          <p>Trade 1 Prestige for a permanent +0.5x multiplier on everything that earns clicks. Current multiplier: ${boostMultiplier()}x (${game.boosts || 0} owned). <span class="owned">Prestige: ${game.prestige || 0}</span></p>
+        </div>
+        <button class="buy-btn" id="buy-boost-trade" ${(game.prestige || 0) < 1 ? 'disabled' : ''}>Trade 1 Prestige</button>
       </div>` }
     ];
 
@@ -2287,6 +2328,8 @@
     bind('buy-icon', buyIconModifier);
     bind('buy-autokill', buyAutoKill);
     bind('buy-noob', buyNoob);
+    bind('do-prestige', openConfirmPrestige);
+    bind('buy-boost-trade', buyBoost);
   }
 
   /* ---------- MUSIC PLAYER ---------- */
@@ -2558,9 +2601,9 @@
     const earned = cappedSeconds * game.autoClickerOwned;
 
     if (earned > 0) {
-      game.clicks += earned;
+      const boosted = earnClicks(earned);
       saveGame();
-      showOfflineBanner(earned, cappedSeconds);
+      showOfflineBanner(boosted, cappedSeconds);
     }
   }
 
@@ -2733,10 +2776,10 @@
       if (xBounced || yBounced) {
         colorIndex = (colorIndex + 1) % DVD_COLORS.length;
         dvd.style.color = DVD_COLORS[colorIndex];
-        game.clicks += game.clickPower;
+        earnClicks(game.clickPower);
 
         if (xBounced && yBounced) {
-          game.clicks += CORNER_BONUS;
+          earnClicks(CORNER_BONUS);
         }
 
         updateCounter();
@@ -2824,7 +2867,7 @@
       if (x >= maxX) { x = maxX; direction = -1; bounced = true; }
 
       if (bounced) {
-        game.clicks += game.clickPower;
+        earnClicks(game.clickPower);
         updateCounter();
         saveGame();
         refreshShopAffordability();
@@ -2903,7 +2946,7 @@
       playSound('mogus.mp3');
       el.classList.add('dead');
       el.classList.remove('working', 'tasking', 'done');
-      game.clicks += reward;
+      earnClicks(reward);
       game.amogusAlive = Math.max(0, game.amogusAlive - 1);
       updateCounter();
       saveGame();
@@ -3141,7 +3184,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxQVZQEDVQGAwvQtA6b1bsqzkVnWL58FrXaqjYGiNlRMzOcW-a5cFypYH4yaKlMlvJwpw/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyJqGAR3h5AWfLDqjHEsl1vtrfhtbIHWrB_iiU_a1lmVRDwFOFDM5zOMEc4Hfs3ALrDtw/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -3200,7 +3243,10 @@
       offlineEarningsOwned: game.offlineEarningsOwned,
       iconModifierOwned: game.iconModifierOwned,
       autoKillOwned: game.autoKillOwned,
-      noobOwned: game.noobOwned    };
+      noobOwned: game.noobOwned,
+      prestige: game.prestige || 0,
+      boosts: game.boosts || 0
+    };
   }
 
   async function syncToSheet(){
@@ -3248,7 +3294,9 @@
       offlineEarningsOwned: !!account.offlineEarningsOwned,
       iconModifierOwned: !!account.iconModifierOwned,
       autoKillOwned: !!account.autoKillOwned,
-      noobOwned: account.noobOwned || 0
+      noobOwned: account.noobOwned || 0,
+      prestige: account.prestige || 0,
+      boosts: account.boosts || 0
     });
 
     // Preserve the real lastSeen so applyOfflineEarnings() (called later in
@@ -4065,6 +4113,34 @@
   function doResetData(){
     document.querySelectorAll('.dvd-logo, .crewmate, .noob').forEach(el => el.remove());
     game = defaultGame();
+    saveGame();
+    syncToSheet();
+    updateCounter();
+    closeConfirm();
+    renderActiveTab();
+  }
+
+  function openConfirmPrestige(){
+    if (game.clicks < PRESTIGE_COST) return;
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Prestige?</h1>
+      <p class="auth-sub">This resets all your progress (clicks, upgrades, and cosmetics) back to zero in exchange for +1 Prestige, which carries over. This can't be undone.</p>
+      <button class="auth-btn" id="confirm-prestige-yes">Yes, prestige</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+    `;
+    document.getElementById('confirm-prestige-yes').addEventListener('click', doPrestige);
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    confirmOverlay.classList.add('visible');
+  }
+
+  function doPrestige(){
+    if (game.clicks < PRESTIGE_COST) { closeConfirm(); return; }
+    document.querySelectorAll('.dvd-logo, .crewmate, .noob').forEach(el => el.remove());
+    const keepPrestige = (game.prestige || 0) + 1;
+    const keepBoosts = game.boosts || 0;
+    game = defaultGame();
+    game.prestige = keepPrestige;
+    game.boosts = keepBoosts;
     saveGame();
     syncToSheet();
     updateCounter();
