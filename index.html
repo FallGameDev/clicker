@@ -766,6 +766,19 @@
     height:26px;
     object-fit:contain;
   }
+  .stats-prestige{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Fredoka One', cursive;
+    font-size:20px;
+    color:#e6423d;
+  }
+  .stats-prestige img{
+    width:26px;
+    height:26px;
+    object-fit:contain;
+  }
 
   /* ---------- ACHIEVEMENTS ---------- */
   .achievement-card{
@@ -3116,6 +3129,8 @@
     if (activeTab !== 'stats') return;
     const span = document.querySelector('.stats-moneys span');
     if (span) span.textContent = game.clicks.toLocaleString();
+    const prestigeSpan = document.querySelector('.stats-prestige span');
+    if (prestigeSpan) prestigeSpan.textContent = (game.prestige || 0).toLocaleString();
   }
 
   function renderActiveTab(){
@@ -3185,6 +3200,10 @@
         <div class="stats-moneys">
           <img src="money.png" alt="Moneys">
           <span>${game.clicks.toLocaleString()}</span>
+        </div>
+        <div class="stats-prestige">
+          <img src="heart.png" alt="Prestige">
+          <span>${(game.prestige || 0).toLocaleString()}</span>
         </div>
       </div>
     `;
