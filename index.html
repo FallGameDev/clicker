@@ -958,6 +958,63 @@
     display:block;
   }
 
+  .achievement-popup{
+    position:fixed;
+    right:16px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--card);
+    border:2px solid var(--zap);
+    border-radius:14px;
+    padding:11px 16px 11px 11px;
+    box-shadow:var(--pop);
+    z-index:5000;
+    transform:translateX(140%);
+    opacity:0;
+    transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s ease, top .3s ease;
+    max-width:260px;
+    pointer-events:none;
+  }
+  .achievement-popup.visible{
+    transform:translateX(0);
+    opacity:1;
+  }
+  .achievement-popup-icon{
+    width:44px;
+    height:44px;
+    border-radius:10px;
+    background:var(--brand-gradient);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Fredoka One', cursive;
+    font-size:16px;
+    color:var(--night);
+    flex-shrink:0;
+    border:2px solid var(--ink);
+  }
+  .achievement-popup-text{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    min-width:0;
+  }
+  .achievement-popup-label{
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--zap);
+    font-weight:600;
+  }
+  .achievement-popup-name{
+    font-family:'Fredoka One', cursive;
+    font-size:14.5px;
+    color:var(--rind);
+    line-height:1.25;
+  }
+
   /* ---------- ROBLOX NOOB ---------- */
   .noob{
     position:fixed;
@@ -1482,6 +1539,36 @@
   .edit-profile-close:hover{
     color:var(--rind);
   }
+  .edit-profile-banner{
+    height:80px;
+    border-radius:12px;
+    margin-bottom:16px;
+    background:var(--hero-gradient);
+    background-size:cover;
+    background-position:center;
+    border:2px solid var(--ink);
+    cursor:pointer;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    box-shadow:var(--pop-sm);
+  }
+  .edit-profile-banner::after{
+    content:"Click to edit banner";
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    color:#fff;
+    background:rgba(0,0,0,0.5);
+    padding:4px 10px;
+    border-radius:999px;
+    opacity:0;
+    transition:opacity .15s ease;
+  }
+  .edit-profile-banner:hover::after{
+    opacity:1;
+  }
 
   /* ---------- CONFIRM OVERLAY ---------- */
   .confirm-overlay{
@@ -1739,6 +1826,8 @@
   <div class="auth-box wide edit-profile-box">
     <button class="edit-profile-close" id="edit-profile-close">&times;</button>
     <h1 class="auth-heading">Edit Profile</h1>
+    <div class="edit-profile-banner" id="edit-profile-banner-el"></div>
+    <input type="file" id="edit-banner-upload-input" accept="image/*" style="display:none">
     <div class="icon-grid" id="edit-icon-grid"></div>
     <button class="auth-btn secondary" id="edit-upload-icon-btn">Upload your own</button>
     <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
@@ -1965,6 +2054,7 @@
   let currentAuth = 'none';
   let currentFont = 'Default';
   let currentDescription = '';
+  let currentBannerImage = '';
 
   function defaultGame(){
     return {
@@ -2577,6 +2667,29 @@
         const w = img.width * scale;
         const h = img.height * scale;
         ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        try {
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } catch (e) {
+          reject(e);
+        }
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  function resizeBannerImage(src, width, height){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        const scale = Math.max(width / img.width, height / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (width - w) / 2, (height - h) / 2, w, h);
         try {
           resolve(canvas.toDataURL('image/jpeg', 0.8));
         } catch (e) {
@@ -3584,8 +3697,78 @@
   const editPreviewEl = document.getElementById('edit-preview');
   const editPreviewImg = document.getElementById('edit-preview-img');
   const editPreviewName = document.getElementById('edit-preview-name');
+  const editProfileBannerEl = document.getElementById('edit-profile-banner-el');
+  const editBannerUploadInput = document.getElementById('edit-banner-upload-input');
 
   let editSelectedIcon = null;
+  let editSelectedFavColor = null;
+  let editSelectedBannerImage = null;
+  let editBannerImageChanged = false;
+
+  function updateEditBannerPreview(){
+    if (editSelectedBannerImage) {
+      editProfileBannerEl.style.background = `center / cover no-repeat url('${editSelectedBannerImage}')`;
+    } else {
+      editProfileBannerEl.style.background = editSelectedFavColor || getLastTheme();
+    }
+  }
+
+  function openBannerMenu(){
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Profile Banner</h1>
+      <p class="auth-sub">Pick a flat favorite color, or upload your own banner image.</p>
+      <button class="auth-btn" id="banner-menu-color">Change Favorite Color</button>
+      <button class="auth-btn secondary" id="banner-menu-upload">Upload Banner Image</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('banner-menu-color').addEventListener('click', openBannerColorMenu);
+    document.getElementById('banner-menu-upload').addEventListener('click', () => {
+      closeConfirm();
+      editBannerUploadInput.click();
+    });
+    confirmOverlay.classList.add('visible');
+  }
+
+  function openBannerColorMenu(){
+    const swatches = COLORS.map(color =>
+      `<button class="color-swatch" data-color="${color}" style="background:${color}">${color.charAt(0).toUpperCase() + color.slice(1)}</button>`
+    ).join('');
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Favorite Color</h1>
+      <div class="color-grid">${swatches}</div>
+      <button class="auth-btn secondary" id="confirm-cancel" style="margin-top:14px;">Cancel</button>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    confirmBox.querySelectorAll('.color-swatch').forEach(btn => {
+      btn.addEventListener('click', () => {
+        editSelectedFavColor = btn.dataset.color;
+        editSelectedBannerImage = null;
+        editBannerImageChanged = true;
+        updateEditBannerPreview();
+        closeConfirm();
+      });
+    });
+    confirmOverlay.classList.add('visible');
+  }
+
+  editProfileBannerEl.addEventListener('click', openBannerMenu);
+
+  editBannerUploadInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        editSelectedBannerImage = await resizeBannerImage(reader.result, 480, 150);
+      } catch (err) {
+        editSelectedBannerImage = reader.result;
+      }
+      editBannerImageChanged = true;
+      updateEditBannerPreview();
+    };
+    reader.readAsDataURL(file);
+  });
 
   editPreviewBtn.addEventListener('click', () => {
     editPreviewImg.src = editSelectedIcon || currentProfileIcon || 'profile.png';
@@ -3670,7 +3853,9 @@
       publicProfileImg.src = account.profileIcon || 'profile.png';
       publicProfileName.innerHTML = account.username + authBadge(account.auth);
       publicProfileName.style.color = authColor(account.auth);
-      publicProfileBanner.style.background = account.favColor || 'var(--melon)';
+      publicProfileBanner.style.background = account.bannerImage
+        ? `center / cover no-repeat url('${account.bannerImage}')`
+        : (account.favColor || 'var(--melon)');
       publicProfileDescription.textContent = account.description || '';
 
       const viewerAuth = String(currentAuth || 'none').trim().toLowerCase();
@@ -4027,10 +4212,43 @@
     }
   }
 
+  let activeAchievementPopups = [];
+
+  function repositionAchievementPopups(){
+    activeAchievementPopups.forEach((p, i) => {
+      p.style.top = (16 + i * 76) + 'px';
+    });
+  }
+
   function showAchievementToast(a){
+    const popup = document.createElement('div');
+    popup.className = 'achievement-popup';
+    popup.innerHTML = `
+      <div class="achievement-popup-icon">${a.icon}</div>
+      <div class="achievement-popup-text">
+        <span class="achievement-popup-label">Achievement Unlocked</span>
+        <span class="achievement-popup-name">${a.label}</span>
+      </div>
+    `;
+    document.body.appendChild(popup);
+    activeAchievementPopups.push(popup);
+    repositionAchievementPopups();
+
+    requestAnimationFrame(() => popup.classList.add('visible'));
+    setTimeout(() => {
+      popup.classList.remove('visible');
+      setTimeout(() => {
+        popup.remove();
+        activeAchievementPopups = activeAchievementPopups.filter(p => p !== popup);
+        repositionAchievementPopups();
+      }, 500);
+    }, 4000);
+  }
+
+  function showAchievementHintBanner(text){
     const banner = document.createElement('div');
     banner.className = 'offline-banner';
-    banner.textContent = `Achievement Unlocked: ${a.label}`;
+    banner.textContent = text;
     document.body.appendChild(banner);
     requestAnimationFrame(() => banner.classList.add('visible'));
     setTimeout(() => {
@@ -4039,8 +4257,59 @@
     }, 4000);
   }
 
+  const HINT_KEY = 'achievementHints';
+  const HINT_LIMIT = 3;
+  const HINT_WINDOW_MS = 15 * 60 * 1000;
+
+  function getHintTimestamps(){
+    let arr = [];
+    try {
+      arr = JSON.parse(localStorage.getItem(HINT_KEY) || '[]');
+    } catch (e) {
+      arr = [];
+    }
+    const cutoff = Date.now() - HINT_WINDOW_MS;
+    return arr.filter(t => t > cutoff);
+  }
+
+  function hintsRemaining(){
+    return Math.max(0, HINT_LIMIT - getHintTimestamps().length);
+  }
+
+  function nextHintWaitMinutes(){
+    const timestamps = getHintTimestamps().sort((a, b) => a - b);
+    if (!timestamps.length) return 0;
+    const msLeft = (timestamps[0] + HINT_WINDOW_MS) - Date.now();
+    return Math.max(1, Math.ceil(msLeft / 60000));
+  }
+
+  function useHint(){
+    const timestamps = getHintTimestamps();
+    if (timestamps.length >= HINT_LIMIT) {
+      showAchievementHintBanner(`Out of hints. Try again in ${nextHintWaitMinutes()} min.`);
+      return;
+    }
+    const locked = ACHIEVEMENTS.filter(a => !(game.unlockedAchievements || []).includes(a.id));
+    if (!locked.length) {
+      showAchievementHintBanner("You've unlocked every achievement!");
+      return;
+    }
+    timestamps.push(Date.now());
+    localStorage.setItem(HINT_KEY, JSON.stringify(timestamps));
+    const pick = locked[Math.floor(Math.random() * locked.length)];
+    showAchievementHintBanner('Hint: ' + pick.desc);
+    renderAchievements();
+  }
+
   function renderAchievements(){
-    list.innerHTML = ACHIEVEMENTS.map(a => {
+    const remaining = hintsRemaining();
+    const hintButton = `
+      <button class="auth-btn" id="hint-btn" style="margin-bottom:14px;" ${remaining <= 0 ? 'disabled' : ''}>
+        ${remaining > 0 ? `Get a Hint (${remaining} left)` : 'Out of Hints'}
+      </button>
+    `;
+
+    list.innerHTML = hintButton + ACHIEVEMENTS.map(a => {
       const unlocked = (game.unlockedAchievements || []).includes(a.id);
       return `
         <div class="achievement-card${unlocked ? ' unlocked' : ''}">
@@ -4052,6 +4321,9 @@
         </div>
       `;
     }).join('');
+
+    const hintBtn = document.getElementById('hint-btn');
+    if (hintBtn) hintBtn.addEventListener('click', useHint);
   }
 
   /* ---------- SETTINGS ---------- */
@@ -4477,6 +4749,10 @@
 
   function openEditProfile(){
     editSelectedIcon = currentProfileIcon;
+    editSelectedFavColor = null;
+    editSelectedBannerImage = currentBannerImage || null;
+    editBannerImageChanged = false;
+    updateEditBannerPreview();
     editUsernameInput.value = currentUsername || '';
     editDescriptionInput.value = currentDescription || '';
     editProfileError.style.display = 'none';
@@ -4528,13 +4804,17 @@
     editProfileError.style.display = 'none';
 
     try {
-      const result = await sheetRequest({
+      const payload = {
         action: 'updateProfile',
         currentUsername: currentUsername,
         newUsername: newUsername,
         profileIcon: editSelectedIcon || currentProfileIcon,
         description: editDescriptionInput.value.trim()
-      });
+      };
+      if (editSelectedFavColor !== null) payload.favColor = editSelectedFavColor;
+      if (editBannerImageChanged) payload.bannerImage = editSelectedBannerImage || '';
+
+      const result = await sheetRequest(payload);
 
       if (result.error === 'taken') {
         editProfileError.textContent = 'That username is already taken.';
@@ -4550,8 +4830,10 @@
       currentUsername = result.account.username;
       currentProfileIcon = result.account.profileIcon;
       currentDescription = result.account.description || '';
+      currentBannerImage = result.account.bannerImage || '';
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
-      setSession(currentUsername, getLastTheme(), currentProfileIcon, currentAuth, currentFont);
+      setSession(currentUsername, result.account.favColor || getLastTheme(), currentProfileIcon, currentAuth, currentFont);
+      applyAccountTheme(result.account.favColor);
       saveGame();
 
       closeEditProfile();
@@ -4862,6 +5144,7 @@
       currentAuth = result.account.auth || 'none';
       currentFont = result.account.font || 'Default';
       currentDescription = result.account.description || '';
+      currentBannerImage = result.account.bannerImage || '';
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
       setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
 
@@ -4954,6 +5237,7 @@
           currentAuth = result.account.auth || 'none';
           currentFont = result.account.font || 'Default';
           currentDescription = result.account.description || '';
+          currentBannerImage = result.account.bannerImage || '';
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
           setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
           applyServerGameData(result.account);
