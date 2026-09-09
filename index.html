@@ -3366,7 +3366,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyJqGAR3h5AWfLDqjHEsl1vtrfhtbIHWrB_iiU_a1lmVRDwFOFDM5zOMEc4Hfs3ALrDtw/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyKxPCTMrWylGAoIrZiJZpMJjog6ck0mg0mz1TnQ_wLEqPEgIKbQWunuDTuQamfJuh0cg/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -4809,10 +4809,10 @@
         currentUsername: currentUsername,
         newUsername: newUsername,
         profileIcon: editSelectedIcon || currentProfileIcon,
-        description: editDescriptionInput.value.trim()
+        description: editDescriptionInput.value.trim(),
+        favColor: editSelectedFavColor !== null ? editSelectedFavColor : getLastTheme(),
+        bannerImage: editSelectedBannerImage || ''
       };
-      if (editSelectedFavColor !== null) payload.favColor = editSelectedFavColor;
-      if (editBannerImageChanged) payload.bannerImage = editSelectedBannerImage || '';
 
       const result = await sheetRequest(payload);
 
