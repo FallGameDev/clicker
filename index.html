@@ -1984,7 +1984,8 @@
       lightMode: false,
       unlockedAchievements: [],
       prestige: 0,
-      boosts: 0
+      boosts: 0,
+      totalPrestige: 0
     };
   }
 
@@ -3324,9 +3325,13 @@
 
   function applyServerGameData(account){
     let previousLastSeen = null;
+    let previousAchievements = [];
+    let previousTotalPrestige = 0;
     try {
       const savedRaw = JSON.parse(localStorage.getItem(SAVE_KEY));
       if (savedRaw && savedRaw.lastSeen) previousLastSeen = savedRaw.lastSeen;
+      if (savedRaw && Array.isArray(savedRaw.unlockedAchievements)) previousAchievements = savedRaw.unlockedAchievements;
+      if (savedRaw && savedRaw.totalPrestige) previousTotalPrestige = savedRaw.totalPrestige;
     } catch (e) {}
 
     game = Object.assign(defaultGame(), {
@@ -3345,7 +3350,9 @@
       autoKillOwned: !!account.autoKillOwned,
       noobOwned: account.noobOwned || 0,
       prestige: account.prestige || 0,
-      boosts: account.boosts || 0
+      boosts: account.boosts || 0,
+      unlockedAchievements: previousAchievements,
+      totalPrestige: previousTotalPrestige
     });
 
     // Preserve the real lastSeen so applyOfflineEarnings() (called later in
@@ -3937,15 +3944,50 @@
     { id: 'click_1000', icon: '1K', label: 'Clicking Along', desc: 'Reach 1,000 total clicks.', check: g => g.clicks >= 1000 },
     { id: 'click_10000', icon: '10K', label: 'Big Spender', desc: 'Reach 10,000 total clicks.', check: g => g.clicks >= 10000 },
     { id: 'click_100000', icon: '100K', label: 'Clicking Legend', desc: 'Reach 100,000 total clicks.', check: g => g.clicks >= 100000 },
+    { id: 'click_1000000', icon: '1M', label: 'Millionaire', desc: 'Reach 1,000,000 total clicks.', check: g => g.clicks >= 1000000 },
+    { id: 'click_10000000', icon: '10M', label: 'Multi-Millionaire', desc: 'Reach 10,000,000 total clicks.', check: g => g.clicks >= 10000000 },
+    { id: 'click_100000000', icon: '100M', label: 'Prestige Ready', desc: 'Reach 100,000,000 total clicks.', check: g => g.clicks >= 100000000 },
+    { id: 'click_1000000000', icon: '1B', label: 'Billionaire', desc: 'Reach 1,000,000,000 total clicks.', check: g => g.clicks >= 1000000000 },
     { id: 'first_boost', icon: '\u26a1', label: 'Power Up', desc: 'Buy your first Click Boost.', check: g => g.clickBoostOwned >= 1 },
+    { id: 'clickboost_5', icon: '\u26a1', label: 'Practice Makes Perfect', desc: 'Own 5 Click Boosts.', check: g => g.clickBoostOwned >= 5 },
+    { id: 'clickboost_25', icon: '\u26a1', label: 'Boosted', desc: 'Own 25 Click Boosts.', check: g => g.clickBoostOwned >= 25 },
+    { id: 'clickboost_50', icon: '\u26a1', label: 'Overclocked', desc: 'Own 50 Click Boosts.', check: g => g.clickBoostOwned >= 50 },
+    { id: 'power_5', icon: '\ud83d\udcaa', label: 'Getting Stronger', desc: 'Reach 5 click power.', check: g => g.clickPower >= 5 },
+    { id: 'power_10', icon: '\ud83d\udcaa', label: 'Heavy Hitter', desc: 'Reach 10 click power.', check: g => g.clickPower >= 10 },
+    { id: 'power_25', icon: '\ud83d\udcaa', label: 'Overpowered', desc: 'Reach 25 click power.', check: g => g.clickPower >= 25 },
+    { id: 'power_50', icon: '\ud83d\udcaa', label: 'Absurd Power', desc: 'Reach 50 click power.', check: g => g.clickPower >= 50 },
+    { id: 'power_100', icon: '\ud83d\udcaa', label: 'Broken', desc: 'Reach 100 click power.', check: g => g.clickPower >= 100 },
     { id: 'first_auto', icon: '\u23f1', label: 'Set It and Forget It', desc: 'Buy your first Clicker.', check: g => g.autoClickerOwned >= 1 },
+    { id: 'auto_5', icon: '\u23f1', label: 'Automated', desc: 'Own 5 Clickers.', check: g => g.autoClickerOwned >= 5 },
+    { id: 'auto_25', icon: '\u23f1', label: 'Assembly Line', desc: 'Own 25 Clickers.', check: g => g.autoClickerOwned >= 25 },
+    { id: 'auto_50', icon: '\u23f1', label: 'Factory Floor', desc: 'Own 50 Clickers.', check: g => g.autoClickerOwned >= 50 },
     { id: 'first_dvd', icon: 'DVD', label: 'Bouncing Around', desc: 'Buy your first DVD Logo.', check: g => g.dvdOwned >= 1 },
+    { id: 'dvd_5', icon: 'DVD', label: 'DVD Party', desc: 'Own 5 DVD Logos.', check: g => g.dvdOwned >= 5 },
+    { id: 'dvd_25', icon: 'DVD', label: 'Screensaver Simulator', desc: 'Own 25 DVD Logos.', check: g => g.dvdOwned >= 25 },
+    { id: 'dvd_100', icon: 'DVD', label: 'DVD Overload', desc: 'Own 100 DVD Logos.', check: g => g.dvdOwned >= 100 },
     { id: 'corner_hit', icon: '\ud83c\udfaf', label: 'Perfect Corner', desc: 'Land a DVD logo corner hit.', check: g => g.clicks >= 10000 && g.dvdOwned >= 1 },
+    { id: 'dvd_behind', icon: '\ud83d\udd04', label: 'Out of Sight', desc: 'Send the DVD logos behind the page.', check: g => g.dvdBehind },
     { id: 'first_amogus', icon: '?', label: 'Sus', desc: 'Buy your first Amogus.', check: g => g.amogusOwned >= 1 },
+    { id: 'amogus_5', icon: '?', label: 'Emergency Meeting', desc: 'Own 5 Amoguses.', check: g => g.amogusOwned >= 5 },
+    { id: 'amogus_25', icon: '?', label: 'Impostor Among Us', desc: 'Own 25 Amoguses.', check: g => g.amogusOwned >= 25 },
     { id: 'first_noob', icon: 'N', label: 'Oof', desc: 'Buy your first Roblox Noob.', check: g => g.noobOwned >= 1 },
+    { id: 'noob_5', icon: 'N', label: 'Noob Squad', desc: 'Own 5 Roblox Noobs.', check: g => g.noobOwned >= 5 },
+    { id: 'noob_25', icon: 'N', label: 'Oof Simulator', desc: 'Own 25 Roblox Noobs.', check: g => g.noobOwned >= 25 },
     { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
     { id: 'auto_kill', icon: '\ud83d\udc80', label: 'No Mercy', desc: 'Buy Auto Kill.', check: g => g.autoKillOwned },
-    { id: 'offline_earner', icon: '\ud83d\udcb0', label: 'Set for Life', desc: 'Buy Offline Earnings.', check: g => g.offlineEarningsOwned }
+    { id: 'offline_earner', icon: '\ud83d\udcb0', label: 'Set for Life', desc: 'Buy Offline Earnings.', check: g => g.offlineEarningsOwned },
+    { id: 'completionist', icon: '\ud83c\udfc6', label: 'Completionist', desc: 'Own every upgrade in the Plain and Customization shop categories.', check: g => g.autoKillOwned && g.offlineEarningsOwned && g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned && g.clickBoostOwned >= 1 && g.autoClickerOwned >= 1 },
+    { id: 'music_loop', icon: '\ud83c\udfb5', label: 'On Repeat', desc: 'Turn on music looping.', check: g => g.musicLoop },
+    { id: 'light_mode', icon: '\u2600', label: 'Seen the Light', desc: 'Switch to Light Mode.', check: g => g.lightMode },
+    { id: 'sfx_muted', icon: '\ud83d\udd07', label: 'Silence is Golden', desc: 'Mute the sound effects.', check: g => g.sfxMuted },
+    { id: 'hide_cursor', icon: '\ud83d\udc7b', label: "Where'd It Go?", desc: 'Hide your custom cursor.', check: g => g.hideCursor },
+    { id: 'first_prestige', icon: '\u267b', label: 'Rebirth', desc: 'Prestige for the first time.', check: g => (g.totalPrestige || 0) >= 1 },
+    { id: 'prestige_5', icon: '\u267b', label: 'Serial Reincarnator', desc: 'Prestige 5 times.', check: g => (g.totalPrestige || 0) >= 5 },
+    { id: 'prestige_10', icon: '\u267b', label: 'Loop Enjoyer', desc: 'Prestige 10 times.', check: g => (g.totalPrestige || 0) >= 10 },
+    { id: 'prestige_25', icon: '\u267b', label: 'Ascended', desc: 'Prestige 25 times.', check: g => (g.totalPrestige || 0) >= 25 },
+    { id: 'first_boost_trade', icon: '\ud83d\udd2e', label: 'Worth It', desc: 'Trade Prestige for your first Boost.', check: g => (g.boosts || 0) >= 1 },
+    { id: 'boost_5', icon: '\ud83d\udd2e', label: 'Multiplied', desc: 'Own 5 Boosts.', check: g => (g.boosts || 0) >= 5 },
+    { id: 'boost_10', icon: '\ud83d\udd2e', label: 'Exponential', desc: 'Own 10 Boosts.', check: g => (g.boosts || 0) >= 10 }
   ];
 
   function checkAchievements(){
@@ -4161,7 +4203,9 @@
 
   function doResetData(){
     document.querySelectorAll('.dvd-logo, .crewmate, .noob').forEach(el => el.remove());
+    const keepAchievements = game.unlockedAchievements || [];
     game = defaultGame();
+    game.unlockedAchievements = keepAchievements;
     saveGame();
     syncToSheet();
     updateCounter();
@@ -4187,9 +4231,13 @@
     document.querySelectorAll('.dvd-logo, .crewmate, .noob').forEach(el => el.remove());
     const keepPrestige = (game.prestige || 0) + 1;
     const keepBoosts = game.boosts || 0;
+    const keepTotalPrestige = (game.totalPrestige || 0) + 1;
+    const keepAchievements = game.unlockedAchievements || [];
     game = defaultGame();
     game.prestige = keepPrestige;
     game.boosts = keepBoosts;
+    game.totalPrestige = keepTotalPrestige;
+    game.unlockedAchievements = keepAchievements;
     saveGame();
     syncToSheet();
     updateCounter();
