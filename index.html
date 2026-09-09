@@ -565,9 +565,9 @@
   .leaderboard-row.me{
     border-color:var(--zap);
   }
-  .leaderboard-row:nth-child(1) .leaderboard-rank{ color:var(--zap); }
-  .leaderboard-row:nth-child(2) .leaderboard-rank{ color:#d7dbe3; }
-  .leaderboard-row:nth-child(3) .leaderboard-rank{ color:#d98a4f; }
+  .leaderboard-row.rank-1 .leaderboard-rank{ color:var(--zap); }
+  .leaderboard-row.rank-2 .leaderboard-rank{ color:#d7dbe3; }
+  .leaderboard-row.rank-3 .leaderboard-rank{ color:#d98a4f; }
 
   /* ---------- PUBLIC PROFILE ---------- */
   .public-profile-overlay{
@@ -813,6 +813,33 @@
   .achievement-card.unlocked .achievement-icon{
     background:var(--brand-gradient);
     color:var(--night);
+  }
+  .achievement-difficulty{
+    display:inline-block;
+    font-family:'Poppins', sans-serif;
+    font-size:9.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:2px 7px;
+    border-radius:999px;
+    margin-bottom:3px;
+  }
+  .achievement-difficulty.diff-easy{
+    background:rgba(87,171,70,0.25);
+    color:var(--melon-light);
+  }
+  .achievement-difficulty.diff-medium{
+    background:rgba(255,203,61,0.22);
+    color:var(--zap);
+  }
+  .achievement-difficulty.diff-hard{
+    background:rgba(255,93,160,0.22);
+    color:var(--pow);
+  }
+  .achievement-difficulty.diff-extreme{
+    background:rgba(255,60,60,0.22);
+    color:#ff5c5c;
   }
   .achievement-info h3{
     font-family:'Fredoka One', cursive;
@@ -1651,35 +1678,6 @@
     vertical-align:middle;
   }
 
-  .edit-preview{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:8px;
-    margin-top:14px;
-    padding:16px;
-    background:var(--night);
-    border:1px solid var(--line);
-    border-radius:12px;
-  }
-  .edit-preview-avatar{
-    width:64px;
-    height:64px;
-    border-radius:50%;
-    overflow:hidden;
-    border:3px solid var(--melon-light);
-  }
-  .edit-preview-avatar img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    display:block;
-  }
-  #edit-preview-name{
-    font-family:'Fredoka One', cursive;
-    font-size:14px;
-    color:var(--rind);
-  }
   .stats-avatar, .stats-name{
     cursor:pointer;
     transition:opacity .15s ease, transform .15s ease;
@@ -1833,13 +1831,6 @@
     <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
     <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
     <textarea id="edit-description-input" class="auth-input edit-description" placeholder="Account description..." maxlength="280" rows="3"></textarea>
-    <button class="auth-btn secondary" id="edit-preview-btn">Preview</button>
-    <div class="edit-preview" id="edit-preview" style="display:none;">
-      <div class="edit-preview-avatar">
-        <img id="edit-preview-img" src="" alt="Preview">
-      </div>
-      <span id="edit-preview-name"></span>
-    </div>
     <button class="auth-btn" id="edit-profile-save">Save Changes</button>
     <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
   </div>
@@ -1897,6 +1888,7 @@
     <p class="auth-sub" id="tutorial-text"></p>
     <p class="auth-error tutorial-hint" id="tutorial-hint" style="display:none;"></p>
     <button class="auth-btn" id="tutorial-next">Next</button>
+    <button class="auth-btn secondary" id="tutorial-skip">Skip Tutorial</button>
   </div>
 </div>
 
@@ -2055,6 +2047,7 @@
   let currentFont = 'Default';
   let currentDescription = '';
   let currentBannerImage = '';
+  let currentVisits = 0;
 
   function defaultGame(){
     return {
@@ -3262,42 +3255,81 @@
     }
   }
 
+  let leaderboardCategory = 'global';
+  let leaderboardCache = null;
+  let leaderboardAdminsCache = null;
+
+  const LEADERBOARD_CATEGORIES = [
+    { id: 'global', label: 'Global' },
+    { id: 'champions', label: 'Champions' },
+    { id: 'admins', label: 'Admins' }
+  ];
+
+  function renderLeaderboardRows(entries){
+    if (!entries || entries.length === 0) {
+      return '<div class="empty-state">No scores yet.</div>';
+    }
+    return entries.map((entry, i) => `
+      <div class="leaderboard-row${entry.username === currentUsername ? ' me' : ''}${i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : ''}" data-username="${entry.username}">
+        <span class="leaderboard-rank">#${i + 1}</span>
+        <div class="leaderboard-avatar">
+          <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
+        </div>
+        <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}${authBadge(entry.auth)}</span>
+        <span class="leaderboard-clicks">
+          <img src="money.png" alt="Moneys">
+          ${Number(entry.clicks || 0).toLocaleString()}
+        </span>
+      </div>
+    `).join('');
+  }
+
+  function renderLeaderboardList(){
+    const categoryBar = LEADERBOARD_CATEGORIES.map(cat =>
+      `<button class="shop-category-btn${leaderboardCategory === cat.id ? ' active' : ''}" data-category="${cat.id}">${cat.label}</button>`
+    ).join('');
+
+    let entries = [];
+    if (leaderboardCategory === 'global') entries = leaderboardCache || [];
+    else if (leaderboardCategory === 'champions') entries = (leaderboardCache || []).slice(0, 10);
+    else if (leaderboardCategory === 'admins') entries = leaderboardAdminsCache || [];
+
+    list.innerHTML = `<div class="shop-category-bar">${categoryBar}</div>` + renderLeaderboardRows(entries);
+
+    list.querySelectorAll('.shop-category-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        leaderboardCategory = btn.dataset.category;
+        renderLeaderboardList();
+      });
+    });
+
+    list.querySelectorAll('.leaderboard-row').forEach(row => {
+      row.addEventListener('click', () => openPublicProfile(row.dataset.username));
+    });
+
+    entries.forEach(entry => {
+      ensureFontLoaded(entry.font).then(family => {
+        if (!family) return;
+        const nameEl = list.querySelector(`.leaderboard-name[data-username="${CSS.escape(entry.username)}"]`);
+        if (nameEl) nameEl.style.fontFamily = `'${family}'`;
+      });
+    });
+  }
+
   async function renderLeaderboard(){
     list.innerHTML = '<div class="empty-state">Loading leaderboard...</div>';
 
     try {
       const result = await sheetRequest({ action: 'getLeaderboard' });
 
-      if (!result.success || !result.leaderboard || result.leaderboard.length === 0) {
+      if (!result.success) {
         list.innerHTML = '<div class="empty-state">No scores yet.</div>';
         return;
       }
 
-      list.innerHTML = result.leaderboard.map((entry, i) => `
-        <div class="leaderboard-row${entry.username === currentUsername ? ' me' : ''}" data-username="${entry.username}">
-          <span class="leaderboard-rank">#${i + 1}</span>
-          <div class="leaderboard-avatar">
-            <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
-          </div>
-          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}${authBadge(entry.auth)}</span>
-          <span class="leaderboard-clicks">
-            <img src="money.png" alt="Moneys">
-            ${Number(entry.clicks || 0).toLocaleString()}
-          </span>
-        </div>
-      `).join('');
-
-      list.querySelectorAll('.leaderboard-row').forEach(row => {
-        row.addEventListener('click', () => openPublicProfile(row.dataset.username));
-      });
-
-      result.leaderboard.forEach(entry => {
-        ensureFontLoaded(entry.font).then(family => {
-          if (!family) return;
-          const nameEl = list.querySelector(`.leaderboard-name[data-username="${CSS.escape(entry.username)}"]`);
-          if (nameEl) nameEl.style.fontFamily = `'${family}'`;
-        });
-      });
+      leaderboardCache = result.leaderboard || [];
+      leaderboardAdminsCache = result.admins || [];
+      renderLeaderboardList();
     } catch (e) {
       list.innerHTML = '<div class="empty-state">Couldn\'t reach the database. Try again.</div>';
     }
@@ -3366,7 +3398,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyKxPCTMrWylGAoIrZiJZpMJjog6ck0mg0mz1TnQ_wLEqPEgIKbQWunuDTuQamfJuh0cg/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxo2YFv9aqTwfliHJ9anv0HRpR_hdboWhDRwigw6AM7rkKRMhbclD2aL59l99RfbY1GYA/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -3693,10 +3725,6 @@
   const editProfileSaveBtn = document.getElementById('edit-profile-save');
   const editProfileError = document.getElementById('edit-profile-error');
   const editProfileClose = document.getElementById('edit-profile-close');
-  const editPreviewBtn = document.getElementById('edit-preview-btn');
-  const editPreviewEl = document.getElementById('edit-preview');
-  const editPreviewImg = document.getElementById('edit-preview-img');
-  const editPreviewName = document.getElementById('edit-preview-name');
   const editProfileBannerEl = document.getElementById('edit-profile-banner-el');
   const editBannerUploadInput = document.getElementById('edit-banner-upload-input');
 
@@ -3768,12 +3796,6 @@
       updateEditBannerPreview();
     };
     reader.readAsDataURL(file);
-  });
-
-  editPreviewBtn.addEventListener('click', () => {
-    editPreviewImg.src = editSelectedIcon || currentProfileIcon || 'profile.png';
-    editPreviewName.textContent = editUsernameInput.value.trim() || currentUsername || 'Guest';
-    editPreviewEl.style.display = 'flex';
   });
 
   /* ---------- PUBLIC PROFILE ---------- */
@@ -4143,55 +4165,55 @@
        check - function(game) that returns true once earned
      ====================================================== */
   const ACHIEVEMENTS = [
-    { id: 'first_click', icon: '1', label: 'First Click', desc: 'Click the avatar for the first time.', check: g => g.clicks >= 1 },
-    { id: 'click_100', icon: '100', label: 'Getting Started', desc: 'Reach 100 total clicks.', check: g => g.clicks >= 100 },
-    { id: 'click_1000', icon: '1K', label: 'Clicking Along', desc: 'Reach 1,000 total clicks.', check: g => g.clicks >= 1000 },
-    { id: 'click_10000', icon: '10K', label: 'Big Spender', desc: 'Reach 10,000 total clicks.', check: g => g.clicks >= 10000 },
-    { id: 'click_100000', icon: '100K', label: 'Clicking Legend', desc: 'Reach 100,000 total clicks.', check: g => g.clicks >= 100000 },
-    { id: 'click_1000000', icon: '1M', label: 'Millionaire', desc: 'Reach 1,000,000 total clicks.', check: g => g.clicks >= 1000000 },
-    { id: 'click_10000000', icon: '10M', label: 'Multi-Millionaire', desc: 'Reach 10,000,000 total clicks.', check: g => g.clicks >= 10000000 },
-    { id: 'click_100000000', icon: '100M', label: 'Prestige Ready', desc: 'Reach 100,000,000 total clicks.', check: g => g.clicks >= 100000000 },
-    { id: 'click_1000000000', icon: '1B', label: 'Billionaire', desc: 'Reach 1,000,000,000 total clicks.', check: g => g.clicks >= 1000000000 },
-    { id: 'first_boost', icon: '\u26a1', label: 'Power Up', desc: 'Buy your first Click Boost.', check: g => g.clickBoostOwned >= 1 },
-    { id: 'clickboost_5', icon: '\u26a1', label: 'Practice Makes Perfect', desc: 'Own 5 Click Boosts.', check: g => g.clickBoostOwned >= 5 },
-    { id: 'clickboost_25', icon: '\u26a1', label: 'Boosted', desc: 'Own 25 Click Boosts.', check: g => g.clickBoostOwned >= 25 },
-    { id: 'clickboost_50', icon: '\u26a1', label: 'Overclocked', desc: 'Own 50 Click Boosts.', check: g => g.clickBoostOwned >= 50 },
-    { id: 'power_5', icon: '\ud83d\udcaa', label: 'Getting Stronger', desc: 'Reach 5 click power.', check: g => g.clickPower >= 5 },
-    { id: 'power_10', icon: '\ud83d\udcaa', label: 'Heavy Hitter', desc: 'Reach 10 click power.', check: g => g.clickPower >= 10 },
-    { id: 'power_25', icon: '\ud83d\udcaa', label: 'Overpowered', desc: 'Reach 25 click power.', check: g => g.clickPower >= 25 },
-    { id: 'power_50', icon: '\ud83d\udcaa', label: 'Absurd Power', desc: 'Reach 50 click power.', check: g => g.clickPower >= 50 },
-    { id: 'power_100', icon: '\ud83d\udcaa', label: 'Broken', desc: 'Reach 100 click power.', check: g => g.clickPower >= 100 },
-    { id: 'first_auto', icon: '\u23f1', label: 'Set It and Forget It', desc: 'Buy your first Clicker.', check: g => g.autoClickerOwned >= 1 },
-    { id: 'auto_5', icon: '\u23f1', label: 'Automated', desc: 'Own 5 Clickers.', check: g => g.autoClickerOwned >= 5 },
-    { id: 'auto_25', icon: '\u23f1', label: 'Assembly Line', desc: 'Own 25 Clickers.', check: g => g.autoClickerOwned >= 25 },
-    { id: 'auto_50', icon: '\u23f1', label: 'Factory Floor', desc: 'Own 50 Clickers.', check: g => g.autoClickerOwned >= 50 },
-    { id: 'first_dvd', icon: 'DVD', label: 'Bouncing Around', desc: 'Buy your first DVD Logo.', check: g => g.dvdOwned >= 1 },
-    { id: 'dvd_5', icon: 'DVD', label: 'DVD Party', desc: 'Own 5 DVD Logos.', check: g => g.dvdOwned >= 5 },
-    { id: 'dvd_25', icon: 'DVD', label: 'Screensaver Simulator', desc: 'Own 25 DVD Logos.', check: g => g.dvdOwned >= 25 },
-    { id: 'dvd_100', icon: 'DVD', label: 'DVD Overload', desc: 'Own 100 DVD Logos.', check: g => g.dvdOwned >= 100 },
-    { id: 'corner_hit', icon: '\ud83c\udfaf', label: 'Perfect Corner', desc: 'Land a DVD logo corner hit.', check: g => g.clicks >= 10000 && g.dvdOwned >= 1 },
-    { id: 'dvd_behind', icon: '\ud83d\udd04', label: 'Out of Sight', desc: 'Send the DVD logos behind the page.', check: g => g.dvdBehind },
-    { id: 'first_amogus', icon: '?', label: 'Sus', desc: 'Buy your first Amogus.', check: g => g.amogusOwned >= 1 },
-    { id: 'amogus_5', icon: '?', label: 'Emergency Meeting', desc: 'Own 5 Amoguses.', check: g => g.amogusOwned >= 5 },
-    { id: 'amogus_25', icon: '?', label: 'Impostor Among Us', desc: 'Own 25 Amoguses.', check: g => g.amogusOwned >= 25 },
-    { id: 'first_noob', icon: 'N', label: 'Oof', desc: 'Buy your first Roblox Noob.', check: g => g.noobOwned >= 1 },
-    { id: 'noob_5', icon: 'N', label: 'Noob Squad', desc: 'Own 5 Roblox Noobs.', check: g => g.noobOwned >= 5 },
-    { id: 'noob_25', icon: 'N', label: 'Oof Simulator', desc: 'Own 25 Roblox Noobs.', check: g => g.noobOwned >= 25 },
-    { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
-    { id: 'auto_kill', icon: '\ud83d\udc80', label: 'No Mercy', desc: 'Buy Auto Kill.', check: g => g.autoKillOwned },
-    { id: 'offline_earner', icon: '\ud83d\udcb0', label: 'Set for Life', desc: 'Buy Offline Earnings.', check: g => g.offlineEarningsOwned },
-    { id: 'completionist', icon: '\ud83c\udfc6', label: 'Completionist', desc: 'Own every upgrade in the Plain and Customization shop categories.', check: g => g.autoKillOwned && g.offlineEarningsOwned && g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned && g.clickBoostOwned >= 1 && g.autoClickerOwned >= 1 },
-    { id: 'music_loop', icon: '\ud83c\udfb5', label: 'On Repeat', desc: 'Turn on music looping.', check: g => g.musicLoop },
-    { id: 'light_mode', icon: '\u2600', label: 'Seen the Light', desc: 'Switch to Light Mode.', check: g => g.lightMode },
-    { id: 'sfx_muted', icon: '\ud83d\udd07', label: 'Silence is Golden', desc: 'Mute the sound effects.', check: g => g.sfxMuted },
-    { id: 'hide_cursor', icon: '\ud83d\udc7b', label: "Where'd It Go?", desc: 'Hide your custom cursor.', check: g => g.hideCursor },
-    { id: 'first_prestige', icon: '\u267b', label: 'Rebirth', desc: 'Prestige for the first time.', check: g => (g.totalPrestige || 0) >= 1 },
-    { id: 'prestige_5', icon: '\u267b', label: 'Serial Reincarnator', desc: 'Prestige 5 times.', check: g => (g.totalPrestige || 0) >= 5 },
-    { id: 'prestige_10', icon: '\u267b', label: 'Loop Enjoyer', desc: 'Prestige 10 times.', check: g => (g.totalPrestige || 0) >= 10 },
-    { id: 'prestige_25', icon: '\u267b', label: 'Ascended', desc: 'Prestige 25 times.', check: g => (g.totalPrestige || 0) >= 25 },
-    { id: 'first_boost_trade', icon: '\ud83d\udd2e', label: 'Worth It', desc: 'Trade Prestige for your first Boost.', check: g => (g.boosts || 0) >= 1 },
-    { id: 'boost_5', icon: '\ud83d\udd2e', label: 'Multiplied', desc: 'Own 5 Boosts.', check: g => (g.boosts || 0) >= 5 },
-    { id: 'boost_10', icon: '\ud83d\udd2e', label: 'Exponential', desc: 'Own 10 Boosts.', check: g => (g.boosts || 0) >= 10 }
+    { id: 'first_click', icon: '1', label: 'First Click', desc: 'Click the avatar for the first time.', difficulty: 'Easy', check: g => g.clicks >= 1 },
+    { id: 'click_100', icon: '100', label: 'Getting Started', desc: 'Reach 100 total clicks.', difficulty: 'Easy', check: g => g.clicks >= 100 },
+    { id: 'click_1000', icon: '1K', label: 'Clicking Along', desc: 'Reach 1,000 total clicks.', difficulty: 'Easy', check: g => g.clicks >= 1000 },
+    { id: 'click_10000', icon: '10K', label: 'Big Spender', desc: 'Reach 10,000 total clicks.', difficulty: 'Medium', check: g => g.clicks >= 10000 },
+    { id: 'click_100000', icon: '100K', label: 'Clicking Legend', desc: 'Reach 100,000 total clicks.', difficulty: 'Medium', check: g => g.clicks >= 100000 },
+    { id: 'click_1000000', icon: '1M', label: 'Millionaire', desc: 'Reach 1,000,000 total clicks.', difficulty: 'Hard', check: g => g.clicks >= 1000000 },
+    { id: 'click_10000000', icon: '10M', label: 'Multi-Millionaire', desc: 'Reach 10,000,000 total clicks.', difficulty: 'Hard', check: g => g.clicks >= 10000000 },
+    { id: 'click_100000000', icon: '100M', label: 'Prestige Ready', desc: 'Reach 100,000,000 total clicks.', difficulty: 'Extreme', check: g => g.clicks >= 100000000 },
+    { id: 'click_1000000000', icon: '1B', label: 'Billionaire', desc: 'Reach 1,000,000,000 total clicks.', difficulty: 'Extreme', check: g => g.clicks >= 1000000000 },
+    { id: 'first_boost', icon: '\u26a1', label: 'Power Up', desc: 'Buy your first Click Boost.', difficulty: 'Easy', check: g => g.clickBoostOwned >= 1 },
+    { id: 'clickboost_5', icon: '\u26a1', label: 'Practice Makes Perfect', desc: 'Own 5 Click Boosts.', difficulty: 'Medium', check: g => g.clickBoostOwned >= 5 },
+    { id: 'clickboost_25', icon: '\u26a1', label: 'Boosted', desc: 'Own 25 Click Boosts.', difficulty: 'Hard', check: g => g.clickBoostOwned >= 25 },
+    { id: 'clickboost_50', icon: '\u26a1', label: 'Overclocked', desc: 'Own 50 Click Boosts.', difficulty: 'Extreme', check: g => g.clickBoostOwned >= 50 },
+    { id: 'power_5', icon: '\ud83d\udcaa', label: 'Getting Stronger', desc: 'Reach 5 click power.', difficulty: 'Medium', check: g => g.clickPower >= 5 },
+    { id: 'power_10', icon: '\ud83d\udcaa', label: 'Heavy Hitter', desc: 'Reach 10 click power.', difficulty: 'Medium', check: g => g.clickPower >= 10 },
+    { id: 'power_25', icon: '\ud83d\udcaa', label: 'Overpowered', desc: 'Reach 25 click power.', difficulty: 'Hard', check: g => g.clickPower >= 25 },
+    { id: 'power_50', icon: '\ud83d\udcaa', label: 'Absurd Power', desc: 'Reach 50 click power.', difficulty: 'Hard', check: g => g.clickPower >= 50 },
+    { id: 'power_100', icon: '\ud83d\udcaa', label: 'Broken', desc: 'Reach 100 click power.', difficulty: 'Extreme', check: g => g.clickPower >= 100 },
+    { id: 'first_auto', icon: '\u23f1', label: 'Set It and Forget It', desc: 'Buy your first Clicker.', difficulty: 'Easy', check: g => g.autoClickerOwned >= 1 },
+    { id: 'auto_5', icon: '\u23f1', label: 'Automated', desc: 'Own 5 Clickers.', difficulty: 'Medium', check: g => g.autoClickerOwned >= 5 },
+    { id: 'auto_25', icon: '\u23f1', label: 'Assembly Line', desc: 'Own 25 Clickers.', difficulty: 'Hard', check: g => g.autoClickerOwned >= 25 },
+    { id: 'auto_50', icon: '\u23f1', label: 'Factory Floor', desc: 'Own 50 Clickers.', difficulty: 'Extreme', check: g => g.autoClickerOwned >= 50 },
+    { id: 'first_dvd', icon: 'DVD', label: 'Bouncing Around', desc: 'Buy your first DVD Logo.', difficulty: 'Easy', check: g => g.dvdOwned >= 1 },
+    { id: 'dvd_5', icon: 'DVD', label: 'DVD Party', desc: 'Own 5 DVD Logos.', difficulty: 'Medium', check: g => g.dvdOwned >= 5 },
+    { id: 'dvd_25', icon: 'DVD', label: 'Screensaver Simulator', desc: 'Own 25 DVD Logos.', difficulty: 'Hard', check: g => g.dvdOwned >= 25 },
+    { id: 'dvd_100', icon: 'DVD', label: 'DVD Overload', desc: 'Own 100 DVD Logos.', difficulty: 'Extreme', check: g => g.dvdOwned >= 100 },
+    { id: 'corner_hit', icon: '\ud83c\udfaf', label: 'Perfect Corner', desc: 'Land a DVD logo corner hit.', difficulty: 'Medium', check: g => g.clicks >= 10000 && g.dvdOwned >= 1 },
+    { id: 'dvd_behind', icon: '\ud83d\udd04', label: 'Out of Sight', desc: 'Send the DVD logos behind the page.', difficulty: 'Easy', check: g => g.dvdBehind },
+    { id: 'first_amogus', icon: '?', label: 'Sus', desc: 'Buy your first Amogus.', difficulty: 'Easy', check: g => g.amogusOwned >= 1 },
+    { id: 'amogus_5', icon: '?', label: 'Emergency Meeting', desc: 'Own 5 Amoguses.', difficulty: 'Medium', check: g => g.amogusOwned >= 5 },
+    { id: 'amogus_25', icon: '?', label: 'Impostor Among Us', desc: 'Own 25 Amoguses.', difficulty: 'Hard', check: g => g.amogusOwned >= 25 },
+    { id: 'first_noob', icon: 'N', label: 'Oof', desc: 'Buy your first Roblox Noob.', difficulty: 'Easy', check: g => g.noobOwned >= 1 },
+    { id: 'noob_5', icon: 'N', label: 'Noob Squad', desc: 'Own 5 Roblox Noobs.', difficulty: 'Medium', check: g => g.noobOwned >= 5 },
+    { id: 'noob_25', icon: 'N', label: 'Oof Simulator', desc: 'Own 25 Roblox Noobs.', difficulty: 'Hard', check: g => g.noobOwned >= 25 },
+    { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', difficulty: 'Medium', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
+    { id: 'auto_kill', icon: '\ud83d\udc80', label: 'No Mercy', desc: 'Buy Auto Kill.', difficulty: 'Medium', check: g => g.autoKillOwned },
+    { id: 'offline_earner', icon: '\ud83d\udcb0', label: 'Set for Life', desc: 'Buy Offline Earnings.', difficulty: 'Medium', check: g => g.offlineEarningsOwned },
+    { id: 'completionist', icon: '\ud83c\udfc6', label: 'Completionist', desc: 'Own every upgrade in the Plain and Customization shop categories.', difficulty: 'Hard', check: g => g.autoKillOwned && g.offlineEarningsOwned && g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned && g.clickBoostOwned >= 1 && g.autoClickerOwned >= 1 },
+    { id: 'music_loop', icon: '\ud83c\udfb5', label: 'On Repeat', desc: 'Turn on music looping.', difficulty: 'Easy', check: g => g.musicLoop },
+    { id: 'light_mode', icon: '\u2600', label: 'Seen the Light', desc: 'Switch to Light Mode.', difficulty: 'Easy', check: g => g.lightMode },
+    { id: 'sfx_muted', icon: '\ud83d\udd07', label: 'Silence is Golden', desc: 'Mute the sound effects.', difficulty: 'Easy', check: g => g.sfxMuted },
+    { id: 'hide_cursor', icon: '\ud83d\udc7b', label: "Where'd It Go?", desc: 'Hide your custom cursor.', difficulty: 'Easy', check: g => g.hideCursor },
+    { id: 'first_prestige', icon: '\u267b', label: 'Rebirth', desc: 'Prestige for the first time.', difficulty: 'Extreme', check: g => (g.totalPrestige || 0) >= 1 },
+    { id: 'prestige_5', icon: '\u267b', label: 'Serial Reincarnator', desc: 'Prestige 5 times.', difficulty: 'Extreme', check: g => (g.totalPrestige || 0) >= 5 },
+    { id: 'prestige_10', icon: '\u267b', label: 'Loop Enjoyer', desc: 'Prestige 10 times.', difficulty: 'Extreme', check: g => (g.totalPrestige || 0) >= 10 },
+    { id: 'prestige_25', icon: '\u267b', label: 'Ascended', desc: 'Prestige 25 times.', difficulty: 'Extreme', check: g => (g.totalPrestige || 0) >= 25 },
+    { id: 'first_boost_trade', icon: '\ud83d\udd2e', label: 'Worth It', desc: 'Trade Prestige for your first Boost.', difficulty: 'Extreme', check: g => (g.boosts || 0) >= 1 },
+    { id: 'boost_5', icon: '\ud83d\udd2e', label: 'Multiplied', desc: 'Own 5 Boosts.', difficulty: 'Extreme', check: g => (g.boosts || 0) >= 5 },
+    { id: 'boost_10', icon: '\ud83d\udd2e', label: 'Exponential', desc: 'Own 10 Boosts.', difficulty: 'Extreme', check: g => (g.boosts || 0) >= 10 }
   ];
 
   function checkAchievements(){
@@ -4283,6 +4305,8 @@
     return Math.max(1, Math.ceil(msLeft / 60000));
   }
 
+  const DIFFICULTY_ORDER = ['Easy', 'Medium', 'Hard', 'Extreme'];
+
   function useHint(){
     const timestamps = getHintTimestamps();
     if (timestamps.length >= HINT_LIMIT) {
@@ -4294,10 +4318,17 @@
       showAchievementHintBanner("You've unlocked every achievement!");
       return;
     }
+    let pool = [];
+    for (const tier of DIFFICULTY_ORDER) {
+      pool = locked.filter(a => a.difficulty === tier);
+      if (pool.length) break;
+    }
+    if (!pool.length) pool = locked;
+
     timestamps.push(Date.now());
     localStorage.setItem(HINT_KEY, JSON.stringify(timestamps));
-    const pick = locked[Math.floor(Math.random() * locked.length)];
-    showAchievementHintBanner('Hint: ' + pick.desc);
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    showAchievementHintBanner(`Hint (${pick.difficulty}): ` + pick.desc);
     renderAchievements();
   }
 
@@ -4315,6 +4346,7 @@
         <div class="achievement-card${unlocked ? ' unlocked' : ''}">
           <div class="achievement-icon">${a.icon}</div>
           <div class="achievement-info">
+            <span class="achievement-difficulty diff-${a.difficulty.toLowerCase()}">${a.difficulty}</span>
             <h3>${unlocked ? a.label : '???'}</h3>
             <p>${unlocked ? a.desc : 'Not yet unlocked.'}</p>
           </div>
@@ -4382,6 +4414,13 @@
       </div>
       <div class="shop-card">
         <div class="shop-info">
+          <h3>Reset Tutorial</h3>
+          <p>Play through the tutorial again from the start.</p>
+        </div>
+        <button class="buy-btn" id="replay-tutorial">Replay</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
           <h3>View Applications</h3>
           <p>Apply for a role on the team.</p>
         </div>
@@ -4433,6 +4472,7 @@
     });
 
     document.getElementById('open-reset-data').addEventListener('click', openConfirmReset);
+    document.getElementById('replay-tutorial').addEventListener('click', () => maybeShowTutorial(true));
     document.getElementById('open-applications').addEventListener('click', openApplicationsMenu);
     document.getElementById('open-logout').addEventListener('click', doLogout);
     document.getElementById('open-delete-account').addEventListener('click', openConfirmDelete);
@@ -4629,7 +4669,6 @@
      requirement: function returning true once satisfied, or null for
      a step that just needs reading (always enabled).
      ------------------------------------------------- */
-  const TUTORIAL_SEEN_KEY = 'fgd_tutorial_seen';
   const TUTORIAL_STEPS = [
     {
       title: "Welcome to The Clicker Game!",
@@ -4697,6 +4736,7 @@
   const tutorialHint = document.getElementById('tutorial-hint');
   const tutorialProgress = document.getElementById('tutorial-progress');
   const tutorialNextBtn = document.getElementById('tutorial-next');
+  const tutorialSkipBtn = document.getElementById('tutorial-skip');
   let tutorialStepIndex = 0;
   let tutorialPollTimer = null;
 
@@ -4732,15 +4772,20 @@
     if (tutorialStepIndex >= TUTORIAL_STEPS.length) {
       clearInterval(tutorialPollTimer);
       tutorialOverlay.classList.remove('visible');
-      localStorage.setItem(TUTORIAL_SEEN_KEY, '1');
       switchBgSong(DEFAULT_BG_SONG);
       return;
     }
     renderTutorialStep();
   });
 
-  function maybeShowTutorial(){
-    if (localStorage.getItem(TUTORIAL_SEEN_KEY)) return;
+  tutorialSkipBtn.addEventListener('click', () => {
+    clearInterval(tutorialPollTimer);
+    tutorialOverlay.classList.remove('visible');
+    switchBgSong(DEFAULT_BG_SONG);
+  });
+
+  function maybeShowTutorial(force){
+    if (!force && currentVisits !== 1) return;
     tutorialStepIndex = 0;
     renderTutorialStep();
     tutorialOverlay.classList.add('visible');
@@ -4756,15 +4801,11 @@
     editUsernameInput.value = currentUsername || '';
     editDescriptionInput.value = currentDescription || '';
     editProfileError.style.display = 'none';
-    editPreviewEl.style.display = 'none';
     editUsernameInput.style.fontFamily = '';
     editUsernameInput.style.color = authColor(currentAuth);
-    editPreviewName.style.fontFamily = '';
-    editPreviewName.style.color = authColor(currentAuth);
     ensureFontLoaded(currentFont).then(family => {
       if (!family) return;
       editUsernameInput.style.fontFamily = `'${family}'`;
-      editPreviewName.style.fontFamily = `'${family}'`;
     });
     renderEditIconGrid();
     editProfileOverlay.classList.add('visible');
@@ -5032,6 +5073,7 @@
       currentProfileIcon = draftAccount.profileIcon;
       currentAuth = 'none';
       currentFont = 'Default';
+      currentVisits = 1;
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
 
       applyAccountTheme(draftAccount.favColor);
@@ -5145,6 +5187,7 @@
       currentFont = result.account.font || 'Default';
       currentDescription = result.account.description || '';
       currentBannerImage = result.account.bannerImage || '';
+      currentVisits = result.account.visits || 0;
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
       setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
 
@@ -5238,6 +5281,7 @@
           currentFont = result.account.font || 'Default';
           currentDescription = result.account.description || '';
           currentBannerImage = result.account.bannerImage || '';
+          currentVisits = result.account.visits || 0;
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
           setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
           applyServerGameData(result.account);
