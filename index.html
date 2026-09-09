@@ -429,6 +429,32 @@
     transform:translate(-1px,-1px);
   }
 
+  .prestige-tab-row{
+    width:100%;
+    margin-bottom:14px;
+  }
+  .shop-category-btn.prestige-tab-btn{
+    width:100%;
+    flex:none;
+    padding:16px 12px;
+    font-size:15px;
+    color:#fff;
+    background:linear-gradient(135deg, #8b5cf6, #d946ef);
+    border:2px solid var(--ink);
+    box-shadow:var(--pop);
+  }
+  .shop-category-btn.prestige-tab-btn:hover{
+    color:#fff;
+    background:linear-gradient(135deg, #8b5cf6, #d946ef);
+    transform:translate(-2px,-2px);
+    box-shadow:6px 6px 0 var(--ink);
+  }
+  .shop-category-btn.prestige-tab-btn.active{
+    background:linear-gradient(135deg, #7c3aed, #c026d3);
+    transform:translate(-1px,-1px);
+    box-shadow:var(--pop-sm);
+  }
+
   /* ---------- LINK LIST ---------- */
   .links{
     width:100%;
@@ -1811,8 +1837,16 @@
 <script>
   /* ---------- LOW PERFORMANCE MODE ---------- */
   const LOW_PERF_KEY = 'lowPerfMode';
+  function isLikelyLowPowerDevice(){
+    const ua = navigator.userAgent || '';
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+    const isChromebook = /CrOS/i.test(ua);
+    return isMobile || isChromebook;
+  }
   function isLowPerfMode(){
-    return localStorage.getItem(LOW_PERF_KEY) === '1';
+    const stored = localStorage.getItem(LOW_PERF_KEY);
+    if (stored === null) return isLikelyLowPowerDevice();
+    return stored === '1';
   }
   function applyLowPerfMode(){
     document.body.classList.toggle('low-perf', isLowPerfMode());
@@ -2297,16 +2331,22 @@
       </div>` }
     ];
 
-    const categoryBar = SHOP_CATEGORIES.map(cat =>
+    const categoryBar = SHOP_CATEGORIES.filter(cat => cat.id !== 'prestige').map(cat =>
       `<button class="shop-category-btn${shopCategory === cat.id ? ' active' : ''}" data-category="${cat.id}">${cat.label}</button>`
     ).join('');
+
+    const prestigeTabBtn = `
+      <div class="prestige-tab-row">
+        <button class="shop-category-btn prestige-tab-btn${shopCategory === 'prestige' ? ' active' : ''}" data-category="prestige">✨ Prestige Shop</button>
+      </div>
+    `;
 
     const visibleCards = cards
       .filter(c => shopCategory === 'all' || c.category === shopCategory)
       .map(c => c.html)
       .join('');
 
-    list.innerHTML = `<div class="shop-category-bar">${categoryBar}</div>${visibleCards}`;
+    list.innerHTML = `<div class="shop-category-bar">${categoryBar}</div>${prestigeTabBtn}${visibleCards}`;
 
     list.querySelectorAll('.shop-category-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -2447,7 +2487,7 @@
   });
 
   function showMusicPlayer(){
-    musicPlayerEl.classList.add('visible');
+    updatePickerVisibility();
     const idx = game.selectedSong || 0;
     songSelect.value = idx;
     loadSong(idx);
@@ -2561,7 +2601,7 @@
   });
 
   function showCursorPicker(){
-    cursorPickerEl.classList.add('visible');
+    updatePickerVisibility();
     cursorSelect.value = game.selectedCursor;
     applyCursor(game.selectedCursor);
   }
@@ -2672,7 +2712,7 @@
   });
 
   function showBgPicker(){
-    bgPickerEl.classList.add('visible');
+    updatePickerVisibility();
     bgSelect.value = game.selectedBg;
     applyBackground(game.selectedBg);
   }
@@ -2718,7 +2758,7 @@
   });
 
   function showIconPicker(){
-    iconPickerEl.classList.add('visible');
+    updatePickerVisibility();
     iconSelect.value = game.selectedIcon;
     applyIcon(game.selectedIcon);
   }
@@ -3019,6 +3059,14 @@
   /* ---------- TABS ---------- */
   const tutorialVisitedTabs = new Set();
 
+  function updatePickerVisibility(){
+    const onHomeTab = activeTab === 'stats';
+    musicPlayerEl.classList.toggle('visible', !!game.musicPlayerOwned && onHomeTab);
+    cursorPickerEl.classList.toggle('visible', !!game.cursorsOwned && onHomeTab);
+    bgPickerEl.classList.toggle('visible', !!game.bgOwned && onHomeTab);
+    iconPickerEl.classList.toggle('visible', !!game.iconModifierOwned && onHomeTab);
+  }
+
   function renderTabs(){
     tabBar.innerHTML = "";
 
@@ -3029,6 +3077,7 @@
       btn.addEventListener('click', () => {
         activeTab = tab.id;
         tutorialVisitedTabs.add(tab.id);
+        updatePickerVisibility();
         renderTabs();
         renderActiveTab();
       });
