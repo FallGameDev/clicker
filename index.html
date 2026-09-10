@@ -1083,6 +1083,12 @@
     color:var(--rind);
     line-height:1.25;
   }
+  .achievement-popup-bonus{
+    font-family:'Poppins', sans-serif;
+    font-size:10.5px;
+    font-weight:600;
+    color:var(--zap);
+  }
 
   /* ---------- ROBLOX NOOB ---------- */
   .noob{
@@ -3450,7 +3456,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyi6F_6h-jItxxAdDfTdO6TR8rmFGlJECd--PSheUBsiJCN8bP_ucD7h1IiR_yAdc9uNw/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzGOgnUkdOK2kr8T0tEip3tRiiyqL91FWWTN0PU67YumM65cZd4JS3iOpcv2N4mvfQcaA/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -4281,7 +4287,11 @@
 
     if (newlyUnlocked.length > 0) {
       saveGame();
-      newlyUnlocked.forEach(a => showAchievementToast(a));
+      newlyUnlocked.forEach(a => {
+        showAchievementToast(a);
+        const bonus = BONUS_HINTS_BY_DIFFICULTY[a.difficulty] || 0;
+        if (bonus > 0) addBonusHints(bonus);
+      });
       if (activeTab === 'achievements') renderAchievements();
     }
   }
@@ -4295,6 +4305,7 @@
   }
 
   function showAchievementToast(a){
+    const bonus = BONUS_HINTS_BY_DIFFICULTY[a.difficulty] || 0;
     const popup = document.createElement('div');
     popup.className = 'achievement-popup';
     popup.innerHTML = `
@@ -4302,6 +4313,7 @@
       <div class="achievement-popup-text">
         <span class="achievement-popup-label">Achievement Unlocked</span>
         <span class="achievement-popup-name">${a.label}</span>
+        ${bonus > 0 ? `<span class="achievement-popup-bonus">+${bonus} hint${bonus > 1 ? 's' : ''}</span>` : ''}
       </div>
     `;
     document.body.appendChild(popup);
@@ -4334,6 +4346,16 @@
   const HINT_KEY = 'achievementHints';
   const HINT_LIMIT = 3;
   const HINT_WINDOW_MS = 15 * 60 * 1000;
+  const BONUS_HINT_KEY = 'bonusHints';
+  const BONUS_HINTS_BY_DIFFICULTY = { Medium: 1, Hard: 2, Extreme: 3 };
+
+  function getBonusHints(){
+    return parseInt(localStorage.getItem(BONUS_HINT_KEY), 10) || 0;
+  }
+
+  function addBonusHints(n){
+    localStorage.setItem(BONUS_HINT_KEY, String(Math.max(0, getBonusHints() + n)));
+  }
 
   function getHintTimestamps(){
     let arr = [];
@@ -4347,7 +4369,7 @@
   }
 
   function hintsRemaining(){
-    return Math.max(0, HINT_LIMIT - getHintTimestamps().length);
+    return Math.max(0, HINT_LIMIT - getHintTimestamps().length) + getBonusHints();
   }
 
   function nextHintWaitMinutes(){
@@ -4360,8 +4382,9 @@
   const DIFFICULTY_ORDER = ['Easy', 'Medium', 'Hard', 'Extreme'];
 
   function useHint(){
+    const bonus = getBonusHints();
     const timestamps = getHintTimestamps();
-    if (timestamps.length >= HINT_LIMIT) {
+    if (bonus <= 0 && timestamps.length >= HINT_LIMIT) {
       showAchievementHintBanner(`Out of hints. Try again in ${nextHintWaitMinutes()} min.`);
       return;
     }
@@ -4377,8 +4400,12 @@
     }
     if (!pool.length) pool = locked;
 
-    timestamps.push(Date.now());
-    localStorage.setItem(HINT_KEY, JSON.stringify(timestamps));
+    if (bonus > 0) {
+      addBonusHints(-1);
+    } else {
+      timestamps.push(Date.now());
+      localStorage.setItem(HINT_KEY, JSON.stringify(timestamps));
+    }
     const pick = pool[Math.floor(Math.random() * pool.length)];
     showAchievementHintBanner(`Hint (${pick.difficulty}): ` + pick.desc);
     renderAchievements();
