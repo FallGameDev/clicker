@@ -3518,7 +3518,8 @@
       autoKillOwned: game.autoKillOwned,
       noobOwned: game.noobOwned,
       prestige: game.prestige || 0,
-      boosts: game.boosts || 0
+      boosts: game.boosts || 0,
+      achievements: game.unlockedAchievements || []
     };
   }
 
@@ -3557,6 +3558,9 @@
       if (savedRaw && savedRaw.totalPrestige) previousTotalPrestige = savedRaw.totalPrestige;
     } catch (e) {}
 
+    const serverAchievements = Array.isArray(account.achievements) ? account.achievements : [];
+    const mergedAchievements = Array.from(new Set(serverAchievements.concat(previousAchievements)));
+
     game = Object.assign(defaultGame(), {
       clicks: account.clicks || 0,
       clickBoostOwned: account.clickBoostOwned || 0,
@@ -3574,7 +3578,7 @@
       noobOwned: account.noobOwned || 0,
       prestige: account.prestige || 0,
       boosts: account.boosts || 0,
-      unlockedAchievements: previousAchievements,
+      unlockedAchievements: mergedAchievements,
       totalPrestige: previousTotalPrestige
     });
 
@@ -4288,6 +4292,7 @@
 
     if (newlyUnlocked.length > 0) {
       saveGame();
+      syncToSheet();
       newlyUnlocked.forEach(a => {
         showAchievementToast(a);
         const bonus = BONUS_HINTS_BY_DIFFICULTY[a.difficulty] || 0;
