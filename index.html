@@ -720,6 +720,48 @@
     height:16px;
     object-fit:contain;
   }
+  .leaderboard-stats{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:2px;
+    flex-shrink:0;
+  }
+  .leaderboard-prestige{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-family:'Fredoka One', cursive;
+    font-size:11px;
+    color:#e6423d;
+  }
+  .leaderboard-prestige img{
+    width:13px;
+    height:13px;
+    object-fit:contain;
+  }
+
+  .leaderboard-row.has-prestige{
+    position:relative;
+    z-index:1;
+    transform:scale(1.06);
+    margin:6px 0;
+    padding:14px 16px;
+    border-color:#e6423d;
+    box-shadow:6px 6px 0 var(--ink), 0 0 18px rgba(230,66,61,0.45);
+  }
+  .leaderboard-row.has-prestige:hover{
+    transform:scale(1.06) translate(-2px,-2px);
+    box-shadow:8px 8px 0 var(--ink), 0 0 22px rgba(230,66,61,0.55);
+  }
+  .leaderboard-row.has-prestige .leaderboard-avatar{
+    width:40px;
+    height:40px;
+    border:2px solid #e6423d;
+  }
+  .leaderboard-row.has-prestige .leaderboard-name{
+    font-size:14px;
+  }
 
   /* ---------- STATS ---------- */
   .stats-card{
@@ -3180,11 +3222,10 @@
   const tutorialVisitedTabs = new Set();
 
   function updatePickerVisibility(){
-    const onHomeTab = activeTab === 'stats';
-    musicPlayerEl.classList.toggle('visible', !!game.musicPlayerOwned && onHomeTab);
-    cursorPickerEl.classList.toggle('visible', !!game.cursorsOwned && onHomeTab);
-    bgPickerEl.classList.toggle('visible', !!game.bgOwned && onHomeTab);
-    iconPickerEl.classList.toggle('visible', !!game.iconModifierOwned && onHomeTab);
+    musicPlayerEl.classList.toggle('visible', !!game.musicPlayerOwned);
+    cursorPickerEl.classList.toggle('visible', !!game.cursorsOwned);
+    bgPickerEl.classList.toggle('visible', !!game.bgOwned);
+    iconPickerEl.classList.toggle('visible', !!game.iconModifierOwned);
   }
 
   function renderTabs(){
@@ -3269,19 +3310,30 @@
     if (!entries || entries.length === 0) {
       return '<div class="empty-state">No scores yet.</div>';
     }
-    return entries.map((entry, i) => `
-      <div class="leaderboard-row${entry.username === currentUsername ? ' me' : ''}${i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : ''}" data-username="${entry.username}">
+    return entries.map((entry, i) => {
+      const prestige = Number(entry.prestige || 0);
+      const hasPrestige = prestige > 0;
+      return `
+      <div class="leaderboard-row${entry.username === currentUsername ? ' me' : ''}${i === 0 ? ' rank-1' : i === 1 ? ' rank-2' : i === 2 ? ' rank-3' : ''}${hasPrestige ? ' has-prestige' : ''}" data-username="${entry.username}">
         <span class="leaderboard-rank">#${i + 1}</span>
         <div class="leaderboard-avatar">
           <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
         </div>
         <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}${authBadge(entry.auth)}</span>
-        <span class="leaderboard-clicks">
-          <img src="money.png" alt="Moneys">
-          ${Number(entry.clicks || 0).toLocaleString()}
+        <span class="leaderboard-stats">
+          <span class="leaderboard-clicks">
+            <img src="money.png" alt="Moneys">
+            ${Number(entry.clicks || 0).toLocaleString()}
+          </span>
+          ${hasPrestige ? `
+          <span class="leaderboard-prestige">
+            <img src="heart.png" alt="Prestige">
+            ${prestige.toLocaleString()}
+          </span>` : ''}
         </span>
       </div>
-    `).join('');
+    `;
+    }).join('');
   }
 
   function renderLeaderboardList(){
@@ -4540,6 +4592,7 @@
     saveGame();
     syncToSheet();
     updateCounter();
+    updatePickerVisibility();
     closeConfirm();
     renderActiveTab();
   }
@@ -4572,6 +4625,7 @@
     saveGame();
     syncToSheet();
     updateCounter();
+    updatePickerVisibility();
     closeConfirm();
     renderActiveTab();
   }
