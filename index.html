@@ -2541,6 +2541,7 @@
 
   const DEFAULT_BG_SONG = 'manthishotelreallysucksidontgetcoolmusicoranythingimjuststuckwithBAHABAHAHABAHABAHAB.mp3';
   const TUTORIAL_BG_SONG = 'yourhired.mp3';
+  const AUTH_BG_SONG = 'go ahead, start crying.mp3';
 
   function updateDefaultBgVolume(){
     if (!defaultBgAudio) return;
@@ -4507,6 +4508,13 @@
       </div>
       <div class="shop-card">
         <div class="shop-info">
+          <h3>Credits</h3>
+          <p>See the admins, mods, devs, directors, and owner behind this game.</p>
+        </div>
+        <button class="buy-btn" id="open-credits">View</button>
+      </div>
+      <div class="shop-card">
+        <div class="shop-info">
           <h3>Log Out</h3>
           <p>Sign out of your account on this device.</p>
         </div>
@@ -4553,6 +4561,7 @@
     document.getElementById('open-reset-data').addEventListener('click', openConfirmReset);
     document.getElementById('replay-tutorial').addEventListener('click', () => maybeShowTutorial(true));
     document.getElementById('open-applications').addEventListener('click', openApplicationsMenu);
+    document.getElementById('open-credits').addEventListener('click', openCreditsDialog);
     document.getElementById('open-logout').addEventListener('click', doLogout);
     document.getElementById('open-delete-account').addEventListener('click', openConfirmDelete);
   }
@@ -4579,6 +4588,58 @@
     document.getElementById('apply-dev').addEventListener('click', () => window.open('https://forms.gle/XHrQKDJLLhH377BF7', '_blank'));
     document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
     confirmOverlay.classList.add('visible');
+  }
+
+  async function openCreditsDialog(){
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Credits</h1>
+      <p class="auth-sub">The admins, mods, devs, directors, and owner behind this game.</p>
+      <div id="credits-list" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+        <div class="empty-state">Loading...</div>
+      </div>
+      <button class="auth-btn secondary" id="confirm-cancel">Close</button>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    confirmOverlay.classList.add('visible');
+
+    try {
+      const result = await sheetRequest({ action: 'getLeaderboard' });
+      const listEl = document.getElementById('credits-list');
+      if (!listEl) return;
+
+      const staff = result.admins || [];
+      if (!staff.length) {
+        listEl.innerHTML = '<div class="empty-state">No staff listed yet.</div>';
+        return;
+      }
+
+      listEl.innerHTML = staff.map(entry => `
+        <div class="leaderboard-row" data-username="${entry.username}" style="cursor:pointer;">
+          <div class="leaderboard-avatar">
+            <img src="${entry.profileIcon || 'profile.png'}" alt="${entry.username}">
+          </div>
+          <span class="leaderboard-name" data-username="${entry.username}" style="color:${authColor(entry.auth)}">${entry.username}${authBadge(entry.auth)}</span>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('.leaderboard-row').forEach(row => {
+        row.addEventListener('click', () => {
+          closeConfirm();
+          openPublicProfile(row.dataset.username);
+        });
+      });
+
+      staff.forEach(entry => {
+        ensureFontLoaded(entry.font).then(family => {
+          if (!family) return;
+          const nameEl = listEl.querySelector(`.leaderboard-name[data-username="${CSS.escape(entry.username)}"]`);
+          if (nameEl) nameEl.style.fontFamily = `'${family}'`;
+        });
+      });
+    } catch (e) {
+      const listEl = document.getElementById('credits-list');
+      if (listEl) listEl.innerHTML = '<div class="empty-state">Couldn\'t load credits.</div>';
+    }
   }
 
   function applyLightMode(){
@@ -5295,7 +5356,7 @@
     applyCursorVisibility();
     if (game.hideCursor) showCursorHint();
     applyLightMode();
-    startDefaultBgSong();
+    switchBgSong(DEFAULT_BG_SONG);
     if (game.musicPlayerOwned) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
@@ -5339,6 +5400,8 @@
 
 
   (async function bootstrap(){
+    switchBgSong(AUTH_BG_SONG);
+
     const openedBefore = getSiteOpens();
     bumpSiteOpens();
 
