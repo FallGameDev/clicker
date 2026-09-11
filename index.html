@@ -954,6 +954,60 @@
     cursor:not-allowed;
   }
 
+  .bulk-expand-btn{
+    flex-shrink:0;
+    width:30px;
+    height:30px;
+    font-size:12px;
+    color:var(--rind);
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:8px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  .bulk-expand-btn:hover{
+    border-color:var(--zap);
+  }
+  .bulk-expand-btn.open{
+    transform:rotate(180deg);
+    border-color:var(--zap);
+  }
+  .bulk-buy-panel{
+    display:flex;
+    gap:6px;
+    width:100%;
+    max-width:340px;
+    margin:-6px auto 12px;
+    padding:8px;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:12px;
+    box-shadow:var(--pop-sm);
+  }
+  .bulk-buy-btn{
+    flex:1;
+    font-family:'Fredoka One', cursive;
+    font-size:10px;
+    color:var(--night);
+    background:var(--brand-gradient);
+    border:2px solid var(--ink);
+    border-radius:8px;
+    padding:7px 4px;
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+  }
+  .bulk-buy-btn:hover:not(:disabled){
+    transform:translate(-1px,-1px);
+  }
+  .bulk-buy-btn:disabled{
+    opacity:0.4;
+    cursor:not-allowed;
+  }
+
   /* ---------- DVD LOGO ---------- */
   .dvd-logo{
     position:fixed;
@@ -972,18 +1026,6 @@
   }
   .dvd-logo.behind{
     z-index:-1;
-  }
-
-  /* ---------- BOUNCING EMOJI ---------- */
-  .bounce-emoji{
-    position:fixed;
-    top:0;
-    left:0;
-    font-size:36px;
-    line-height:1;
-    pointer-events:none;
-    z-index:998;
-    user-select:none;
   }
 
   /* ---------- SCREAMING GOAT ---------- */
@@ -2033,6 +2075,10 @@
     <select id="icon-select"></select>
   </div>
 
+  <div class="icon-picker" id="effect-picker">
+    <select id="effect-select"></select>
+  </div>
+
   <div class="tabs" id="tab-list"></div>
 
   <div class="links" id="link-list"></div>
@@ -2146,6 +2192,7 @@
 
   let activeTab = TABS[0].id;
   let shopCategory = 'all';
+  let clickBoostExpanded = false;
 
   const tabBar = document.getElementById('tab-list');
   const list = document.getElementById('link-list');
@@ -2195,10 +2242,9 @@
       prestige: 0,
       boosts: 0,
       totalPrestige: 0,
-      emojiOwned: 0,
       goatOwned: 0,
-      confettiOwned: false,
-      shakeOwned: false,
+      effectsOwned: false,
+      selectedEffect: 'none',
       megaBoostOwned: 0,
       turboClickerOwned: 0,
       luckyCharmOwned: false
@@ -2256,8 +2302,8 @@
     saveGame();
     refreshShopAffordability();
     refreshStatsMoneys();
-    if (game.confettiOwned) spawnConfettiBurst();
-    if (game.shakeOwned) triggerScreenShake();
+    if (game.effectsOwned && game.selectedEffect === 'confetti') spawnConfettiBurst();
+    if (game.effectsOwned && game.selectedEffect === 'shake') triggerScreenShake();
   });
 
   setInterval(() => {
@@ -2272,6 +2318,28 @@
   }, 1000);
 
   function clickBoostCost(){ return 10 * (game.clickBoostOwned + 1); }
+  function clickBoostBulkCost(n){
+    let total = 0;
+    let owned = game.clickBoostOwned;
+    for (let i = 0; i < n; i++) {
+      total += 10 * (owned + 1);
+      owned++;
+    }
+    return total;
+  }
+  function clickBoostMaxAffordable(){
+    let n = 0;
+    let owned = game.clickBoostOwned;
+    let remaining = game.clicks;
+    while (true) {
+      const next = 10 * (owned + 1);
+      if (remaining < next) break;
+      remaining -= next;
+      owned++;
+      n++;
+    }
+    return n;
+  }
   function autoClickerCost(){ return 50 * (game.autoClickerOwned + 1); }
   const DVD_COST = 100;
   const AMOGUS_COST = 100;
@@ -2284,10 +2352,8 @@
   const ICON_COST = 500;
   const AUTO_KILL_COST = 1000;
   const NOOB_COST = 250;
-  const EMOJI_COST = 200;
   const GOAT_COST = 350;
-  const CONFETTI_COST = 750;
-  const SHAKE_COST = 750;
+  const EFFECTS_COST = 750;
   const LUCKY_CHARM_COST = 2500;
   function megaBoostCost(){ return 500 * (game.megaBoostOwned + 1); }
   function turboClickerCost(){ return 750 * (game.turboClickerOwned + 1); }
@@ -2373,18 +2439,6 @@
     spawnNoob();
   }
 
-  function buyEmoji(){
-    if (game.clicks < EMOJI_COST) return;
-    playSound('money.mp3');
-    game.clicks -= EMOJI_COST;
-    game.emojiOwned += 1;
-    updateCounter();
-    saveGame();
-    syncToSheet();
-    renderShop();
-    spawnEmoji();
-  }
-
   function buyGoat(){
     if (game.clicks < GOAT_COST) return;
     playSound('money.mp3');
@@ -2397,26 +2451,16 @@
     spawnGoat();
   }
 
-  function buyConfetti(){
-    if (game.confettiOwned || game.clicks < CONFETTI_COST) return;
+  function buyEffects(){
+    if (game.effectsOwned || game.clicks < EFFECTS_COST) return;
     playSound('money.mp3');
-    game.clicks -= CONFETTI_COST;
-    game.confettiOwned = true;
+    game.clicks -= EFFECTS_COST;
+    game.effectsOwned = true;
     updateCounter();
     saveGame();
     syncToSheet();
     renderShop();
-  }
-
-  function buyShake(){
-    if (game.shakeOwned || game.clicks < SHAKE_COST) return;
-    playSound('money.mp3');
-    game.clicks -= SHAKE_COST;
-    game.shakeOwned = true;
-    updateCounter();
-    saveGame();
-    syncToSheet();
-    renderShop();
+    showEffectPicker();
   }
 
   function buyMegaBoost(){
@@ -2466,6 +2510,24 @@
     saveGame();
     syncToSheet();
     renderShop();
+  }
+
+  function buyClickBoostBulk(n){
+    if (n <= 0) return;
+    const cost = clickBoostBulkCost(n);
+    if (game.clicks < cost) return;
+    playSound('money.mp3');
+    game.clicks -= cost;
+    game.clickBoostOwned += n;
+    game.clickPower += n;
+    updateCounter();
+    saveGame();
+    syncToSheet();
+    renderShop();
+  }
+
+  function buyClickBoostMax(){
+    buyClickBoostBulk(clickBoostMaxAffordable());
   }
 
   function buyAutoClicker(){
@@ -2530,13 +2592,20 @@
   function renderShop(){
     const cards = [
       { category: 'plain', html: `
-      <div class="shop-card">
+      <div class="shop-card clickboost-card">
         <div class="shop-info">
           <h3>Click Boost</h3>
           <p>+1 click power per click. <span class="owned">Owned: ${game.clickBoostOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-boost" ${game.clicks < clickBoostCost() ? 'disabled' : ''}>Buy (${clickBoostCost()})</button>
-      </div>` },
+        <button class="bulk-expand-btn${clickBoostExpanded ? ' open' : ''}" id="clickboost-expand-btn" title="More options">&#9662;</button>
+      </div>
+      ${clickBoostExpanded ? `
+      <div class="bulk-buy-panel">
+        <button class="bulk-buy-btn" id="buy-boost-x10" ${game.clicks < clickBoostBulkCost(10) ? 'disabled' : ''}>Buy x10 (${clickBoostBulkCost(10)})</button>
+        <button class="bulk-buy-btn" id="buy-boost-x25" ${game.clicks < clickBoostBulkCost(25) ? 'disabled' : ''}>Buy x25 (${clickBoostBulkCost(25)})</button>
+        <button class="bulk-buy-btn" id="buy-boost-max" ${clickBoostMaxAffordable() <= 0 ? 'disabled' : ''}>Buy Max (${clickBoostMaxAffordable()})</button>
+      </div>` : ''}` },
       { category: 'plain', html: `
       <div class="shop-card">
         <div class="shop-info">
@@ -2580,34 +2649,10 @@
       { category: 'visuals', html: `
       <div class="shop-card">
         <div class="shop-info">
-          <h3>Bouncing Emoji</h3>
-          <p>Spawns a random emoji that bounces around the screen, changing on every wall hit. Pays out like a DVD logo. <span class="owned">Owned: ${game.emojiOwned}</span></p>
-        </div>
-        <button class="buy-btn" id="buy-emoji" ${game.clicks < EMOJI_COST ? 'disabled' : ''}>Buy (${EMOJI_COST})</button>
-      </div>` },
-      { category: 'visuals', html: `
-      <div class="shop-card">
-        <div class="shop-info">
           <h3>Screaming Goat</h3>
           <p>Spawns a goat that wanders back and forth and occasionally screams. Pays out every time it bounces off a wall. <span class="owned">Owned: ${game.goatOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-goat" ${game.clicks < GOAT_COST ? 'disabled' : ''}>Buy (${GOAT_COST})</button>
-      </div>` },
-      { category: 'visuals', html: `
-      <div class="shop-card">
-        <div class="shop-info">
-          <h3>Confetti Clicks</h3>
-          <p>One-time buy. Every click bursts a little confetti from the avatar.</p>
-        </div>
-        <button class="buy-btn" id="buy-confetti" ${game.confettiOwned ? 'disabled' : (game.clicks < CONFETTI_COST ? 'disabled' : '')}>${game.confettiOwned ? 'Owned' : 'Buy (' + CONFETTI_COST + ')'}</button>
-      </div>` },
-      { category: 'visuals', html: `
-      <div class="shop-card">
-        <div class="shop-info">
-          <h3>Screen Shake</h3>
-          <p>One-time buy. Every click gives the whole page a little shake.</p>
-        </div>
-        <button class="buy-btn" id="buy-shake" ${game.shakeOwned ? 'disabled' : (game.clicks < SHAKE_COST ? 'disabled' : '')}>${game.shakeOwned ? 'Owned' : 'Buy (' + SHAKE_COST + ')'}</button>
       </div>` },
       { category: 'customization', html: `
       <div class="shop-card">
@@ -2640,6 +2685,14 @@
           <p>One-time buy. Adds a picker to swap the clicker avatar and the browser tab icon.</p>
         </div>
         <button class="buy-btn" id="buy-icon" ${game.iconModifierOwned ? 'disabled' : (game.clicks < ICON_COST ? 'disabled' : '')}>${game.iconModifierOwned ? 'Owned' : 'Buy (' + ICON_COST + ')'}</button>
+      </div>` },
+      { category: 'customization', html: `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Click Effects</h3>
+          <p>One-time buy. Adds a picker to choose an effect that plays on every click. Default: None.</p>
+        </div>
+        <button class="buy-btn" id="buy-effects" ${game.effectsOwned ? 'disabled' : (game.clicks < EFFECTS_COST ? 'disabled' : '')}>${game.effectsOwned ? 'Owned' : 'Buy (' + EFFECTS_COST + ')'}</button>
       </div>` },
       { category: 'plain', html: `
       <div class="shop-card">
@@ -2725,6 +2778,16 @@
 
     const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
     bind('buy-boost', buyClickBoost);
+    const clickBoostExpandBtn = document.getElementById('clickboost-expand-btn');
+    if (clickBoostExpandBtn) {
+      clickBoostExpandBtn.addEventListener('click', () => {
+        clickBoostExpanded = !clickBoostExpanded;
+        renderShop();
+      });
+    }
+    bind('buy-boost-x10', () => buyClickBoostBulk(10));
+    bind('buy-boost-x25', () => buyClickBoostBulk(25));
+    bind('buy-boost-max', buyClickBoostMax);
     bind('buy-auto', buyAutoClicker);
     bind('buy-dvd', buyDvd);
     bind('toggle-dvd-layer', toggleDvdLayer);
@@ -2734,12 +2797,10 @@
     bind('buy-bg', buyBackground);
     bind('buy-offline', buyOfflineEarnings);
     bind('buy-icon', buyIconModifier);
+    bind('buy-effects', buyEffects);
     bind('buy-autokill', buyAutoKill);
     bind('buy-noob', buyNoob);
-    bind('buy-emoji', buyEmoji);
     bind('buy-goat', buyGoat);
-    bind('buy-confetti', buyConfetti);
-    bind('buy-shake', buyShake);
     bind('buy-megaboost', buyMegaBoost);
     bind('buy-turboclicker', buyTurboClicker);
     bind('buy-luckycharm', buyLuckyCharm);
@@ -3162,6 +3223,33 @@
     applyIcon(game.selectedIcon);
   }
 
+  const EFFECTS = [
+    { label: "None", value: "none" },
+    { label: "Confetti", value: "confetti" },
+    { label: "Screen Shake", value: "shake" }
+  ];
+
+  const effectPickerEl = document.getElementById('effect-picker');
+  const effectSelect = document.getElementById('effect-select');
+
+  EFFECTS.forEach(entry => {
+    const opt = document.createElement('option');
+    opt.value = entry.value;
+    opt.textContent = entry.label;
+    effectSelect.appendChild(opt);
+  });
+
+  effectSelect.addEventListener('change', () => {
+    game.selectedEffect = effectSelect.value;
+    saveGame();
+    syncToSheet();
+  });
+
+  function showEffectPicker(){
+    updatePickerVisibility();
+    effectSelect.value = game.selectedEffect || 'none';
+  }
+
   /* ---------- DVD LOGO ---------- */
   const DVD_COLORS = ['#57ab46', '#79cf67', '#c1aef0', '#faf3df', '#ff6f9c', '#66c2ff'];
 
@@ -3242,59 +3330,6 @@
   }
 
   /* ---------- BOUNCING EMOJI ---------- */
-  const BOUNCE_EMOJIS = ['\ud83d\ude02', '\ud83d\udd25', '\ud83d\udc80', '\ud83d\ude08', '\ud83e\udd21', '\u2764\ufe0f', '\ud83c\udf89', '\ud83d\udc4d', '\ud83e\udd2a', '\ud83d\udc51'];
-
-  function spawnEmoji(){
-    const el = document.createElement('div');
-    el.className = 'bounce-emoji';
-    let emojiIndex = Math.floor(Math.random() * BOUNCE_EMOJIS.length);
-    el.textContent = BOUNCE_EMOJIS[emojiIndex];
-    document.body.appendChild(el);
-
-    let x = Math.random() * (window.innerWidth - 44);
-    let y = Math.random() * (window.innerHeight - 44);
-    let vx = (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 1.4);
-    let vy = (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 1.4);
-
-    function tick(){
-      if (!document.body.contains(el)) return;
-
-      const w = el.offsetWidth || 44;
-      const h = el.offsetHeight || 44;
-
-      x += vx;
-      y += vy;
-
-      let xBounced = false;
-      let yBounced = false;
-
-      if (x <= 0) { x = 0; vx = Math.abs(vx); xBounced = true; }
-      if (x + w >= window.innerWidth) { x = window.innerWidth - w; vx = -Math.abs(vx); xBounced = true; }
-      if (y <= 0) { y = 0; vy = Math.abs(vy); yBounced = true; }
-      if (y + h >= window.innerHeight) { y = window.innerHeight - h; vy = -Math.abs(vy); yBounced = true; }
-
-      if (xBounced || yBounced) {
-        emojiIndex = Math.floor(Math.random() * BOUNCE_EMOJIS.length);
-        el.textContent = BOUNCE_EMOJIS[emojiIndex];
-        earnClicks(game.clickPower);
-
-        if (xBounced && yBounced) {
-          earnClicks(CORNER_BONUS);
-        }
-
-        updateCounter();
-        saveGame();
-        refreshShopAffordability();
-        refreshStatsMoneys();
-      }
-
-      el.style.transform = `translate(${x}px, ${y}px)`;
-      requestAnimationFrame(tick);
-    }
-
-    requestAnimationFrame(tick);
-  }
-
   /* ---------- SCREAMING GOAT ---------- */
   function spawnGoat(){
     const el = document.createElement('div');
@@ -3593,6 +3628,7 @@
     cursorPickerEl.classList.toggle('visible', !!game.cursorsOwned);
     bgPickerEl.classList.toggle('visible', !!game.bgOwned);
     iconPickerEl.classList.toggle('visible', !!game.iconModifierOwned);
+    effectPickerEl.classList.toggle('visible', !!game.effectsOwned);
   }
 
   function renderTabs(){
@@ -3817,7 +3853,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbywx-gYxwamTxzzDYetEhEZyf2E6ocCHrsiWGmWYI3GijL1tEWO2B22tnjQJg2YzhsGMw/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzmdaiufh1QEcptPhZQN27l7AFH7nCapqwqdIuHn5WGpIOpyH0gJKHFu6QHsYbiIQj2Pg/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -3880,10 +3916,9 @@
       prestige: game.prestige || 0,
       boosts: game.boosts || 0,
       achievements: game.unlockedAchievements || [],
-      emojiOwned: game.emojiOwned || 0,
       goatOwned: game.goatOwned || 0,
-      confettiOwned: game.confettiOwned || false,
-      shakeOwned: game.shakeOwned || false,
+      effectsOwned: game.effectsOwned || false,
+      selectedEffect: game.selectedEffect || 'none',
       megaBoostOwned: game.megaBoostOwned || 0,
       turboClickerOwned: game.turboClickerOwned || 0,
       luckyCharmOwned: game.luckyCharmOwned || false
@@ -3947,10 +3982,9 @@
       boosts: account.boosts || 0,
       unlockedAchievements: mergedAchievements,
       totalPrestige: previousTotalPrestige,
-      emojiOwned: account.emojiOwned || 0,
       goatOwned: account.goatOwned || 0,
-      confettiOwned: !!account.confettiOwned,
-      shakeOwned: !!account.shakeOwned,
+      effectsOwned: !!account.effectsOwned,
+      selectedEffect: account.selectedEffect || 'none',
       megaBoostOwned: account.megaBoostOwned || 0,
       turboClickerOwned: account.turboClickerOwned || 0,
       luckyCharmOwned: !!account.luckyCharmOwned
@@ -5052,7 +5086,7 @@
   }
 
   function doResetData(){
-    document.querySelectorAll('.dvd-logo, .crewmate, .noob, .bounce-emoji, .screaming-goat').forEach(el => el.remove());
+    document.querySelectorAll('.dvd-logo, .crewmate, .noob, .screaming-goat').forEach(el => el.remove());
     const keepAchievements = game.unlockedAchievements || [];
     game = defaultGame();
     game.unlockedAchievements = keepAchievements;
@@ -5079,7 +5113,7 @@
 
   function doPrestige(){
     if (game.clicks < PRESTIGE_COST) { closeConfirm(); return; }
-    document.querySelectorAll('.dvd-logo, .crewmate, .noob, .bounce-emoji, .screaming-goat').forEach(el => el.remove());
+    document.querySelectorAll('.dvd-logo, .crewmate, .noob, .screaming-goat').forEach(el => el.remove());
     const keepPrestige = (game.prestige || 0) + 1;
     const keepBoosts = game.boosts || 0;
     const keepTotalPrestige = (game.totalPrestige || 0) + 1;
@@ -5740,11 +5774,11 @@
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
     if (game.iconModifierOwned) showIconPicker();
+    if (game.effectsOwned) showEffectPicker();
     for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
     updateDvdVisibility();
     for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
     for (let i = 0; i < game.noobOwned; i++) spawnNoob();
-    for (let i = 0; i < game.emojiOwned; i++) spawnEmoji();
     for (let i = 0; i < game.goatOwned; i++) spawnGoat();
 
     renderTabs();
