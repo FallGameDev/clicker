@@ -4699,7 +4699,8 @@
     if (key === 'admin') return 'purple';
     if (key === 'dev') return 'lime';
     if (key === 'owner') return 'green';
-    return 'white';
+    if (key === 'director' || key === 'dir') return 'orange';
+    return 'var(--rind)';
   }
 
   function authBadge(auth){
@@ -4710,6 +4711,7 @@
     if (key === 'admin') return `<img src="admin.png" class="auth-badge" alt="admin">`;
     if (key === 'dev') return `<img src="dev.png" class="auth-badge" alt="dev">`;
     if (key === 'owner') return `<img src="owner.png" class="auth-badge" alt="owner">`;
+    if (key === 'director' || key === 'dir') return `<img src="director.png" class="auth-badge" alt="director">`;
     if (key === 'none') return '';
     return `<span class="auth-badge-unknown">?</span>`;
   }
