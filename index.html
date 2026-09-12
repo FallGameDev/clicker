@@ -2247,7 +2247,10 @@
       selectedEffect: 'none',
       megaBoostOwned: 0,
       turboClickerOwned: 0,
-      luckyCharmOwned: false
+      luckyCharmOwned: false,
+      headStartOwned: 0,
+      prestigeMultOwned: 0,
+      autoBuyerOwned: false
     };
   }
 
@@ -2579,6 +2582,55 @@
     renderShop();
   }
 
+  function headStartCost(){ return 2 * (game.headStartOwned + 1); }
+  function prestigeMultCost(){ return 3 * (game.prestigeMultOwned + 1); }
+  const AUTO_BUYER_COST = 10;
+
+  function buyHeadStart(){
+    const cost = headStartCost();
+    if ((game.prestige || 0) < cost) return;
+    playSound('money.mp3');
+    game.prestige -= cost;
+    game.headStartOwned += 1;
+    saveGame();
+    syncToSheet();
+    renderShop();
+  }
+
+  function buyPrestigeMult(){
+    const cost = prestigeMultCost();
+    if ((game.prestige || 0) < cost) return;
+    playSound('money.mp3');
+    game.prestige -= cost;
+    game.prestigeMultOwned += 1;
+    saveGame();
+    syncToSheet();
+    renderShop();
+  }
+
+  function buyAutoBuyer(){
+    if (game.autoBuyerOwned || (game.prestige || 0) < AUTO_BUYER_COST) return;
+    playSound('money.mp3');
+    game.prestige -= AUTO_BUYER_COST;
+    game.autoBuyerOwned = true;
+    saveGame();
+    syncToSheet();
+    renderShop();
+  }
+
+  setInterval(() => {
+    if (!game.autoBuyerOwned) return;
+    const options = [
+      { cost: clickBoostCost(), buy: buyClickBoost },
+      { cost: autoClickerCost(), buy: buyAutoClicker },
+      { cost: megaBoostCost(), buy: buyMegaBoost },
+      { cost: turboClickerCost(), buy: buyTurboClicker }
+    ].filter(o => game.clicks >= o.cost);
+    if (!options.length) return;
+    options.sort((a, b) => a.cost - b.cost);
+    options[0].buy();
+  }, 5000);
+
   const SHOP_CATEGORIES = [
     { id: 'all', label: 'All' },
     { id: 'visuals', label: 'Visuals' },
@@ -2749,6 +2801,30 @@
           <p>Trade 1 Prestige for a permanent +0.5x multiplier on everything that earns clicks. Current multiplier: ${boostMultiplier()}x (${game.boosts || 0} owned). <span class="owned">Prestige: ${game.prestige || 0}</span></p>
         </div>
         <button class="buy-btn" id="buy-boost-trade" ${(game.prestige || 0) < 1 ? 'disabled' : ''}>Trade 1 Prestige</button>
+      </div>` },
+      { category: 'prestige', html: `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Head Start</h3>
+          <p>Permanently start every future Prestige with 5 free Click Boosts already owned. <span class="owned">Owned: ${game.headStartOwned} (Prestige: ${game.prestige || 0})</span></p>
+        </div>
+        <button class="buy-btn" id="buy-headstart" ${(game.prestige || 0) < headStartCost() ? 'disabled' : ''}>Buy (${headStartCost()} Prestige)</button>
+      </div>` },
+      { category: 'prestige', html: `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Prestige Multiplier</h3>
+          <p>Permanently gain +1 extra Prestige every time you Prestige. <span class="owned">Owned: ${game.prestigeMultOwned} (Prestige: ${game.prestige || 0})</span></p>
+        </div>
+        <button class="buy-btn" id="buy-prestigemult" ${(game.prestige || 0) < prestigeMultCost() ? 'disabled' : ''}>Buy (${prestigeMultCost()} Prestige)</button>
+      </div>` },
+      { category: 'prestige', html: `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Auto Buyer</h3>
+          <p>One-time buy. Every 5 seconds, automatically buys the cheapest affordable Click Boost, Clicker, Mega Click Boost, or Turbo Clicker. <span class="owned">Prestige: ${game.prestige || 0}</span></p>
+        </div>
+        <button class="buy-btn" id="buy-autobuyer" ${game.autoBuyerOwned ? 'disabled' : ((game.prestige || 0) < AUTO_BUYER_COST ? 'disabled' : '')}>${game.autoBuyerOwned ? 'Owned' : 'Buy (' + AUTO_BUYER_COST + ' Prestige)'}</button>
       </div>` }
     ];
 
@@ -2806,6 +2882,9 @@
     bind('buy-luckycharm', buyLuckyCharm);
     bind('do-prestige', openConfirmPrestige);
     bind('buy-boost-trade', buyBoost);
+    bind('buy-headstart', buyHeadStart);
+    bind('buy-prestigemult', buyPrestigeMult);
+    bind('buy-autobuyer', buyAutoBuyer);
   }
 
   /* ---------- MUSIC PLAYER ---------- */
@@ -3853,7 +3932,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzmdaiufh1QEcptPhZQN27l7AFH7nCapqwqdIuHn5WGpIOpyH0gJKHFu6QHsYbiIQj2Pg/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzam2vyN-qMoN2VCatjYHGjMndzlNApewHCO8Z9B8faK7U1wjOd5LWG66haOXQXfIQl_g/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -3921,7 +4000,10 @@
       selectedEffect: game.selectedEffect || 'none',
       megaBoostOwned: game.megaBoostOwned || 0,
       turboClickerOwned: game.turboClickerOwned || 0,
-      luckyCharmOwned: game.luckyCharmOwned || false
+      luckyCharmOwned: game.luckyCharmOwned || false,
+      headStartOwned: game.headStartOwned || 0,
+      prestigeMultOwned: game.prestigeMultOwned || 0,
+      autoBuyerOwned: game.autoBuyerOwned || false
     };
   }
 
@@ -3987,7 +4069,10 @@
       selectedEffect: account.selectedEffect || 'none',
       megaBoostOwned: account.megaBoostOwned || 0,
       turboClickerOwned: account.turboClickerOwned || 0,
-      luckyCharmOwned: !!account.luckyCharmOwned
+      luckyCharmOwned: !!account.luckyCharmOwned,
+      headStartOwned: account.headStartOwned || 0,
+      prestigeMultOwned: account.prestigeMultOwned || 0,
+      autoBuyerOwned: !!account.autoBuyerOwned
     });
 
     // Preserve the real lastSeen so applyOfflineEarnings() (called later in
@@ -4167,8 +4252,11 @@
     runNextPhase();
   }
 
-  function hideLoadingScreen(){
-    runLoadingSequence(actuallyHideLoadingScreen);
+  function hideLoadingScreen(onDone){
+    runLoadingSequence(() => {
+      actuallyHideLoadingScreen();
+      if (onDone) onDone();
+    });
   }
 
   function showAuthScreen(name){
@@ -5100,9 +5188,10 @@
 
   function openConfirmPrestige(){
     if (game.clicks < PRESTIGE_COST) return;
+    const gain = 1 + (game.prestigeMultOwned || 0);
     confirmBox.innerHTML = `
       <h1 class="auth-heading">Prestige?</h1>
-      <p class="auth-sub">This resets all your progress (clicks, upgrades, and cosmetics) back to zero in exchange for +1 Prestige, which carries over. This can't be undone.</p>
+      <p class="auth-sub">This resets all your progress (clicks, upgrades, and cosmetics) back to zero in exchange for +${gain} Prestige, which carries over. This can't be undone.</p>
       <button class="auth-btn" id="confirm-prestige-yes">Yes, prestige</button>
       <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
     `;
@@ -5114,15 +5203,26 @@
   function doPrestige(){
     if (game.clicks < PRESTIGE_COST) { closeConfirm(); return; }
     document.querySelectorAll('.dvd-logo, .crewmate, .noob, .screaming-goat').forEach(el => el.remove());
-    const keepPrestige = (game.prestige || 0) + 1;
+    const prestigeGain = 1 + (game.prestigeMultOwned || 0);
+    const keepPrestige = (game.prestige || 0) + prestigeGain;
     const keepBoosts = game.boosts || 0;
     const keepTotalPrestige = (game.totalPrestige || 0) + 1;
     const keepAchievements = game.unlockedAchievements || [];
+    const keepHeadStart = game.headStartOwned || 0;
+    const keepPrestigeMult = game.prestigeMultOwned || 0;
+    const keepAutoBuyer = game.autoBuyerOwned || false;
     game = defaultGame();
     game.prestige = keepPrestige;
     game.boosts = keepBoosts;
     game.totalPrestige = keepTotalPrestige;
     game.unlockedAchievements = keepAchievements;
+    game.headStartOwned = keepHeadStart;
+    game.prestigeMultOwned = keepPrestigeMult;
+    game.autoBuyerOwned = keepAutoBuyer;
+    if (keepHeadStart > 0) {
+      game.clickBoostOwned = keepHeadStart * 5;
+      game.clickPower = 1 + keepHeadStart * 5;
+    }
     saveGame();
     syncToSheet();
     updateCounter();
@@ -5845,9 +5945,10 @@
           setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
           applyServerGameData(result.account);
           applyAccountTheme(result.account.favColor);
-          hideLoadingScreen();
-          startGame();
-          queueUnseenNotices(result.account);
+          hideLoadingScreen(() => {
+            startGame();
+            queueUnseenNotices(result.account);
+          });
           return;
         }
 
@@ -5864,8 +5965,7 @@
           currentFont = getLastFont();
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
           applyAccountTheme(getLastTheme());
-          hideLoadingScreen();
-          startGame();
+          hideLoadingScreen(startGame);
           return;
         }
       } catch (e) {
@@ -5877,8 +5977,7 @@
         currentFont = getLastFont();
         SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
         applyAccountTheme(getLastTheme());
-        hideLoadingScreen();
-        startGame();
+        hideLoadingScreen(startGame);
         return;
       }
     }
