@@ -821,6 +821,44 @@
     height:26px;
     object-fit:contain;
   }
+  .stats-gems{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Fredoka One', cursive;
+    font-size:20px;
+    color:#a855f7;
+  }
+  .stats-gems img{
+    width:26px;
+    height:26px;
+    object-fit:contain;
+  }
+  .gems-plus-btn{
+    width:26px;
+    height:26px;
+    border-radius:8px;
+    border:2px solid var(--ink);
+    background:linear-gradient(135deg, #a855f7, #d946ef);
+    color:#fff;
+    font-family:'Fredoka One', cursive;
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .gems-plus-btn:hover{
+    transform:translate(-1px,-1px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .gems-plus-btn:active{
+    transform:translate(1px,1px);
+    box-shadow:1px 1px 0 var(--ink);
+  }
 
   /* ---------- ACHIEVEMENTS ---------- */
   .achievement-card{
@@ -1768,6 +1806,120 @@
     display:flex;
   }
 
+  /* ---------- WORKSHOP ---------- */
+  .workshop-overlay{
+    position:fixed;
+    inset:0;
+    z-index:4700;
+    background:rgba(10,8,16,0.85);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .workshop-overlay.visible{
+    display:flex;
+  }
+  .workshop-box{
+    position:relative;
+    width:100%;
+    max-width:560px;
+    max-height:85vh;
+    display:flex;
+    flex-direction:column;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:18px;
+    padding:24px;
+    box-shadow:var(--pop-lg);
+  }
+  .workshop-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:16px;
+    padding-right:26px;
+  }
+  .workshop-header .auth-heading{
+    margin:0;
+  }
+  .workshop-header-actions{
+    display:flex;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .workshop-icon-btn{
+    font-family:'Fredoka One', cursive;
+    font-size:11.5px;
+    color:var(--night);
+    background:var(--brand-gradient);
+    border:2px solid var(--ink);
+    border-radius:9px;
+    padding:8px 12px;
+    cursor:pointer;
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .workshop-icon-btn:hover{
+    transform:translate(-1px,-1px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .workshop-body{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .workshop-item-card{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:12px 14px;
+  }
+  .workshop-item-card h3{
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:var(--rind);
+    margin:0;
+  }
+  .workshop-item-card p{
+    font-size:11.5px;
+    color:var(--muted);
+    margin:0;
+  }
+  .workshop-item-meta{
+    font-size:10.5px;
+    color:var(--zap);
+    font-weight:600;
+  }
+  .workshop-tabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .workshop-tabs button{
+    flex:1;
+    font-family:'Fredoka One', cursive;
+    font-size:11.5px;
+    color:var(--muted);
+    background:var(--night);
+    border:2px solid var(--ink);
+    border-radius:10px;
+    padding:8px;
+    cursor:pointer;
+  }
+  .workshop-tabs button.active{
+    background:var(--brand-gradient);
+    color:var(--night);
+  }
+
   /* ---------- TUTORIAL ---------- */
   .tutorial-overlay{
     position:fixed;
@@ -2033,6 +2185,22 @@
   <div class="auth-box confirm-box" id="confirm-box"></div>
 </div>
 
+<div class="workshop-overlay" id="workshop-overlay">
+  <div class="workshop-box">
+    <button class="edit-profile-close" id="workshop-close">&times;</button>
+    <div class="workshop-header">
+      <h1 class="auth-heading">Workshop</h1>
+      <div class="workshop-header-actions">
+        <button class="workshop-icon-btn" id="workshop-profile-btn" title="My Mods">Profile</button>
+        <button class="workshop-icon-btn" id="workshop-upload-btn" title="Upload a Mod">Upload</button>
+      </div>
+    </div>
+    <div class="workshop-body" id="workshop-body">
+      <div class="empty-state">Loading...</div>
+    </div>
+  </div>
+</div>
+
 <div id="fps-counter">FPS: 0</div>
 
 <div class="tutorial-overlay" id="tutorial-overlay">
@@ -2250,7 +2418,8 @@
       luckyCharmOwned: false,
       headStartOwned: 0,
       prestigeMultOwned: 0,
-      autoBuyerOwned: false
+      autoBuyerOwned: false,
+      gems: 0
     };
   }
 
@@ -3760,6 +3929,8 @@
     if (span) span.textContent = game.clicks.toLocaleString();
     const prestigeSpan = document.querySelector('.stats-prestige span');
     if (prestigeSpan) prestigeSpan.textContent = (game.prestige || 0).toLocaleString();
+    const gemsSpan = document.querySelector('.stats-gems span');
+    if (gemsSpan) gemsSpan.textContent = (game.gems || 0).toLocaleString();
   }
 
   function renderActiveTab(){
@@ -3869,7 +4040,11 @@
     }
   }
 
+  const MOD_CAPABLE_AUTHS = ['owner', 'mod', 'admin', 'dev', 'dir', 'director'];
+
   function renderStats(){
+    const isModCapable = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
+
     list.innerHTML = `
       <div class="stats-card">
         <div class="stats-avatar" id="stats-avatar-click">
@@ -3884,17 +4059,209 @@
           <img src="heart.png" alt="Prestige">
           <span>${(game.prestige || 0).toLocaleString()}</span>
         </div>
+        <div class="stats-gems">
+          <img src="gems.png" alt="Gems">
+          <span>${(game.gems || 0).toLocaleString()}</span>
+          <button class="gems-plus-btn" id="gems-plus-btn" title="Convert Moneys to Gems">+</button>
+        </div>
       </div>
+      ${isModCapable ? `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Mods</h3>
+          <p>Open the Workshop to browse, manage, and upload mods.</p>
+        </div>
+        <button class="buy-btn" id="open-workshop-btn">Open Workshop</button>
+      </div>` : ''}
     `;
 
     document.getElementById('stats-avatar-click').addEventListener('click', openEditProfile);
     document.getElementById('stats-name-click').addEventListener('click', openEditProfile);
+    document.getElementById('gems-plus-btn').addEventListener('click', openGemsConvertDialog);
+
+    if (isModCapable) {
+      const workshopBtn = document.getElementById('open-workshop-btn');
+      if (workshopBtn) workshopBtn.addEventListener('click', openWorkshop);
+    }
 
     ensureFontLoaded(currentFont).then(family => {
       if (!family) return;
       const nameEl = document.getElementById('stats-name-click');
       if (nameEl) nameEl.style.fontFamily = `'${family}'`;
     });
+  }
+
+  function openGemsConvertDialog(){
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Convert Moneys to Gems</h1>
+      <p class="auth-sub">1,000 Moneys = 1 Gem. You have ${game.clicks.toLocaleString()} Moneys.</p>
+      <input type="number" id="gems-convert-input" class="auth-input" placeholder="How many gems?" min="1" step="1">
+      <p class="auth-sub" id="gems-convert-cost">Cost: 0 Moneys</p>
+      <button class="auth-btn" id="gems-convert-confirm">Convert</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="gems-convert-error" style="display:none;"></p>
+    `;
+    const input = document.getElementById('gems-convert-input');
+    const costText = document.getElementById('gems-convert-cost');
+    const errorEl = document.getElementById('gems-convert-error');
+
+    input.addEventListener('input', () => {
+      const n = Math.max(0, Math.floor(Number(input.value) || 0));
+      costText.textContent = `Cost: ${(n * 1000).toLocaleString()} Moneys`;
+    });
+
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('gems-convert-confirm').addEventListener('click', () => {
+      const n = Math.floor(Number(input.value) || 0);
+      if (n <= 0) {
+        errorEl.textContent = 'Enter a valid number of gems.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      const cost = n * 1000;
+      if (game.clicks < cost) {
+        errorEl.textContent = "You don't have enough Moneys.";
+        errorEl.style.display = 'block';
+        return;
+      }
+      game.clicks -= cost;
+      game.gems = (game.gems || 0) + n;
+      updateCounter();
+      saveGame();
+      syncToSheet();
+      renderStats();
+      closeConfirm();
+    });
+
+    confirmOverlay.classList.add('visible');
+  }
+
+  const workshopOverlay = document.getElementById('workshop-overlay');
+  const workshopClose = document.getElementById('workshop-close');
+  const workshopBody = document.getElementById('workshop-body');
+  const workshopProfileBtn = document.getElementById('workshop-profile-btn');
+  const workshopUploadBtn = document.getElementById('workshop-upload-btn');
+  let workshopItemsCache = [];
+  let workshopView = 'browse';
+
+  workshopClose.addEventListener('click', () => workshopOverlay.classList.remove('visible'));
+  workshopProfileBtn.addEventListener('click', () => {
+    workshopView = 'profile';
+    renderWorkshopBody();
+  });
+  workshopUploadBtn.addEventListener('click', openWorkshopUploadDialog);
+
+  async function openWorkshop(){
+    workshopView = 'browse';
+    workshopOverlay.classList.add('visible');
+    workshopBody.innerHTML = '<div class="empty-state">Loading...</div>';
+    try {
+      const result = await sheetRequest({ action: 'getWorkshop' });
+      workshopItemsCache = result.items || [];
+      renderWorkshopBody();
+    } catch (e) {
+      workshopBody.innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
+    }
+  }
+
+  function renderWorkshopBody(){
+    if (workshopView === 'profile') {
+      renderWorkshopProfile();
+    } else {
+      renderWorkshopBrowse();
+    }
+  }
+
+  function renderWorkshopBrowse(){
+    if (!workshopItemsCache.length) {
+      workshopBody.innerHTML = '<div class="empty-state">No mods uploaded yet.</div>';
+      return;
+    }
+    workshopBody.innerHTML = workshopItemsCache.map(item => `
+      <div class="workshop-item-card">
+        <h3>${item.name}</h3>
+        <p>${item.description || 'No description.'}</p>
+        <span class="workshop-item-meta">${item.category || 'Other'} &middot; by ${item.author}</span>
+      </div>
+    `).join('');
+  }
+
+  function renderWorkshopProfile(){
+    const created = workshopItemsCache.filter(item =>
+      String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase()
+    );
+
+    let html = `
+      <div class="workshop-tabs">
+        <button id="workshop-tab-back">&larr; Back to Browse</button>
+      </div>
+      <h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:4px 0;">Installed Mods</h3>
+      <div class="empty-state">Mod installation isn't available yet.</div>
+      <h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:12px 0 4px;">Created Mods</h3>
+    `;
+
+    if (!created.length) {
+      html += '<div class="empty-state">You haven\'t uploaded any mods yet.</div>';
+    } else {
+      html += created.map(item => `
+        <div class="workshop-item-card">
+          <h3>${item.name}</h3>
+          <p>${item.description || 'No description.'}</p>
+          <span class="workshop-item-meta">${item.category || 'Other'}</span>
+        </div>
+      `).join('');
+    }
+
+    workshopBody.innerHTML = html;
+    const backBtn = document.getElementById('workshop-tab-back');
+    if (backBtn) backBtn.addEventListener('click', () => { workshopView = 'browse'; renderWorkshopBody(); });
+  }
+
+  function openWorkshopUploadDialog(){
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Upload a Mod</h1>
+      <input type="text" id="workshop-upload-name" class="auth-input" placeholder="Mod name" maxlength="60">
+      <input type="text" id="workshop-upload-category" class="auth-input" placeholder="Category (optional)" maxlength="30">
+      <textarea id="workshop-upload-desc" class="auth-input edit-description" placeholder="Description..." maxlength="280" rows="3"></textarea>
+      <button class="auth-btn" id="workshop-upload-submit">Upload</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="workshop-upload-error" style="display:none;"></p>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('workshop-upload-submit').addEventListener('click', submitWorkshopUpload);
+    confirmOverlay.classList.add('visible');
+  }
+
+  async function submitWorkshopUpload(){
+    const name = document.getElementById('workshop-upload-name').value.trim();
+    const category = document.getElementById('workshop-upload-category').value.trim();
+    const description = document.getElementById('workshop-upload-desc').value.trim();
+    const errorEl = document.getElementById('workshop-upload-error');
+    if (!name) {
+      errorEl.textContent = 'Please enter a name for your mod.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    try {
+      const result = await sheetRequest({
+        action: 'uploadWorkshopItem',
+        username: currentUsername,
+        name,
+        description,
+        category
+      });
+      if (result.success) {
+        closeConfirm();
+        if (result.item) workshopItemsCache.unshift(result.item);
+        renderWorkshopBody();
+      } else {
+        errorEl.textContent = 'Something went wrong. Please try again.';
+        errorEl.style.display = 'block';
+      }
+    } catch (e) {
+      errorEl.textContent = "Couldn't reach the database.";
+      errorEl.style.display = 'block';
+    }
   }
 
   function renderLinks(items){
@@ -3932,7 +4299,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzam2vyN-qMoN2VCatjYHGjMndzlNApewHCO8Z9B8faK7U1wjOd5LWG66haOXQXfIQl_g/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxxWJ605WszUKJL4KrFt8ER4u_BTSXs0EMm2p20TffcTyNUDzNuUI-z20JRu1XHqHWt/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -4003,7 +4370,8 @@
       luckyCharmOwned: game.luckyCharmOwned || false,
       headStartOwned: game.headStartOwned || 0,
       prestigeMultOwned: game.prestigeMultOwned || 0,
-      autoBuyerOwned: game.autoBuyerOwned || false
+      autoBuyerOwned: game.autoBuyerOwned || false,
+      gems: game.gems || 0
     };
   }
 
@@ -4072,7 +4440,8 @@
       luckyCharmOwned: !!account.luckyCharmOwned,
       headStartOwned: account.headStartOwned || 0,
       prestigeMultOwned: account.prestigeMultOwned || 0,
-      autoBuyerOwned: !!account.autoBuyerOwned
+      autoBuyerOwned: !!account.autoBuyerOwned,
+      gems: account.gems || 0
     });
 
     // Preserve the real lastSeen so applyOfflineEarnings() (called later in
@@ -5213,6 +5582,7 @@
     const keepHeadStart = game.headStartOwned || 0;
     const keepPrestigeMult = game.prestigeMultOwned || 0;
     const keepAutoBuyer = game.autoBuyerOwned || false;
+    const keepGems = game.gems || 0;
     game = defaultGame();
     game.prestige = keepPrestige;
     game.boosts = keepBoosts;
@@ -5221,6 +5591,7 @@
     game.headStartOwned = keepHeadStart;
     game.prestigeMultOwned = keepPrestigeMult;
     game.autoBuyerOwned = keepAutoBuyer;
+    game.gems = keepGems;
     if (keepHeadStart > 0) {
       game.clickBoostOwned = keepHeadStart * 5;
       game.clickPower = 1 + keepHeadStart * 5;
