@@ -1811,12 +1811,11 @@
     position:fixed;
     inset:0;
     z-index:4700;
-    background:rgba(10,8,16,0.85);
-    backdrop-filter:blur(4px);
+    background:var(--night);
     display:none;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
+    align-items:stretch;
+    justify-content:stretch;
+    padding:0;
   }
   .workshop-overlay.visible{
     display:flex;
@@ -1824,23 +1823,26 @@
   .workshop-box{
     position:relative;
     width:100%;
-    max-width:560px;
-    max-height:85vh;
+    height:100%;
+    max-width:none;
+    max-height:none;
     display:flex;
     flex-direction:column;
     background:var(--card);
-    border:2px solid var(--ink);
-    border-radius:18px;
+    border:none;
+    border-radius:0;
     padding:24px;
-    box-shadow:var(--pop-lg);
+    box-shadow:none;
   }
   .workshop-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:10px;
-    margin-bottom:16px;
+    margin:0 auto 16px;
     padding-right:26px;
+    width:100%;
+    max-width:520px;
   }
   .workshop-header .auth-heading{
     margin:0;
@@ -1866,12 +1868,100 @@
     transform:translate(-1px,-1px);
     box-shadow:4px 4px 0 var(--ink);
   }
+  .workshop-profile-btn{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-family:'Fredoka One', cursive;
+    font-size:11px;
+    color:var(--rind);
+    background:var(--night);
+    border:2px solid var(--ink);
+    border-radius:9px;
+    padding:5px 10px 5px 5px;
+    cursor:pointer;
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .workshop-profile-btn:hover{
+    transform:translate(-1px,-1px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .workshop-profile-btn img{
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    object-fit:cover;
+    display:block;
+  }
+  .workshop-profile-btn span{
+    max-width:80px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .workshop-gems-display{
+    display:flex;
+    align-items:center;
+    gap:5px;
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:#a855f7;
+    background:var(--night);
+    border:2px solid var(--ink);
+    border-radius:9px;
+    padding:6px 10px;
+    cursor:pointer;
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .workshop-gems-display:hover{
+    transform:translate(-1px,-1px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .workshop-gems-display img{
+    width:18px;
+    height:18px;
+    object-fit:contain;
+  }
+  .workshop-profile-banner{
+    height:80px;
+    border-radius:14px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    margin-bottom:44px;
+  }
+  .workshop-profile-avatar{
+    width:76px;
+    height:76px;
+    border-radius:50%;
+    overflow:hidden;
+    border:4px solid var(--card);
+    background:var(--night);
+    transform:translateY(38px);
+  }
+  .workshop-profile-avatar img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+  }
+  .workshop-profile-name{
+    font-family:'Fredoka One', cursive;
+    font-size:17px;
+    text-align:center;
+    margin:0 0 8px;
+  }
   .workshop-body{
     flex:1;
     overflow-y:auto;
     display:flex;
     flex-direction:column;
     gap:10px;
+    width:100%;
+    max-width:520px;
+    margin:0 auto;
   }
   .workshop-item-card{
     width:100%;
@@ -1888,6 +1978,25 @@
     font-size:13px;
     color:var(--rind);
     margin:0;
+  }
+  .workshop-item-top{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .workshop-item-icon{
+    width:28px;
+    height:28px;
+    border-radius:7px;
+    object-fit:cover;
+    flex-shrink:0;
+    border:1px solid var(--line);
+  }
+  .workshop-item-version{
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    color:var(--muted);
+    font-weight:400;
   }
   .workshop-item-card p{
     font-size:11.5px;
@@ -2191,7 +2300,14 @@
     <div class="workshop-header">
       <h1 class="auth-heading">Workshop</h1>
       <div class="workshop-header-actions">
-        <button class="workshop-icon-btn" id="workshop-profile-btn" title="My Mods">Profile</button>
+        <button class="workshop-gems-display" id="workshop-gems-display" title="Convert Moneys to Gems">
+          <img src="gems.png" alt="Gems">
+          <span id="workshop-gems-count">0</span>
+        </button>
+        <button class="workshop-profile-btn" id="workshop-profile-btn" title="My Mods">
+          <img id="workshop-profile-btn-img" src="profile.png" alt="">
+          <span id="workshop-profile-btn-name">Profile</span>
+        </button>
         <button class="workshop-icon-btn" id="workshop-upload-btn" title="Upload a Mod">Upload</button>
       </div>
     </div>
@@ -2419,7 +2535,8 @@
       headStartOwned: 0,
       prestigeMultOwned: 0,
       autoBuyerOwned: false,
-      gems: 0
+      gems: 0,
+      installedMods: []
     };
   }
 
@@ -4130,6 +4247,7 @@
       saveGame();
       syncToSheet();
       renderStats();
+      updateWorkshopGemsDisplay();
       closeConfirm();
     });
 
@@ -4150,11 +4268,15 @@
     renderWorkshopBody();
   });
   workshopUploadBtn.addEventListener('click', openWorkshopUploadDialog);
+  document.getElementById('workshop-gems-display').addEventListener('click', openGemsConvertDialog);
 
   async function openWorkshop(){
     workshopView = 'browse';
     workshopOverlay.classList.add('visible');
     workshopBody.innerHTML = '<div class="empty-state">Loading...</div>';
+    document.getElementById('workshop-profile-btn-img').src = currentProfileIcon || 'profile.png';
+    document.getElementById('workshop-profile-btn-name').textContent = currentUsername || 'Guest';
+    updateWorkshopGemsDisplay();
     try {
       const result = await sheetRequest({ action: 'getWorkshop' });
       workshopItemsCache = result.items || [];
@@ -4162,6 +4284,11 @@
     } catch (e) {
       workshopBody.innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
     }
+  }
+
+  function updateWorkshopGemsDisplay(){
+    const span = document.getElementById('workshop-gems-count');
+    if (span) span.textContent = (game.gems || 0).toLocaleString();
   }
 
   function renderWorkshopBody(){
@@ -4179,7 +4306,10 @@
     }
     workshopBody.innerHTML = workshopItemsCache.map(item => `
       <div class="workshop-item-card">
-        <h3>${item.name}</h3>
+        <div class="workshop-item-top">
+          ${item.iconUrl ? `<img class="workshop-item-icon" src="${item.iconUrl}" alt="">` : ''}
+          <h3>${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h3>
+        </div>
         <p>${item.description || 'No description.'}</p>
         <span class="workshop-item-meta">${item.category || 'Other'} &middot; by ${item.author}</span>
       </div>
@@ -4191,11 +4321,21 @@
       String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase()
     );
 
+    const bannerStyle = currentBannerImage
+      ? `center / cover no-repeat url('${currentBannerImage}')`
+      : (getLastTheme() || 'var(--melon)');
+
     let html = `
       <div class="workshop-tabs">
         <button id="workshop-tab-back">&larr; Back to Browse</button>
       </div>
-      <h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:4px 0;">Installed Mods</h3>
+      <div class="workshop-profile-banner" style="background:${bannerStyle};">
+        <div class="workshop-profile-avatar">
+          <img src="${currentProfileIcon || 'profile.png'}" alt="">
+        </div>
+      </div>
+      <h2 class="workshop-profile-name" style="color:${authColor(currentAuth)}">${currentUsername || 'Guest'}${authBadge(currentAuth)}</h2>
+      <h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:20px 0 4px;">Installed Mods</h3>
       <div class="empty-state">Mod installation isn't available yet.</div>
       <h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:12px 0 4px;">Created Mods</h3>
     `;
@@ -4220,10 +4360,10 @@
   function openWorkshopUploadDialog(){
     confirmBox.innerHTML = `
       <h1 class="auth-heading">Upload a Mod</h1>
-      <input type="text" id="workshop-upload-name" class="auth-input" placeholder="Mod name" maxlength="60">
+      <p class="auth-sub">Paste a link to a public GitHub repo. It needs a manifest.json in the root and a "custom" folder (the folder itself is required, but everything inside it is optional).</p>
+      <input type="text" id="workshop-upload-repo" class="auth-input" placeholder="https://github.com/owner/repo">
       <input type="text" id="workshop-upload-category" class="auth-input" placeholder="Category (optional)" maxlength="30">
-      <textarea id="workshop-upload-desc" class="auth-input edit-description" placeholder="Description..." maxlength="280" rows="3"></textarea>
-      <button class="auth-btn" id="workshop-upload-submit">Upload</button>
+      <button class="auth-btn" id="workshop-upload-submit">Check &amp; Upload</button>
       <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
       <p class="auth-error" id="workshop-upload-error" style="display:none;"></p>
     `;
@@ -4232,35 +4372,125 @@
     confirmOverlay.classList.add('visible');
   }
 
+  function parseGithubUrl(url){
+    const match = String(url || '').match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)/i);
+    if (!match) return null;
+    return { owner: match[1], repo: match[2].replace(/\.git$/i, '') };
+  }
+
+  async function checkGithubRepo(owner, repo){
+    const repoInfoRes = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+    if (!repoInfoRes.ok) throw new Error('notfound');
+    const repoInfo = await repoInfoRes.json();
+    const branch = repoInfo.default_branch || 'main';
+    const rawBase = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}`;
+
+    let manifest = null;
+    try {
+      const manifestRes = await fetch(`${rawBase}/manifest.json`);
+      if (manifestRes.ok) manifest = await manifestRes.json();
+    } catch (e) {}
+    if (!manifest) throw new Error('nomanifest');
+
+    let hasIcon = false;
+    try {
+      const iconRes = await fetch(`${rawBase}/icon.png`, { method: 'HEAD' });
+      hasIcon = iconRes.ok;
+    } catch (e) {}
+
+    let hasCustomFolder = false;
+    try {
+      const customRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/custom?ref=${branch}`);
+      hasCustomFolder = customRes.ok;
+    } catch (e) {}
+    if (!hasCustomFolder) throw new Error('nocustom');
+
+    let customManifest = null;
+    try {
+      const cmRes = await fetch(`${rawBase}/custom/manifest.json`);
+      if (cmRes.ok) customManifest = await cmRes.json();
+    } catch (e) {}
+
+    const customFiles = { music: [], icons: [], cursors: [], bg: [] };
+    if (customManifest) {
+      for (const type of Object.keys(customFiles)) {
+        const list = Array.isArray(customManifest[type]) ? customManifest[type] : [];
+        customFiles[type] = list
+          .filter(entry => entry && entry.file)
+          .map(entry => ({
+            name: entry.name || String(entry.file).split('/').pop().replace(/\.[^.]+$/, ''),
+            file: entry.file,
+            url: `${rawBase}/${entry.file}`
+          }));
+      }
+    }
+
+    return {
+      manifest,
+      iconUrl: hasIcon ? `${rawBase}/icon.png` : '',
+      customFiles,
+      branch
+    };
+  }
+
   async function submitWorkshopUpload(){
-    const name = document.getElementById('workshop-upload-name').value.trim();
+    const repoInput = document.getElementById('workshop-upload-repo').value.trim();
     const category = document.getElementById('workshop-upload-category').value.trim();
-    const description = document.getElementById('workshop-upload-desc').value.trim();
     const errorEl = document.getElementById('workshop-upload-error');
-    if (!name) {
-      errorEl.textContent = 'Please enter a name for your mod.';
+    const submitBtn = document.getElementById('workshop-upload-submit');
+
+    const parsed = parseGithubUrl(repoInput);
+    if (!parsed) {
+      errorEl.textContent = 'Please enter a valid GitHub repo link.';
       errorEl.style.display = 'block';
       return;
     }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Checking repo...';
+    errorEl.style.display = 'none';
+
     try {
+      const checked = await checkGithubRepo(parsed.owner, parsed.repo);
+      const manifest = checked.manifest || {};
+      const name = String(manifest.name || parsed.repo).trim();
+      const description = String(manifest.description || '').trim();
+      const version = String(manifest.version || '').trim();
+
       const result = await sheetRequest({
         action: 'uploadWorkshopItem',
         username: currentUsername,
         name,
         description,
-        category
+        category: category || manifest.category || 'Other',
+        repoUrl: `https://github.com/${parsed.owner}/${parsed.repo}`,
+        iconUrl: checked.iconUrl,
+        version,
+        customFiles: checked.customFiles
       });
+
       if (result.success) {
         closeConfirm();
         if (result.item) workshopItemsCache.unshift(result.item);
         renderWorkshopBody();
       } else {
-        errorEl.textContent = 'Something went wrong. Please try again.';
+        errorEl.textContent = 'Something went wrong saving your mod. Please try again.';
         errorEl.style.display = 'block';
       }
     } catch (e) {
-      errorEl.textContent = "Couldn't reach the database.";
+      if (e.message === 'notfound') {
+        errorEl.textContent = "Couldn't find that repo. Make sure it's public and the link is correct.";
+      } else if (e.message === 'nomanifest') {
+        errorEl.textContent = 'No manifest.json found in the root of that repo.';
+      } else if (e.message === 'nocustom') {
+        errorEl.textContent = 'No "custom" folder found in the root of that repo. It\'s required, even if empty.';
+      } else {
+        errorEl.textContent = "Couldn't reach GitHub. Try again in a moment.";
+      }
       errorEl.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Check & Upload';
     }
   }
 
@@ -4299,7 +4529,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxxWJ605WszUKJL4KrFt8ER4u_BTSXs0EMm2p20TffcTyNUDzNuUI-z20JRu1XHqHWt/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbz09uj447YLUZ53iqv4bT79Nlg0ojjREAX2hoJrj1s_XlWCrnIJXiI4jiZyE1ISexY51w/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -4371,7 +4601,8 @@
       headStartOwned: game.headStartOwned || 0,
       prestigeMultOwned: game.prestigeMultOwned || 0,
       autoBuyerOwned: game.autoBuyerOwned || false,
-      gems: game.gems || 0
+      gems: game.gems || 0,
+      installedMods: game.installedMods || []
     };
   }
 
@@ -4441,7 +4672,8 @@
       headStartOwned: account.headStartOwned || 0,
       prestigeMultOwned: account.prestigeMultOwned || 0,
       autoBuyerOwned: !!account.autoBuyerOwned,
-      gems: account.gems || 0
+      gems: account.gems || 0,
+      installedMods: Array.isArray(account.installedMods) ? account.installedMods : []
     });
 
     // Preserve the real lastSeen so applyOfflineEarnings() (called later in
@@ -4565,10 +4797,18 @@
     const max = Math.max(1, Math.round(realMax / divisor));
 
     const phases = [
-      { text: 'Loading API...', duration: 1200, target: 25 },
-      { text: 'Previewing java...', duration: 1200, target: 50 },
-      { text: 'Loading assets...', duration: 1200, target: 75 }
+      { text: 'Loading API...', duration: 1200, target: 25 }
     ];
+
+    const installedMods = game.installedMods || [];
+    installedMods.forEach((mod, i) => {
+      const modName = (mod && mod.name) ? mod.name : String(mod);
+      const target = 25 + Math.round(((i + 1) / installedMods.length) * 20);
+      phases.push({ text: `Loading mod: ${modName}...`, duration: 600, target: target });
+    });
+
+    phases.push({ text: 'Previewing java...', duration: 1200, target: 50 });
+    phases.push({ text: 'Loading assets...', duration: 1200, target: 75 });
 
     let phaseIndex = 0;
 
