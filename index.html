@@ -3644,6 +3644,22 @@
     (game.customCursors || []).forEach(entry => {
       if (!CURSORS.some(c => c.file === entry.file)) addCursorOption(entry);
     });
+
+    (game.installedMods || []).forEach(mod => {
+      if (!mod || !mod.customFiles) return;
+      (mod.customFiles.bg || []).forEach(f => {
+        if (f && f.url && !BACKGROUNDS.some(b => b.file === f.url)) addBackgroundOption({ label: f.name, file: f.url });
+      });
+      (mod.customFiles.music || []).forEach(f => {
+        if (f && f.url && !SONGS.some(s => s.file === f.url)) addSongOption({ label: f.name, file: f.url });
+      });
+      (mod.customFiles.cursors || []).forEach(f => {
+        if (f && f.url && !CURSORS.some(c => c.file === f.url)) addCursorOption({ label: f.name, file: f.url });
+      });
+      (mod.customFiles.icons || []).forEach(f => {
+        if (f && f.url && !ICONS.some(i => i.file === f.url)) addIconOption({ label: f.name, file: f.url });
+      });
+    });
   }
 
   function applyBackground(file){
@@ -3699,6 +3715,11 @@
   }
 
   ICONS.forEach(renderIconOption);
+
+  function addIconOption(entry){
+    ICONS.push(entry);
+    renderIconOption(entry);
+  }
 
   function applyIcon(file){
     const avatarImg = document.querySelector('.avatar img');
@@ -4478,6 +4499,7 @@
       workshopBody.innerHTML = '<div class="empty-state">Mod not found.</div>';
       return;
     }
+    if (!item.comments) item.comments = [];
 
     const isSiteMod = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
     const isModAuthor = String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase();
@@ -4506,7 +4528,7 @@
       <h3 class="workshop-comments-heading">Comments</h3>
       <textarea id="workshop-comment-input" class="auth-input edit-description" placeholder="Add a comment..." maxlength="300" rows="2"></textarea>
       <button class="auth-btn" id="workshop-comment-submit">Post</button>
-      <div id="workshop-comments-list"><div class="empty-state">Loading comments...</div></div>
+      <div id="workshop-comments-list"></div>
     `;
 
     document.getElementById('workshop-tab-back').addEventListener('click', () => {
@@ -4516,9 +4538,9 @@
     document.getElementById('workshop-upvote-btn').addEventListener('click', () => voteOnMod(item, 'up'));
     document.getElementById('workshop-downvote-btn').addEventListener('click', () => voteOnMod(item, 'down'));
     document.getElementById('workshop-real-download-btn').addEventListener('click', () => downloadMod(item));
-    document.getElementById('workshop-comment-submit').addEventListener('click', () => submitWorkshopComment(item.id));
+    document.getElementById('workshop-comment-submit').addEventListener('click', () => submitWorkshopComment(item));
 
-    loadWorkshopComments(item.id, canModerateComments);
+    renderWorkshopComments(item, canModerateComments);
   }
 
   async function voteOnMod(item, vote){
@@ -4548,9 +4570,10 @@
         }
         if (!game.installedMods) game.installedMods = [];
         if (!game.installedMods.some(m => m && m.id === item.id)) {
-          game.installedMods.push({ id: item.id, name: item.name });
+          game.installedMods.push({ id: item.id, name: item.name, customFiles: item.customFiles || {} });
           saveGame();
           syncToSheet();
+          loadCustomAssets();
         }
         if (item.repoUrl) window.open(item.repoUrl, '_blank');
         renderWorkshopBody();
@@ -4565,58 +4588,79 @@
     }
   }
 
-  async function loadWorkshopComments(modId, canModerate){
+  function renderWorkshopComments(item, canModerate){
     const listEl = document.getElementById('workshop-comments-list');
-    try {
-      const result = await sheetRequest({ action: 'getWorkshopComments', modId: modId });
-      workshopCommentsCache = result.comments || [];
-      if (!listEl) return;
-      if (!workshopCommentsCache.length) {
-        listEl.innerHTML = '<div class="empty-state">No comments yet.</div>';
-        return;
-      }
-      listEl.innerHTML = workshopCommentsCache.map(c => `
-        <div class="workshop-comment" data-comment-id="${c.id}">
-          <div class="workshop-comment-head">
-            <span class="workshop-comment-author">${c.username}</span>
-            ${canModerate ? `<button class="workshop-comment-delete" data-comment-id="${c.id}">Remove</button>` : ''}
-          </div>
-          <p>${c.text}</p>
+    if (!listEl) return;
+    if (!item.comments.length) {
+      listEl.innerHTML = '<div class="empty-state">No comments yet.</div>';
+      return;
+    }
+    listEl.innerHTML = item.comments.map(c => `
+      <div class="workshop-comment" data-comment-id="${c.id}">
+        <div class="workshop-comment-head">
+          <span class="workshop-comment-author">${c.user}</span>
+          ${canModerate ? `<button class="workshop-comment-delete" data-comment-id="${c.id}">Remove</button>` : ''}
         </div>
-      `).join('');
-      if (canModerate) {
-        listEl.querySelectorAll('.workshop-comment-delete').forEach(btn => {
-          btn.addEventListener('click', () => deleteWorkshopComment(btn.dataset.commentId, modId, canModerate));
-        });
-      }
-    } catch (e) {
-      if (listEl) listEl.innerHTML = '<div class="empty-state">Couldn\'t load comments.</div>';
+        <p>${c.text}</p>
+        <div class="workshop-comment-votes">
+          <button class="vote-btn small${c.myVote === 'up' ? ' active' : ''}" data-comment-id="${c.id}" data-vote="up">&#11014; ${c.upvotes || 0}</button>
+          <button class="vote-btn small${c.myVote === 'down' ? ' active' : ''}" data-comment-id="${c.id}" data-vote="down">&#11015; ${c.downvotes || 0}</button>
+        </div>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.vote-btn.small').forEach(btn => {
+      btn.addEventListener('click', () => voteOnComment(item, btn.dataset.commentId, btn.dataset.vote, canModerate));
+    });
+    if (canModerate) {
+      listEl.querySelectorAll('.workshop-comment-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteWorkshopComment(item, btn.dataset.commentId, canModerate));
+      });
     }
   }
 
-  async function submitWorkshopComment(modId){
+  async function voteOnComment(item, commentId, vote, canModerate){
+    const comment = item.comments.find(c => c.id === commentId);
+    if (!comment) return;
+    const newVote = comment.myVote === vote ? 'none' : vote;
+    try {
+      const result = await sheetRequest({ action: 'voteWorkshopComment', modId: item.id, commentId: commentId, username: currentUsername, vote: newVote });
+      if (result.success) {
+        comment.upvotes = result.upvotes;
+        comment.downvotes = result.downvotes;
+        comment.myVote = result.myVote;
+        renderWorkshopComments(item, canModerate);
+      }
+    } catch (e) {}
+  }
+
+  async function submitWorkshopComment(item){
     const input = document.getElementById('workshop-comment-input');
     const text = input.value.trim();
     if (!text) return;
     const submitBtn = document.getElementById('workshop-comment-submit');
     submitBtn.disabled = true;
     try {
-      const result = await sheetRequest({ action: 'postWorkshopComment', modId: modId, username: currentUsername, text: text });
+      const result = await sheetRequest({ action: 'postWorkshopComment', modId: item.id, username: currentUsername, text: text });
       if (result.success) {
         input.value = '';
+        if (!item.comments) item.comments = [];
+        item.comments.unshift(result.comment);
         const isSiteMod = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
-        const item = workshopItemsCache.find(i => i.id === modId);
-        const isModAuthor = item && String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase();
-        loadWorkshopComments(modId, isSiteMod || isModAuthor);
+        const isModAuthor = String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase();
+        renderWorkshopComments(item, isSiteMod || isModAuthor);
       }
     } catch (e) {}
     submitBtn.disabled = false;
   }
 
-  async function deleteWorkshopComment(commentId, modId, canModerate){
+  async function deleteWorkshopComment(item, commentId, canModerate){
     try {
-      const result = await sheetRequest({ action: 'deleteWorkshopComment', commentId: commentId, modId: modId, username: currentUsername });
-      if (result.success) loadWorkshopComments(modId, canModerate);
+      const result = await sheetRequest({ action: 'deleteWorkshopComment', commentId: commentId, modId: item.id, username: currentUsername });
+      if (result.success) {
+        item.comments = item.comments.filter(c => c.id !== commentId);
+        renderWorkshopComments(item, canModerate);
+      }
     } catch (e) {}
   }
 
@@ -4904,7 +4948,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyOf0MDhnE8u-67TFGftowqXuUz_VGPpcP-DRPCXPsorO1oKrvhFn5i3gSYkMWhmiROuQ/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzudmaQK3l1pImZ0-1JzXk5wgfi6gxmlXftl_p7cag-5ymlMguR5nBJb7zHZPUTjHdCMg/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
