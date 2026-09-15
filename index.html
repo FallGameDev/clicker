@@ -2028,6 +2028,136 @@
     background:var(--brand-gradient);
     color:var(--night);
   }
+  .workshop-item-stats{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:10.5px;
+    color:var(--muted);
+    margin-top:2px;
+  }
+  .workshop-item-price{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    color:#a855f7;
+    font-weight:600;
+  }
+  .workshop-item-price img{
+    width:12px;
+    height:12px;
+    object-fit:contain;
+  }
+  .workshop-download-btn{
+    align-self:flex-start;
+    margin-top:6px;
+  }
+  .workshop-detail{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:14px;
+  }
+  .workshop-detail-top{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .workshop-detail-top h2{
+    font-family:'Fredoka One', cursive;
+    font-size:16px;
+    color:var(--rind);
+    margin:0 0 4px;
+  }
+  .workshop-detail-icon{
+    width:48px;
+    height:48px;
+    border-radius:10px;
+    object-fit:cover;
+    border:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .workshop-detail-desc{
+    font-size:12.5px;
+    color:var(--muted);
+    margin:0;
+  }
+  .workshop-detail-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .vote-btn{
+    font-family:'Fredoka One', cursive;
+    font-size:12px;
+    color:var(--rind);
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:9px;
+    padding:6px 10px;
+    cursor:pointer;
+  }
+  .vote-btn.active{
+    background:var(--brand-gradient);
+    color:var(--night);
+  }
+  .workshop-download-count{
+    font-size:11px;
+    color:var(--muted);
+  }
+  .workshop-comments-heading{
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:var(--rind);
+    margin:16px 0 8px;
+  }
+  #workshop-comments-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:10px;
+  }
+  .workshop-comment{
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+  }
+  .workshop-comment-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:4px;
+  }
+  .workshop-comment-author{
+    font-family:'Fredoka One', cursive;
+    font-size:11.5px;
+    color:var(--rind);
+  }
+  .workshop-comment p{
+    font-size:12px;
+    color:var(--muted);
+    margin:0;
+  }
+  .workshop-comment-delete{
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    color:#ff6b6b;
+    background:none;
+    border:none;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  .workshop-upload-preview{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:10px;
+  }
 
   /* ---------- TUTORIAL ---------- */
   .tutorial-overlay{
@@ -4261,6 +4391,8 @@
   const workshopUploadBtn = document.getElementById('workshop-upload-btn');
   let workshopItemsCache = [];
   let workshopView = 'browse';
+  let workshopDetailModId = null;
+  let workshopCommentsCache = [];
 
   workshopClose.addEventListener('click', () => workshopOverlay.classList.remove('visible'));
   workshopProfileBtn.addEventListener('click', () => {
@@ -4278,7 +4410,7 @@
     document.getElementById('workshop-profile-btn-name').textContent = currentUsername || 'Guest';
     updateWorkshopGemsDisplay();
     try {
-      const result = await sheetRequest({ action: 'getWorkshop' });
+      const result = await sheetRequest({ action: 'getWorkshop', username: currentUsername });
       workshopItemsCache = result.items || [];
       renderWorkshopBody();
     } catch (e) {
@@ -4294,9 +4426,16 @@
   function renderWorkshopBody(){
     if (workshopView === 'profile') {
       renderWorkshopProfile();
+    } else if (workshopView === 'detail') {
+      renderWorkshopDetail();
     } else {
       renderWorkshopBrowse();
     }
+  }
+
+  function shortRepo(repoUrl){
+    const match = String(repoUrl || '').match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)/i);
+    return match ? `${match[1]}/${match[2]}` : (repoUrl || '');
   }
 
   function renderWorkshopBrowse(){
@@ -4305,15 +4444,180 @@
       return;
     }
     workshopBody.innerHTML = workshopItemsCache.map(item => `
-      <div class="workshop-item-card">
+      <div class="workshop-item-card" data-mod-id="${item.id}">
         <div class="workshop-item-top">
           ${item.iconUrl ? `<img class="workshop-item-icon" src="${item.iconUrl}" alt="">` : ''}
           <h3>${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h3>
         </div>
         <p>${item.description || 'No description.'}</p>
-        <span class="workshop-item-meta">${item.category || 'Other'} &middot; by ${item.author}</span>
+        <span class="workshop-item-meta">${item.category || 'Other'} &middot; ${shortRepo(item.repoUrl)} &middot; by ${item.author}</span>
+        <div class="workshop-item-stats">
+          <span>\u2b06 ${item.upvotes || 0}</span>
+          <span>\u2b07 ${item.downvotes || 0}</span>
+          <span>\u2b07\ufe0f ${item.downloads || 0} downloads</span>
+          ${item.price ? `<span class="workshop-item-price"><img src="gems.png" alt="">${item.price}</span>` : '<span>Free</span>'}
+        </div>
+        <button class="buy-btn workshop-download-btn" data-mod-id="${item.id}">Download</button>
       </div>
     `).join('');
+
+    workshopBody.querySelectorAll('.workshop-download-btn').forEach(btn => {
+      btn.addEventListener('click', () => openWorkshopModPage(btn.dataset.modId));
+    });
+  }
+
+  function openWorkshopModPage(modId){
+    workshopView = 'detail';
+    workshopDetailModId = modId;
+    renderWorkshopBody();
+  }
+
+  function renderWorkshopDetail(){
+    const item = workshopItemsCache.find(i => i.id === workshopDetailModId);
+    if (!item) {
+      workshopBody.innerHTML = '<div class="empty-state">Mod not found.</div>';
+      return;
+    }
+
+    const isSiteMod = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
+    const isModAuthor = String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase();
+    const canModerateComments = isSiteMod || isModAuthor;
+
+    workshopBody.innerHTML = `
+      <div class="workshop-tabs">
+        <button id="workshop-tab-back">&larr; Back to Browse</button>
+      </div>
+      <div class="workshop-detail">
+        <div class="workshop-detail-top">
+          ${item.iconUrl ? `<img class="workshop-detail-icon" src="${item.iconUrl}" alt="">` : ''}
+          <div>
+            <h2>${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h2>
+            <span class="workshop-item-meta">${shortRepo(item.repoUrl)} &middot; by ${item.author}</span>
+          </div>
+        </div>
+        <p class="workshop-detail-desc">${item.description || 'No description.'}</p>
+        <div class="workshop-detail-actions">
+          <button class="vote-btn${item.myVote === 'up' ? ' active' : ''}" id="workshop-upvote-btn">&#11014; <span id="workshop-upvote-count">${item.upvotes || 0}</span></button>
+          <button class="vote-btn${item.myVote === 'down' ? ' active' : ''}" id="workshop-downvote-btn">&#11015; <span id="workshop-downvote-count">${item.downvotes || 0}</span></button>
+          <span class="workshop-download-count"><span id="workshop-download-count">${item.downloads || 0}</span> downloads</span>
+        </div>
+        <button class="auth-btn" id="workshop-real-download-btn">${item.price ? `Download (${item.price} Gems)` : 'Download'}</button>
+      </div>
+      <h3 class="workshop-comments-heading">Comments</h3>
+      <textarea id="workshop-comment-input" class="auth-input edit-description" placeholder="Add a comment..." maxlength="300" rows="2"></textarea>
+      <button class="auth-btn" id="workshop-comment-submit">Post</button>
+      <div id="workshop-comments-list"><div class="empty-state">Loading comments...</div></div>
+    `;
+
+    document.getElementById('workshop-tab-back').addEventListener('click', () => {
+      workshopView = 'browse';
+      renderWorkshopBody();
+    });
+    document.getElementById('workshop-upvote-btn').addEventListener('click', () => voteOnMod(item, 'up'));
+    document.getElementById('workshop-downvote-btn').addEventListener('click', () => voteOnMod(item, 'down'));
+    document.getElementById('workshop-real-download-btn').addEventListener('click', () => downloadMod(item));
+    document.getElementById('workshop-comment-submit').addEventListener('click', () => submitWorkshopComment(item.id));
+
+    loadWorkshopComments(item.id, canModerateComments);
+  }
+
+  async function voteOnMod(item, vote){
+    const newVote = item.myVote === vote ? 'none' : vote;
+    try {
+      const result = await sheetRequest({ action: 'voteWorkshopItem', modId: item.id, username: currentUsername, vote: newVote });
+      if (result.success) {
+        item.upvotes = result.upvotes;
+        item.downvotes = result.downvotes;
+        item.myVote = result.myVote;
+        renderWorkshopBody();
+      }
+    } catch (e) {}
+  }
+
+  async function downloadMod(item){
+    const btn = document.getElementById('workshop-real-download-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Downloading...'; }
+    try {
+      const result = await sheetRequest({ action: 'downloadWorkshopItem', modId: item.id, username: currentUsername });
+      if (result.success) {
+        item.downloads = result.downloads;
+        if (result.gemsRemaining !== undefined) {
+          game.gems = result.gemsRemaining;
+          saveGame();
+          updateWorkshopGemsDisplay();
+        }
+        if (!game.installedMods) game.installedMods = [];
+        if (!game.installedMods.some(m => m && m.id === item.id)) {
+          game.installedMods.push({ id: item.id, name: item.name });
+          saveGame();
+          syncToSheet();
+        }
+        if (item.repoUrl) window.open(item.repoUrl, '_blank');
+        renderWorkshopBody();
+      } else if (result.error === 'nogems') {
+        if (btn) { btn.disabled = false; btn.textContent = "Not enough Gems"; }
+        setTimeout(() => { if (btn) btn.textContent = item.price ? `Download (${item.price} Gems)` : 'Download'; }, 2000);
+      } else {
+        if (btn) { btn.disabled = false; btn.textContent = item.price ? `Download (${item.price} Gems)` : 'Download'; }
+      }
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = item.price ? `Download (${item.price} Gems)` : 'Download'; }
+    }
+  }
+
+  async function loadWorkshopComments(modId, canModerate){
+    const listEl = document.getElementById('workshop-comments-list');
+    try {
+      const result = await sheetRequest({ action: 'getWorkshopComments', modId: modId });
+      workshopCommentsCache = result.comments || [];
+      if (!listEl) return;
+      if (!workshopCommentsCache.length) {
+        listEl.innerHTML = '<div class="empty-state">No comments yet.</div>';
+        return;
+      }
+      listEl.innerHTML = workshopCommentsCache.map(c => `
+        <div class="workshop-comment" data-comment-id="${c.id}">
+          <div class="workshop-comment-head">
+            <span class="workshop-comment-author">${c.username}</span>
+            ${canModerate ? `<button class="workshop-comment-delete" data-comment-id="${c.id}">Remove</button>` : ''}
+          </div>
+          <p>${c.text}</p>
+        </div>
+      `).join('');
+      if (canModerate) {
+        listEl.querySelectorAll('.workshop-comment-delete').forEach(btn => {
+          btn.addEventListener('click', () => deleteWorkshopComment(btn.dataset.commentId, modId, canModerate));
+        });
+      }
+    } catch (e) {
+      if (listEl) listEl.innerHTML = '<div class="empty-state">Couldn\'t load comments.</div>';
+    }
+  }
+
+  async function submitWorkshopComment(modId){
+    const input = document.getElementById('workshop-comment-input');
+    const text = input.value.trim();
+    if (!text) return;
+    const submitBtn = document.getElementById('workshop-comment-submit');
+    submitBtn.disabled = true;
+    try {
+      const result = await sheetRequest({ action: 'postWorkshopComment', modId: modId, username: currentUsername, text: text });
+      if (result.success) {
+        input.value = '';
+        const isSiteMod = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
+        const item = workshopItemsCache.find(i => i.id === modId);
+        const isModAuthor = item && String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase();
+        loadWorkshopComments(modId, isSiteMod || isModAuthor);
+      }
+    } catch (e) {}
+    submitBtn.disabled = false;
+  }
+
+  async function deleteWorkshopComment(commentId, modId, canModerate){
+    try {
+      const result = await sheetRequest({ action: 'deleteWorkshopComment', commentId: commentId, modId: modId, username: currentUsername });
+      if (result.success) loadWorkshopComments(modId, canModerate);
+    } catch (e) {}
   }
 
   function renderWorkshopProfile(){
@@ -4360,17 +4664,19 @@
   function openWorkshopUploadDialog(){
     confirmBox.innerHTML = `
       <h1 class="auth-heading">Upload a Mod</h1>
-      <p class="auth-sub">Paste a link to a public GitHub repo. It needs a manifest.json in the root and a "custom" folder (the folder itself is required, but everything inside it is optional).</p>
+      <p class="auth-sub">Paste a link to a public GitHub repo. It needs a manifest.json in the root and a "custom" folder (the folder itself is required, but everything inside it is optional). Uploading costs ${WORKSHOP_UPLOAD_COST} Gems. You have ${(game.gems || 0).toLocaleString()} Gems.</p>
       <input type="text" id="workshop-upload-repo" class="auth-input" placeholder="https://github.com/owner/repo">
-      <input type="text" id="workshop-upload-category" class="auth-input" placeholder="Category (optional)" maxlength="30">
-      <button class="auth-btn" id="workshop-upload-submit">Check &amp; Upload</button>
+      <button class="auth-btn" id="workshop-upload-check">Check Repo</button>
       <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
       <p class="auth-error" id="workshop-upload-error" style="display:none;"></p>
     `;
     document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
-    document.getElementById('workshop-upload-submit').addEventListener('click', submitWorkshopUpload);
+    document.getElementById('workshop-upload-check').addEventListener('click', checkWorkshopUploadRepo);
     confirmOverlay.classList.add('visible');
   }
+
+  const WORKSHOP_UPLOAD_COST = 100;
+  let workshopUploadDraft = null;
 
   function parseGithubUrl(url){
     const match = String(url || '').match(/github\.com\/([^\/\s]+)\/([^\/\s#?]+)/i);
@@ -4433,11 +4739,10 @@
     };
   }
 
-  async function submitWorkshopUpload(){
+  async function checkWorkshopUploadRepo(){
     const repoInput = document.getElementById('workshop-upload-repo').value.trim();
-    const category = document.getElementById('workshop-upload-category').value.trim();
     const errorEl = document.getElementById('workshop-upload-error');
-    const submitBtn = document.getElementById('workshop-upload-submit');
+    const checkBtn = document.getElementById('workshop-upload-check');
 
     const parsed = parseGithubUrl(repoInput);
     if (!parsed) {
@@ -4446,37 +4751,24 @@
       return;
     }
 
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Checking repo...';
+    checkBtn.disabled = true;
+    checkBtn.textContent = 'Checking repo...';
     errorEl.style.display = 'none';
 
     try {
       const checked = await checkGithubRepo(parsed.owner, parsed.repo);
       const manifest = checked.manifest || {};
-      const name = String(manifest.name || parsed.repo).trim();
-      const description = String(manifest.description || '').trim();
-      const version = String(manifest.version || '').trim();
-
-      const result = await sheetRequest({
-        action: 'uploadWorkshopItem',
-        username: currentUsername,
-        name,
-        description,
-        category: category || manifest.category || 'Other',
+      workshopUploadDraft = {
+        name: String(manifest.name || parsed.repo).trim(),
+        description: String(manifest.description || '').trim(),
+        version: String(manifest.version || '').trim(),
+        category: String(manifest.category || 'Other').trim(),
         repoUrl: `https://github.com/${parsed.owner}/${parsed.repo}`,
+        repoShort: `${parsed.owner}/${parsed.repo}`,
         iconUrl: checked.iconUrl,
-        version,
         customFiles: checked.customFiles
-      });
-
-      if (result.success) {
-        closeConfirm();
-        if (result.item) workshopItemsCache.unshift(result.item);
-        renderWorkshopBody();
-      } else {
-        errorEl.textContent = 'Something went wrong saving your mod. Please try again.';
-        errorEl.style.display = 'block';
-      }
+      };
+      renderWorkshopUploadPreview();
     } catch (e) {
       if (e.message === 'notfound') {
         errorEl.textContent = "Couldn't find that repo. Make sure it's public and the link is correct.";
@@ -4488,9 +4780,92 @@
         errorEl.textContent = "Couldn't reach GitHub. Try again in a moment.";
       }
       errorEl.style.display = 'block';
-    } finally {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Check & Upload';
+      checkBtn.disabled = false;
+      checkBtn.textContent = 'Check Repo';
+    }
+  }
+
+  function renderWorkshopUploadPreview(){
+    const d = workshopUploadDraft;
+    const customCount = Object.values(d.customFiles).reduce((sum, arr) => sum + arr.length, 0);
+
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Confirm Upload</h1>
+      <div class="workshop-upload-preview">
+        ${d.iconUrl ? `<img class="workshop-detail-icon" src="${d.iconUrl}" alt="">` : ''}
+        <div>
+          <h3 style="font-family:'Fredoka One', cursive; font-size:14px; color:var(--rind); margin:0 0 2px;">${d.name}${d.version ? ` <span class="workshop-item-version">v${d.version}</span>` : ''}</h3>
+          <span class="workshop-item-meta">${d.repoShort}</span>
+        </div>
+      </div>
+      <p class="auth-sub">${d.description || 'No description found in manifest.json.'}</p>
+      <p class="auth-sub">Category: ${d.category} &middot; Custom files found: ${customCount}</p>
+      <input type="number" id="workshop-upload-price" class="auth-input" placeholder="Price in Gems (0 = free)" min="0" step="1" value="0">
+      <p class="auth-sub">Uploading costs ${WORKSHOP_UPLOAD_COST} Gems. You have ${(game.gems || 0).toLocaleString()} Gems.</p>
+      <button class="auth-btn" id="workshop-upload-confirm">Upload for ${WORKSHOP_UPLOAD_COST} Gems</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="workshop-upload-error" style="display:none;"></p>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('workshop-upload-confirm').addEventListener('click', submitWorkshopUpload);
+    confirmOverlay.classList.add('visible');
+  }
+
+  async function submitWorkshopUpload(){
+    const d = workshopUploadDraft;
+    const errorEl = document.getElementById('workshop-upload-error');
+    const confirmBtn = document.getElementById('workshop-upload-confirm');
+    const priceInput = document.getElementById('workshop-upload-price');
+    const price = Math.max(0, Math.floor(Number(priceInput.value) || 0));
+
+    if ((game.gems || 0) < WORKSHOP_UPLOAD_COST) {
+      errorEl.textContent = `You need ${WORKSHOP_UPLOAD_COST} Gems to upload a mod.`;
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Uploading...';
+
+    try {
+      const result = await sheetRequest({
+        action: 'uploadWorkshopItem',
+        username: currentUsername,
+        name: d.name,
+        description: d.description,
+        category: d.category,
+        repoUrl: d.repoUrl,
+        iconUrl: d.iconUrl,
+        version: d.version,
+        customFiles: d.customFiles,
+        price: price
+      });
+
+      if (result.success) {
+        if (result.gemsRemaining !== undefined) {
+          game.gems = result.gemsRemaining;
+          saveGame();
+          updateWorkshopGemsDisplay();
+        }
+        closeConfirm();
+        if (result.item) workshopItemsCache.unshift(result.item);
+        renderWorkshopBody();
+      } else if (result.error === 'nogems') {
+        errorEl.textContent = `You need ${WORKSHOP_UPLOAD_COST} Gems to upload a mod.`;
+        errorEl.style.display = 'block';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = `Upload for ${WORKSHOP_UPLOAD_COST} Gems`;
+      } else {
+        errorEl.textContent = 'Something went wrong saving your mod. Please try again.';
+        errorEl.style.display = 'block';
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = `Upload for ${WORKSHOP_UPLOAD_COST} Gems`;
+      }
+    } catch (e) {
+      errorEl.textContent = "Couldn't reach the database.";
+      errorEl.style.display = 'block';
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = `Upload for ${WORKSHOP_UPLOAD_COST} Gems`;
     }
   }
 
@@ -4529,7 +4904,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbz09uj447YLUZ53iqv4bT79Nlg0ojjREAX2hoJrj1s_XlWCrnIJXiI4jiZyE1ISexY51w/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbyOf0MDhnE8u-67TFGftowqXuUz_VGPpcP-DRPCXPsorO1oKrvhFn5i3gSYkMWhmiROuQ/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
