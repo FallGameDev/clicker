@@ -3460,6 +3460,7 @@
   function resizeCursorImage(src, size){
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.crossOrigin = 'anonymous';
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = size;
@@ -4482,8 +4483,15 @@
       </div>
     `).join('');
 
+    workshopBody.querySelectorAll('.workshop-item-card').forEach(card => {
+      card.addEventListener('click', () => openWorkshopModPage(card.dataset.modId));
+    });
     workshopBody.querySelectorAll('.workshop-download-btn').forEach(btn => {
-      btn.addEventListener('click', () => openWorkshopModPage(btn.dataset.modId));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const item = workshopItemsCache.find(i => i.id === btn.dataset.modId);
+        if (item) downloadMod(item, btn);
+      });
     });
   }
 
@@ -4524,6 +4532,7 @@
           <span class="workshop-download-count"><span id="workshop-download-count">${item.downloads || 0}</span> downloads</span>
         </div>
         <button class="auth-btn" id="workshop-real-download-btn">${item.price ? `Download (${item.price} Gems)` : 'Download'}</button>
+        <button class="auth-btn secondary" id="workshop-manual-download-btn">Manual Download (GitHub)</button>
       </div>
       <h3 class="workshop-comments-heading">Comments</h3>
       <textarea id="workshop-comment-input" class="auth-input edit-description" placeholder="Add a comment..." maxlength="300" rows="2"></textarea>
@@ -4537,7 +4546,10 @@
     });
     document.getElementById('workshop-upvote-btn').addEventListener('click', () => voteOnMod(item, 'up'));
     document.getElementById('workshop-downvote-btn').addEventListener('click', () => voteOnMod(item, 'down'));
-    document.getElementById('workshop-real-download-btn').addEventListener('click', () => downloadMod(item));
+    document.getElementById('workshop-real-download-btn').addEventListener('click', (e) => downloadMod(item, e.target));
+    document.getElementById('workshop-manual-download-btn').addEventListener('click', () => {
+      if (item.repoUrl) window.open(item.repoUrl, '_blank');
+    });
     document.getElementById('workshop-comment-submit').addEventListener('click', () => submitWorkshopComment(item));
 
     renderWorkshopComments(item, canModerateComments);
@@ -4556,8 +4568,8 @@
     } catch (e) {}
   }
 
-  async function downloadMod(item){
-    const btn = document.getElementById('workshop-real-download-btn');
+  async function downloadMod(item, btn){
+    const defaultLabel = item.price ? `Download (${item.price} Gems)` : 'Download';
     if (btn) { btn.disabled = true; btn.textContent = 'Downloading...'; }
     try {
       const result = await sheetRequest({ action: 'downloadWorkshopItem', modId: item.id, username: currentUsername });
@@ -4571,20 +4583,25 @@
         if (!game.installedMods) game.installedMods = [];
         if (!game.installedMods.some(m => m && m.id === item.id)) {
           game.installedMods.push({ id: item.id, name: item.name, customFiles: item.customFiles || {} });
+          loadCustomAssets();
+          const cf = item.customFiles || {};
+          if ((cf.music || []).length && !game.musicPlayerOwned) { game.musicPlayerOwned = true; showMusicPlayer(); }
+          if ((cf.cursors || []).length && !game.cursorsOwned) { game.cursorsOwned = true; showCursorPicker(); }
+          if ((cf.bg || []).length && !game.bgOwned) { game.bgOwned = true; showBgPicker(); }
+          if ((cf.icons || []).length && !game.iconModifierOwned) { game.iconModifierOwned = true; showIconPicker(); }
           saveGame();
           syncToSheet();
-          loadCustomAssets();
         }
         if (item.repoUrl) window.open(item.repoUrl, '_blank');
         renderWorkshopBody();
       } else if (result.error === 'nogems') {
         if (btn) { btn.disabled = false; btn.textContent = "Not enough Gems"; }
-        setTimeout(() => { if (btn) btn.textContent = item.price ? `Download (${item.price} Gems)` : 'Download'; }, 2000);
+        setTimeout(() => { if (btn) btn.textContent = defaultLabel; }, 2000);
       } else {
-        if (btn) { btn.disabled = false; btn.textContent = item.price ? `Download (${item.price} Gems)` : 'Download'; }
+        if (btn) { btn.disabled = false; btn.textContent = defaultLabel; }
       }
     } catch (e) {
-      if (btn) { btn.disabled = false; btn.textContent = item.price ? `Download (${item.price} Gems)` : 'Download'; }
+      if (btn) { btn.disabled = false; btn.textContent = defaultLabel; }
     }
   }
 
@@ -5053,46 +5070,54 @@
     let previousLastSeen = null;
     let previousAchievements = [];
     let previousTotalPrestige = 0;
+    let savedRaw = null;
     try {
-      const savedRaw = JSON.parse(localStorage.getItem(SAVE_KEY));
+      savedRaw = JSON.parse(localStorage.getItem(SAVE_KEY));
       if (savedRaw && savedRaw.lastSeen) previousLastSeen = savedRaw.lastSeen;
       if (savedRaw && Array.isArray(savedRaw.unlockedAchievements)) previousAchievements = savedRaw.unlockedAchievements;
       if (savedRaw && savedRaw.totalPrestige) previousTotalPrestige = savedRaw.totalPrestige;
     } catch (e) {}
 
+    // If the local save is further along than what the server just returned,
+    // the last auto-save (or the beforeunload save-on-refresh) hasn't landed
+    // yet - trust local progress instead of overwriting it with a stale
+    // server snapshot, then push it back up to the server below.
+    const localIsAhead = !!(savedRaw && (savedRaw.clicks || 0) > (account.clicks || 0));
+    const source = localIsAhead ? savedRaw : account;
+
     const serverAchievements = Array.isArray(account.achievements) ? account.achievements : [];
     const mergedAchievements = Array.from(new Set(serverAchievements.concat(previousAchievements)));
 
     game = Object.assign(defaultGame(), {
-      clicks: account.clicks || 0,
-      clickBoostOwned: account.clickBoostOwned || 0,
-      clickPower: 1 + (account.clickBoostOwned || 0) + 5 * (account.megaBoostOwned || 0),
-      autoClickerOwned: account.autoClickerOwned || 0,
-      dvdOwned: account.dvdOwned || 0,
-      amogusOwned: account.amogusOwned || 0,
-      amogusAlive: account.amogusAlive || 0,
-      musicPlayerOwned: !!account.musicPlayerOwned,
-      cursorsOwned: !!account.cursorsOwned,
-      bgOwned: !!account.bgOwned,
-      offlineEarningsOwned: !!account.offlineEarningsOwned,
-      iconModifierOwned: !!account.iconModifierOwned,
-      autoKillOwned: !!account.autoKillOwned,
-      noobOwned: account.noobOwned || 0,
-      prestige: account.prestige || 0,
-      boosts: account.boosts || 0,
+      clicks: source.clicks || 0,
+      clickBoostOwned: source.clickBoostOwned || 0,
+      clickPower: 1 + (source.clickBoostOwned || 0) + 5 * (source.megaBoostOwned || 0),
+      autoClickerOwned: source.autoClickerOwned || 0,
+      dvdOwned: source.dvdOwned || 0,
+      amogusOwned: source.amogusOwned || 0,
+      amogusAlive: source.amogusAlive || 0,
+      musicPlayerOwned: !!source.musicPlayerOwned,
+      cursorsOwned: !!source.cursorsOwned,
+      bgOwned: !!source.bgOwned,
+      offlineEarningsOwned: !!source.offlineEarningsOwned,
+      iconModifierOwned: !!source.iconModifierOwned,
+      autoKillOwned: !!source.autoKillOwned,
+      noobOwned: source.noobOwned || 0,
+      prestige: source.prestige || 0,
+      boosts: source.boosts || 0,
       unlockedAchievements: mergedAchievements,
       totalPrestige: previousTotalPrestige,
-      goatOwned: account.goatOwned || 0,
-      effectsOwned: !!account.effectsOwned,
-      selectedEffect: account.selectedEffect || 'none',
-      megaBoostOwned: account.megaBoostOwned || 0,
-      turboClickerOwned: account.turboClickerOwned || 0,
-      luckyCharmOwned: !!account.luckyCharmOwned,
-      headStartOwned: account.headStartOwned || 0,
-      prestigeMultOwned: account.prestigeMultOwned || 0,
-      autoBuyerOwned: !!account.autoBuyerOwned,
-      gems: account.gems || 0,
-      installedMods: Array.isArray(account.installedMods) ? account.installedMods : []
+      goatOwned: source.goatOwned || 0,
+      effectsOwned: !!source.effectsOwned,
+      selectedEffect: source.selectedEffect || 'none',
+      megaBoostOwned: source.megaBoostOwned || 0,
+      turboClickerOwned: source.turboClickerOwned || 0,
+      luckyCharmOwned: !!source.luckyCharmOwned,
+      headStartOwned: source.headStartOwned || 0,
+      prestigeMultOwned: source.prestigeMultOwned || 0,
+      autoBuyerOwned: !!source.autoBuyerOwned,
+      gems: source.gems || 0,
+      installedMods: Array.isArray(source.installedMods) ? source.installedMods : (Array.isArray(account.installedMods) ? account.installedMods : [])
     });
 
     // Preserve the real lastSeen so applyOfflineEarnings() (called later in
@@ -5102,6 +5127,8 @@
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify(game));
     } catch (e) {}
+
+    if (localIsAhead) syncToSheet();
   }
 
   function resolveColorToRgb(colorStr){
