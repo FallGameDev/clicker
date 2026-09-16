@@ -4592,7 +4592,6 @@
           saveGame();
           syncToSheet();
         }
-        if (item.repoUrl) window.open(item.repoUrl, '_blank');
         renderWorkshopBody();
       } else if (result.error === 'nogems') {
         if (btn) { btn.disabled = false; btn.textContent = "Not enough Gems"; }
@@ -4787,7 +4786,7 @@
           .map(entry => ({
             name: entry.name || String(entry.file).split('/').pop().replace(/\.[^.]+$/, ''),
             file: entry.file,
-            url: `${rawBase}/${entry.file}`
+            url: `${rawBase}/custom/${entry.file}`
           }));
       }
     }
