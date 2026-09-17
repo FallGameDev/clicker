@@ -462,6 +462,14 @@
     flex-direction:column;
     gap:13px;
     margin-bottom:40px;
+    transform-origin:center;
+  }
+  .links.tab-pop-x{
+    animation:tab-pop-x-kf 0.25s ease;
+  }
+  @keyframes tab-pop-x-kf{
+    0%{ transform:scaleX(0.9); opacity:0.5; }
+    100%{ transform:scaleX(1); opacity:1; }
   }
 
   .link-card{
@@ -1868,6 +1876,34 @@
     transform:translate(-1px,-1px);
     box-shadow:4px 4px 0 var(--ink);
   }
+  .workshop-refresh-banner{
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    width:100%;
+    max-width:520px;
+    margin:0 auto 12px;
+    padding:10px 14px;
+    background:linear-gradient(135deg, #ffcb3d, #ff9f43);
+    border:2px solid var(--ink);
+    border-radius:12px;
+    box-shadow:var(--pop-sm);
+  }
+  .workshop-refresh-banner span{
+    font-family:'Poppins', sans-serif;
+    font-size:11.5px;
+    font-weight:600;
+    color:#241c00;
+  }
+  .workshop-refresh-banner .auth-btn{
+    width:auto;
+    padding:8px 14px;
+    font-size:11px;
+  }
+  .workshop-update-btn{
+    background:linear-gradient(135deg, #ffcb3d, #ff9f43) !important;
+  }
   .workshop-profile-btn{
     display:flex;
     align-items:center;
@@ -2440,6 +2476,10 @@
         </button>
         <button class="workshop-icon-btn" id="workshop-upload-btn" title="Upload a Mod">Upload</button>
       </div>
+    </div>
+    <div class="workshop-refresh-banner" id="workshop-refresh-banner">
+      <span>A mod was installed or updated. Refresh to load it.</span>
+      <button class="auth-btn" id="workshop-refresh-btn">Refresh</button>
     </div>
     <div class="workshop-body" id="workshop-body">
       <div class="empty-state">Loading...</div>
@@ -3315,8 +3355,7 @@
     { label: "Show Yourself", file: "sy.mp3" },
     { label: "Masquerade Party", file: "mp.mp3" },
     { label: "Keep Me Going (BIRDBRAIN)", file: "birdbrain.mp3" },
-    { label: "Isnt That What Foes Are For", file: "kys.mp3" },
-    { label: "IM NOT AN EGG", file: "egg.mp3" }
+    { label: "Isnt That What Foes Are For", file: "kys.mp3" }
   ];
 
   const musicPlayerEl = document.getElementById('music-player');
@@ -3436,7 +3475,7 @@
   const cursorSelect = document.getElementById('cursor-select');
 
   const CURSORS = [
-    { label: "Default", file: "default" },
+    { label: "System", file: "default" },
     { label: "Duck", file: "duck.png" },
     { label: "Banana", file: "banan.png" },
     { label: "Error", file: "error.png" }
@@ -3613,7 +3652,7 @@
        { label: "Space", file: "space.png" }
   ------------------------------------------------- */
   const BACKGROUNDS = [
-    { label: "Default", file: "default" },
+    { label: "Color", file: "default" },
     { label: "Backrooms", file: "backroom.jpeg" },
     { label: "Grace", file: "zen.jpeg" },
     { label: "Space Nebula", file: "space.jpg" }
@@ -3650,16 +3689,20 @@
     (game.installedMods || []).forEach(mod => {
       if (!mod || !mod.customFiles) return;
       (mod.customFiles.bg || []).forEach(f => {
-        if (f && f.url && !BACKGROUNDS.some(b => b.file === f.url)) addBackgroundOption({ label: f.name, file: f.url });
+        const src = f && (f.base64 || f.url);
+        if (src && !BACKGROUNDS.some(b => b.file === src)) addBackgroundOption({ label: f.name, file: src });
       });
       (mod.customFiles.music || []).forEach(f => {
-        if (f && f.url && !SONGS.some(s => s.file === f.url)) addSongOption({ label: f.name, file: f.url });
+        const src = f && (f.base64 || f.url);
+        if (src && !SONGS.some(s => s.file === src)) addSongOption({ label: f.name, file: src });
       });
       (mod.customFiles.cursors || []).forEach(f => {
-        if (f && f.url && !CURSORS.some(c => c.file === f.url)) addCursorOption({ label: f.name, file: f.url });
+        const src = f && (f.base64 || f.url);
+        if (src && !CURSORS.some(c => c.file === src)) addCursorOption({ label: f.name, file: src });
       });
       (mod.customFiles.icons || []).forEach(f => {
-        if (f && f.url && !ICONS.some(i => i.file === f.url)) addIconOption({ label: f.name, file: f.url });
+        const src = f && (f.base64 || f.url);
+        if (src && !ICONS.some(i => i.file === src)) addIconOption({ label: f.name, file: src });
       });
     });
   }
@@ -4162,9 +4205,16 @@
         updatePickerVisibility();
         renderTabs();
         renderActiveTab();
+        playTabOpenAnimation();
       });
       tabBar.appendChild(btn);
     });
+  }
+
+  function playTabOpenAnimation(){
+    list.classList.remove('tab-pop-x');
+    void list.offsetWidth;
+    list.classList.add('tab-pop-x');
   }
 
   function refreshShopAffordability(){
@@ -4418,6 +4468,7 @@
   let workshopCommentsCache = [];
 
   workshopClose.addEventListener('click', () => workshopOverlay.classList.remove('visible'));
+  document.getElementById('workshop-refresh-btn').addEventListener('click', () => location.reload());
   workshopProfileBtn.addEventListener('click', () => {
     workshopView = 'profile';
     renderWorkshopBody();
@@ -4466,7 +4517,9 @@
       workshopBody.innerHTML = '<div class="empty-state">No mods uploaded yet.</div>';
       return;
     }
-    workshopBody.innerHTML = workshopItemsCache.map(item => `
+    workshopBody.innerHTML = workshopItemsCache.map(item => {
+      const installed = !!findInstalledMod(item.id);
+      return `
       <div class="workshop-item-card" data-mod-id="${item.id}">
         <div class="workshop-item-top">
           ${item.iconUrl ? `<img class="workshop-item-icon" src="${item.iconUrl}" alt="">` : ''}
@@ -4480,9 +4533,10 @@
           <span>\u2b07\ufe0f ${item.downloads || 0} downloads</span>
           ${item.price ? `<span class="workshop-item-price"><img src="gems.png" alt="">${item.price}</span>` : '<span>Free</span>'}
         </div>
-        <button class="buy-btn workshop-download-btn" data-mod-id="${item.id}">Download</button>
+        <button class="buy-btn workshop-download-btn${installed ? ' workshop-update-btn' : ''}" data-mod-id="${item.id}">${installed ? 'Update' : 'Download'}</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     workshopBody.querySelectorAll('.workshop-item-card').forEach(card => {
       card.addEventListener('click', () => openWorkshopModPage(card.dataset.modId));
@@ -4491,7 +4545,12 @@
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const item = workshopItemsCache.find(i => i.id === btn.dataset.modId);
-        if (item) downloadMod(item, btn);
+        if (!item) return;
+        if (findInstalledMod(item.id)) {
+          updateMod(item, btn);
+        } else {
+          downloadMod(item, btn);
+        }
       });
     });
   }
@@ -4513,6 +4572,7 @@
     const isSiteMod = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
     const isModAuthor = String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase();
     const canModerateComments = isSiteMod || isModAuthor;
+    const installed = !!findInstalledMod(item.id);
 
     workshopBody.innerHTML = `
       <div class="workshop-tabs">
@@ -4532,7 +4592,7 @@
           <button class="vote-btn${item.myVote === 'down' ? ' active' : ''}" id="workshop-downvote-btn">&#11015; <span id="workshop-downvote-count">${item.downvotes || 0}</span></button>
           <span class="workshop-download-count"><span id="workshop-download-count">${item.downloads || 0}</span> downloads</span>
         </div>
-        <button class="auth-btn" id="workshop-real-download-btn">${item.price ? `Download (${item.price} Gems)` : 'Download'}</button>
+        <button class="auth-btn${installed ? ' workshop-update-btn' : ''}" id="workshop-real-download-btn">${installed ? 'Update' : (item.price ? `Download (${item.price} Gems)` : 'Download')}</button>
         <button class="auth-btn secondary" id="workshop-manual-download-btn">Manual Download (GitHub)</button>
       </div>
       <h3 class="workshop-comments-heading">Comments</h3>
@@ -4547,7 +4607,13 @@
     });
     document.getElementById('workshop-upvote-btn').addEventListener('click', () => voteOnMod(item, 'up'));
     document.getElementById('workshop-downvote-btn').addEventListener('click', () => voteOnMod(item, 'down'));
-    document.getElementById('workshop-real-download-btn').addEventListener('click', (e) => downloadMod(item, e.target));
+    document.getElementById('workshop-real-download-btn').addEventListener('click', (e) => {
+      if (findInstalledMod(item.id)) {
+        updateMod(item, e.target);
+      } else {
+        downloadMod(item, e.target);
+      }
+    });
     document.getElementById('workshop-manual-download-btn').addEventListener('click', () => {
       if (item.repoUrl) window.open(item.repoUrl, '_blank');
     });
@@ -4569,6 +4635,48 @@
     } catch (e) {}
   }
 
+  function findInstalledMod(modId){
+    return (game.installedMods || []).find(m => m && m.id === modId) || null;
+  }
+
+  function modHasChanges(item){
+    const installed = findInstalledMod(item.id);
+    if (!installed) return false;
+    if ((installed.version || '') !== (item.version || '')) return true;
+    try {
+      return JSON.stringify(installed.customFiles || {}) !== JSON.stringify(item.customFiles || {});
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function updateMod(item, btn){
+    const installed = findInstalledMod(item.id);
+    if (!installed) return downloadMod(item, btn);
+
+    if (!modHasChanges(item)) {
+      if (btn) {
+        const original = btn.textContent;
+        btn.textContent = 'Up to date';
+        setTimeout(() => { if (btn) btn.textContent = original; }, 1500);
+      }
+      return;
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+    game.installedMods = (game.installedMods || []).filter(m => m && m.id !== item.id);
+    game.installedMods.push({ id: item.id, name: item.name, version: item.version || '', customFiles: item.customFiles || {} });
+    saveGame();
+    syncToSheet();
+    showWorkshopRefreshBanner();
+    renderWorkshopBody();
+  }
+
+  function showWorkshopRefreshBanner(){
+    const banner = document.getElementById('workshop-refresh-banner');
+    if (banner) banner.style.display = 'flex';
+  }
+
   async function downloadMod(item, btn){
     const defaultLabel = item.price ? `Download (${item.price} Gems)` : 'Download';
     if (btn) { btn.disabled = true; btn.textContent = 'Downloading...'; }
@@ -4583,15 +4691,10 @@
         }
         if (!game.installedMods) game.installedMods = [];
         if (!game.installedMods.some(m => m && m.id === item.id)) {
-          game.installedMods.push({ id: item.id, name: item.name, customFiles: item.customFiles || {} });
-          loadCustomAssets();
-          const cf = item.customFiles || {};
-          if ((cf.music || []).length && !game.musicPlayerOwned) { game.musicPlayerOwned = true; showMusicPlayer(); }
-          if ((cf.cursors || []).length && !game.cursorsOwned) { game.cursorsOwned = true; showCursorPicker(); }
-          if ((cf.bg || []).length && !game.bgOwned) { game.bgOwned = true; showBgPicker(); }
-          if ((cf.icons || []).length && !game.iconModifierOwned) { game.iconModifierOwned = true; showIconPicker(); }
+          game.installedMods.push({ id: item.id, name: item.name, version: item.version || '', customFiles: item.customFiles || {} });
           saveGame();
           syncToSheet();
+          showWorkshopRefreshBanner();
         }
         renderWorkshopBody();
       } else if (result.error === 'nogems') {
@@ -5225,6 +5328,35 @@
     setTimeout(() => loadingScreenEl.remove(), 400);
   }
 
+  function urlToBase64(url){
+    return fetch(url)
+      .then(res => {
+        if (!res.ok) throw new Error('fetch failed');
+        return res.blob();
+      })
+      .then(blob => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      }));
+  }
+
+  async function loadModAssetsAsBase64(mod){
+    if (!mod || !mod.customFiles) return;
+    const types = ['music', 'icons', 'cursors', 'bg'];
+    for (const type of types) {
+      const list = mod.customFiles[type];
+      if (!Array.isArray(list)) continue;
+      for (const entry of list) {
+        if (!entry || entry.base64 || !entry.url) continue;
+        try {
+          entry.base64 = await urlToBase64(entry.url);
+        } catch (e) {}
+      }
+    }
+  }
+
   function runLoadingSequence(onDone){
     if (!loadingScreenEl || !loadingStatusEl || !loadingBarFillEl) {
       onDone();
@@ -5250,7 +5382,12 @@
     installedMods.forEach((mod, i) => {
       const modName = (mod && mod.name) ? mod.name : String(mod);
       const target = 25 + Math.round(((i + 1) / installedMods.length) * 20);
-      phases.push({ text: `Loading mod: ${modName}...`, duration: 600, target: target });
+      phases.push({
+        text: `Loading mod: ${modName}...`,
+        duration: 300,
+        target: target,
+        action: () => loadModAssetsAsBase64(mod)
+      });
     });
 
     phases.push({ text: 'Previewing java...', duration: 1200, target: 50 });
@@ -5267,10 +5404,19 @@
       loadingStatusEl.textContent = phase.text;
       loadingBarFillEl.style.transition = `width ${phase.duration / 1000}s ease-in-out`;
       loadingBarFillEl.style.width = phase.target + '%';
-      setTimeout(() => {
+
+      const advance = () => {
         phaseIndex++;
         runNextPhase();
-      }, phase.duration);
+      };
+
+      if (phase.action) {
+        Promise.resolve().then(phase.action).catch(() => {}).then(() => {
+          setTimeout(advance, phase.duration);
+        });
+      } else {
+        setTimeout(advance, phase.duration);
+      }
     }
 
     function runCodeCountPhase(){
