@@ -4363,8 +4363,6 @@
   const MOD_CAPABLE_AUTHS = ['owner', 'mod', 'admin', 'dev', 'dir', 'director'];
 
   function renderStats(){
-    const isModCapable = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
-
     list.innerHTML = `
       <div class="stats-card">
         <div class="stats-avatar" id="stats-avatar-click">
@@ -4385,24 +4383,19 @@
           <button class="gems-plus-btn" id="gems-plus-btn" title="Convert Moneys to Gems">+</button>
         </div>
       </div>
-      ${isModCapable ? `
       <div class="shop-card">
         <div class="shop-info">
           <h3>Mods</h3>
-          <p>Open the Workshop to browse, manage, and upload mods.</p>
+          <p>Open the Workshop to browse, install, and upload mods.</p>
         </div>
         <button class="buy-btn" id="open-workshop-btn">Open Workshop</button>
-      </div>` : ''}
+      </div>
     `;
 
     document.getElementById('stats-avatar-click').addEventListener('click', openEditProfile);
     document.getElementById('stats-name-click').addEventListener('click', openEditProfile);
     document.getElementById('gems-plus-btn').addEventListener('click', openGemsConvertDialog);
-
-    if (isModCapable) {
-      const workshopBtn = document.getElementById('open-workshop-btn');
-      if (workshopBtn) workshopBtn.addEventListener('click', openWorkshop);
-    }
+    document.getElementById('open-workshop-btn').addEventListener('click', openWorkshop);
 
     ensureFontLoaded(currentFont).then(family => {
       if (!family) return;
