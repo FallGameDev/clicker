@@ -1798,6 +1798,146 @@
     opacity:1;
   }
 
+  /* ---------- EDIT PROFILE TABS & FRIENDS ---------- */
+  .edit-profile-tabs{
+    display:flex;
+    gap:8px;
+    width:100%;
+    margin-bottom:16px;
+  }
+  .edit-profile-tab-btn{
+    flex:1;
+    font-family:'Fredoka One', cursive;
+    font-size:12px;
+    color:var(--muted);
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:10px;
+    padding:8px;
+    cursor:pointer;
+    transition:transform .12s ease, background .15s ease, color .15s ease, box-shadow .12s ease;
+  }
+  .edit-profile-tab-btn:hover{
+    color:var(--rind);
+    transform:translate(-1px,-1px);
+    box-shadow:2px 2px 0 var(--ink);
+  }
+  .edit-profile-tab-btn.active{
+    background:var(--brand-gradient);
+    border-color:var(--ink);
+    color:var(--night);
+    box-shadow:var(--pop-sm);
+    transform:translate(-1px,-1px);
+  }
+  #friends-search-input{
+    margin-bottom:14px;
+  }
+  .friends-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    max-height:320px;
+    overflow-y:auto;
+  }
+  .friends-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:14px;
+    padding:10px 14px;
+    cursor:pointer;
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .friends-row:hover{
+    transform:translate(-2px,-2px);
+    box-shadow:5px 5px 0 var(--ink);
+  }
+
+  /* ---------- FRIEND ACTIONS ---------- */
+  .public-profile-friend-row{
+    display:none;
+    justify-content:center;
+    gap:8px;
+    margin-top:6px;
+  }
+  .friend-action-btn{
+    font-family:'Fredoka One', cursive;
+    font-size:12px;
+    padding:9px 16px;
+    border-radius:10px;
+    border:2px solid var(--ink);
+    cursor:pointer;
+    background:var(--brand-gradient);
+    color:var(--night);
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .friend-action-btn:hover{
+    transform:translate(-1px,-1px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .friend-action-btn:disabled{
+    opacity:0.6;
+    cursor:default;
+    transform:none;
+  }
+  .friend-action-btn.pending{
+    background:var(--card);
+    color:var(--muted);
+  }
+  .friend-action-btn.unfriend,
+  .friend-action-btn.decline{
+    background:var(--night);
+    color:var(--rind);
+  }
+  .friend-action-btn.accept{
+    background:var(--brand-gradient);
+    color:var(--night);
+  }
+  .friend-request-actions{
+    display:flex;
+    gap:8px;
+  }
+  .friend-requests-card{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:18px 16px;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:16px;
+    box-shadow:var(--pop-sm);
+  }
+  .friend-requests-card h3{
+    font-family:'Fredoka One', cursive;
+    font-size:14px;
+    color:var(--rind);
+    margin:0;
+  }
+  .friend-request-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    width:100%;
+  }
+  .friend-request-row .leaderboard-name{
+    flex:1;
+  }
+  .friend-request-btns{
+    display:flex;
+    gap:6px;
+    flex-shrink:0;
+  }
+  .friend-request-btns .friend-action-btn{
+    font-size:10.5px;
+    padding:6px 10px;
+  }
+
   /* ---------- CONFIRM OVERLAY ---------- */
   .confirm-overlay{
     position:fixed;
@@ -2406,15 +2546,28 @@
   <div class="auth-box wide edit-profile-box">
     <button class="edit-profile-close" id="edit-profile-close">&times;</button>
     <h1 class="auth-heading">Edit Profile</h1>
-    <div class="edit-profile-banner" id="edit-profile-banner-el"></div>
-    <input type="file" id="edit-banner-upload-input" accept="image/*" style="display:none">
-    <div class="icon-grid" id="edit-icon-grid"></div>
-    <button class="auth-btn secondary" id="edit-upload-icon-btn">Upload your own</button>
-    <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
-    <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
-    <textarea id="edit-description-input" class="auth-input edit-description" placeholder="Account description..." maxlength="280" rows="3"></textarea>
-    <button class="auth-btn" id="edit-profile-save">Save Changes</button>
-    <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
+
+    <div class="edit-profile-tabs">
+      <button class="edit-profile-tab-btn active" id="edit-profile-tab-profile" data-tab="profile">Profile</button>
+      <button class="edit-profile-tab-btn" id="edit-profile-tab-friends" data-tab="friends">Friends</button>
+    </div>
+
+    <div class="edit-profile-tab-pane" id="edit-profile-pane-profile">
+      <div class="edit-profile-banner" id="edit-profile-banner-el"></div>
+      <input type="file" id="edit-banner-upload-input" accept="image/*" style="display:none">
+      <div class="icon-grid" id="edit-icon-grid"></div>
+      <button class="auth-btn secondary" id="edit-upload-icon-btn">Upload your own</button>
+      <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
+      <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
+      <textarea id="edit-description-input" class="auth-input edit-description" placeholder="Account description..." maxlength="280" rows="3"></textarea>
+      <button class="auth-btn" id="edit-profile-save">Save Changes</button>
+      <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
+    </div>
+
+    <div class="edit-profile-tab-pane" id="edit-profile-pane-friends" style="display:none;">
+      <input type="text" id="friends-search-input" class="auth-input" placeholder="Search your friends..." autocomplete="off">
+      <div class="friends-list" id="friends-list"></div>
+    </div>
   </div>
 </div>
 
@@ -2442,6 +2595,7 @@
         <img src="money.png" alt="Moneys">
         <span id="public-profile-clicks"></span>
       </div>
+      <div class="public-profile-friend-row" id="public-profile-friend-row"></div>
     </div>
   </div>
 </div>
@@ -4390,6 +4544,10 @@
         </div>
         <button class="buy-btn" id="open-workshop-btn">Open Workshop</button>
       </div>
+      <div class="friend-requests-card" id="friend-requests-card" style="display:none;">
+        <h3>Friend Requests</h3>
+        <div class="friend-requests-list" id="friend-requests-list"></div>
+      </div>
     `;
 
     document.getElementById('stats-avatar-click').addEventListener('click', openEditProfile);
@@ -4402,6 +4560,50 @@
       const nameEl = document.getElementById('stats-name-click');
       if (nameEl) nameEl.style.fontFamily = `'${family}'`;
     });
+
+    loadFriendRequests();
+  }
+
+  async function loadFriendRequests(){
+    const card = document.getElementById('friend-requests-card');
+    const listEl = document.getElementById('friend-requests-list');
+    if (!card || !listEl || !currentUsername) return;
+
+    try {
+      const result = await sheetRequest({ action: 'getFriendRequests', username: currentUsername });
+      const requests = (result.success && result.requests) ? result.requests : [];
+
+      if (!requests.length) {
+        card.style.display = 'none';
+        return;
+      }
+
+      card.style.display = 'flex';
+      listEl.innerHTML = requests.map(r => `
+        <div class="friend-request-row" data-username="${r.username}">
+          <div class="leaderboard-avatar"><img src="${r.profileIcon || 'profile.png'}" alt=""></div>
+          <span class="leaderboard-name" style="color:${authColor(r.auth)}">${r.username}${authBadge(r.auth)}</span>
+          <div class="friend-request-btns">
+            <button class="friend-action-btn accept" data-action="accept">Accept</button>
+            <button class="friend-action-btn decline" data-action="decline">Decline</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('.friend-request-row').forEach(row => {
+        const username = row.dataset.username;
+        row.querySelector('[data-action="accept"]').addEventListener('click', async () => {
+          await apiAcceptFriendRequest(username);
+          loadFriendRequests();
+        });
+        row.querySelector('[data-action="decline"]').addEventListener('click', async () => {
+          await apiDeclineFriendRequest(username);
+          loadFriendRequests();
+        });
+      });
+    } catch (e) {
+      card.style.display = 'none';
+    }
   }
 
   function openGemsConvertDialog(){
@@ -5072,7 +5274,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzudmaQK3l1pImZ0-1JzXk5wgfi6gxmlXftl_p7cag-5ymlMguR5nBJb7zHZPUTjHdCMg/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbymeVYpUO6DG4DCjMJlMh91TNX3ySK5mL7SlTQBmhNhHuu1vdGZ0KVH6-uc0tUI1Ln2NQ/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -5497,6 +5699,84 @@
   let editSelectedBannerImage = null;
   let editBannerImageChanged = false;
 
+  /* ---------- FRIENDS TAB ---------- */
+  const editProfileTabBtns = document.querySelectorAll('.edit-profile-tab-btn');
+  const editProfilePaneProfile = document.getElementById('edit-profile-pane-profile');
+  const editProfilePaneFriends = document.getElementById('edit-profile-pane-friends');
+  const friendsSearchInput = document.getElementById('friends-search-input');
+  const friendsListEl = document.getElementById('friends-list');
+
+  let friendsListCache = [];
+  let friendsListLoaded = false;
+
+  editProfileTabBtns.forEach(btn => {
+    btn.addEventListener('click', () => switchEditProfileTab(btn.dataset.tab));
+  });
+
+  function switchEditProfileTab(tab){
+    editProfileTabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+    editProfilePaneProfile.style.display = tab === 'profile' ? '' : 'none';
+    editProfilePaneFriends.style.display = tab === 'friends' ? '' : 'none';
+    if (tab === 'friends') loadFriendsList();
+  }
+
+  async function loadFriendsList(){
+    friendsListEl.innerHTML = '<div class="empty-state">Loading friends...</div>';
+    try {
+      const result = await sheetRequest({ action: 'getFriends', username: currentUsername });
+      friendsListCache = (result.success && result.friends) ? result.friends : [];
+      friendsListLoaded = true;
+      renderFriendsList(friendsSearchInput.value.trim());
+    } catch (e) {
+      friendsListLoaded = false;
+      friendsListEl.innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
+    }
+  }
+
+  function renderFriendsList(filterText){
+    if (!friendsListLoaded) return;
+    const q = (filterText || '').toLowerCase();
+    const filtered = friendsListCache.filter(f => f.username.toLowerCase().includes(q));
+
+    if (!filtered.length) {
+      friendsListEl.innerHTML = `<div class="empty-state">${friendsListCache.length ? 'No friends match that search.' : "You haven't added any friends yet."}</div>`;
+      return;
+    }
+
+    friendsListEl.innerHTML = filtered.map(f => `
+      <div class="friends-row" data-username="${f.username}">
+        <div class="leaderboard-avatar"><img src="${f.profileIcon || 'profile.png'}" alt=""></div>
+        <span class="leaderboard-name" style="color:${authColor(f.auth)}">${f.username}${authBadge(f.auth)}</span>
+      </div>
+    `).join('');
+
+    friendsListEl.querySelectorAll('.friends-row').forEach(row => {
+      row.addEventListener('click', () => {
+        closeEditProfile();
+        openPublicProfile(row.dataset.username);
+      });
+    });
+  }
+
+  friendsSearchInput.addEventListener('input', () => renderFriendsList(friendsSearchInput.value.trim()));
+
+  /* ---------- FRIEND ACTIONS (API) ---------- */
+  async function apiSendFriendRequest(toUsername){
+    return sheetRequest({ action: 'sendFriendRequest', fromUsername: currentUsername, toUsername });
+  }
+  async function apiCancelFriendRequest(toUsername){
+    return sheetRequest({ action: 'cancelFriendRequest', fromUsername: currentUsername, toUsername });
+  }
+  async function apiAcceptFriendRequest(fromUsername){
+    return sheetRequest({ action: 'acceptFriendRequest', username: currentUsername, fromUsername });
+  }
+  async function apiDeclineFriendRequest(fromUsername){
+    return sheetRequest({ action: 'declineFriendRequest', username: currentUsername, fromUsername });
+  }
+  async function apiRemoveFriend(targetUsername){
+    return sheetRequest({ action: 'removeFriend', username: currentUsername, targetUsername });
+  }
+
   function updateEditBannerPreview(){
     if (editSelectedBannerImage) {
       editProfileBannerEl.style.background = `center / cover no-repeat url('${editSelectedBannerImage}')`;
@@ -5573,6 +5853,7 @@
   const publicProfileDescription = document.getElementById('public-profile-description');
   const publicProfileModActions = document.getElementById('public-profile-mod-actions');
   const publicProfileRestoreRow = document.getElementById('public-profile-restore-row');
+  const publicProfileFriendRow = document.getElementById('public-profile-friend-row');
   const modBtnModerate = document.getElementById('mod-btn-moderate');
   const modBtnWarn = document.getElementById('mod-btn-warn');
   const modBtnBan = document.getElementById('mod-btn-ban');
@@ -5619,6 +5900,8 @@
     publicProfileBanner.style.background = 'var(--melon)';
     publicProfileModActions.style.display = 'none';
     publicProfileRestoreRow.style.display = 'none';
+    publicProfileFriendRow.style.display = 'none';
+    publicProfileFriendRow.innerHTML = '';
     publicProfileOverlay.classList.add('visible');
 
     try {
@@ -5660,6 +5943,8 @@
 
       publicProfileClicks.textContent = Number(account.clicks || 0).toLocaleString();
 
+      updatePublicProfileFriendRow(account, isSelf);
+
       if (!skipUrlUpdate && account.playerId != null) {
         const url = new URL(window.location);
         url.searchParams.set('profile', account.playerId);
@@ -5668,6 +5953,95 @@
     } catch (e) {
       publicProfileName.textContent = "Couldn't reach the database.";
     }
+  }
+
+  /* ---------- FRIEND BUTTON (public profile) ---------- */
+  async function updatePublicProfileFriendRow(account, isSelf){
+    if (isSelf || !currentUsername) {
+      publicProfileFriendRow.style.display = 'none';
+      publicProfileFriendRow.innerHTML = '';
+      return;
+    }
+    publicProfileFriendRow.style.display = 'flex';
+    publicProfileFriendRow.innerHTML = '<button class="friend-action-btn" disabled>Loading...</button>';
+    try {
+      const result = await sheetRequest({ action: 'getFriendStatus', username: currentUsername, targetUsername: account.username });
+      const status = result.success ? result.status : 'none';
+      renderFriendActionRow(status, account.username);
+    } catch (e) {
+      publicProfileFriendRow.innerHTML = '';
+    }
+  }
+
+  function friendButtonHTML(status){
+    if (status === 'friends') {
+      return '<button class="friend-action-btn unfriend" id="friend-action-btn">Unfriend</button>';
+    }
+    if (status === 'requestSent') {
+      return '<button class="friend-action-btn pending" id="friend-action-btn">Cancel Request</button>';
+    }
+    if (status === 'requestReceived') {
+      return `
+        <div class="friend-request-actions">
+          <button class="friend-action-btn accept" id="friend-accept-btn">Accept Request</button>
+          <button class="friend-action-btn decline" id="friend-decline-btn">Decline</button>
+        </div>`;
+    }
+    return '<button class="friend-action-btn add" id="friend-action-btn">Add Friend</button>';
+  }
+
+  function renderFriendActionRow(status, targetUsername){
+    publicProfileFriendRow.innerHTML = friendButtonHTML(status);
+    if (status === 'requestReceived') {
+      document.getElementById('friend-accept-btn').addEventListener('click', async () => {
+        await apiAcceptFriendRequest(targetUsername);
+        renderFriendActionRow('friends', targetUsername);
+        loadFriendRequests();
+      });
+      document.getElementById('friend-decline-btn').addEventListener('click', async () => {
+        await apiDeclineFriendRequest(targetUsername);
+        renderFriendActionRow('none', targetUsername);
+        loadFriendRequests();
+      });
+    } else {
+      document.getElementById('friend-action-btn').addEventListener('click', () => handleFriendActionClick(status, targetUsername));
+    }
+  }
+
+  async function handleFriendActionClick(status, targetUsername){
+    const btn = document.getElementById('friend-action-btn');
+    if (status === 'friends') {
+      openUnfriendConfirm(targetUsername);
+      return;
+    }
+    btn.disabled = true;
+    try {
+      if (status === 'none') {
+        await apiSendFriendRequest(targetUsername);
+        renderFriendActionRow('requestSent', targetUsername);
+      } else if (status === 'requestSent') {
+        await apiCancelFriendRequest(targetUsername);
+        renderFriendActionRow('none', targetUsername);
+      }
+    } catch (e) {
+      btn.disabled = false;
+    }
+  }
+
+  function openUnfriendConfirm(targetUsername){
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Unfriend ${targetUsername}?</h1>
+      <p class="auth-sub">You can send a new friend request later.</p>
+      <button class="auth-btn" id="unfriend-confirm-btn">Unfriend</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('unfriend-confirm-btn').addEventListener('click', async () => {
+      await apiRemoveFriend(targetUsername);
+      closeConfirm();
+      renderFriendActionRow('none', targetUsername);
+    });
+    confirmOverlay.classList.add('visible');
   }
 
   /* ---------- MODERATION ---------- */
@@ -6672,6 +7046,9 @@
       editUsernameInput.style.fontFamily = `'${family}'`;
     });
     renderEditIconGrid();
+    switchEditProfileTab('profile');
+    friendsListLoaded = false;
+    friendsSearchInput.value = '';
     editProfileOverlay.classList.add('visible');
   }
 
