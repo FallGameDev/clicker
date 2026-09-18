@@ -4593,6 +4593,7 @@
           <span class="workshop-download-count"><span id="workshop-download-count">${item.downloads || 0}</span> downloads</span>
         </div>
         <button class="auth-btn${installed ? ' workshop-update-btn' : ''}" id="workshop-real-download-btn">${installed ? 'Update' : (item.price ? `Download (${item.price} Gems)` : 'Download')}</button>
+        ${installed ? '<button class="auth-btn secondary" id="workshop-uninstall-btn">Uninstall</button>' : ''}
         <button class="auth-btn secondary" id="workshop-manual-download-btn">Manual Download (GitHub)</button>
       </div>
       <h3 class="workshop-comments-heading">Comments</h3>
@@ -4614,6 +4615,8 @@
         downloadMod(item, e.target);
       }
     });
+    const uninstallBtn = document.getElementById('workshop-uninstall-btn');
+    if (uninstallBtn) uninstallBtn.addEventListener('click', () => uninstallMod(item));
     document.getElementById('workshop-manual-download-btn').addEventListener('click', () => {
       if (item.repoUrl) window.open(item.repoUrl, '_blank');
     });
@@ -4666,6 +4669,14 @@
     if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
     game.installedMods = (game.installedMods || []).filter(m => m && m.id !== item.id);
     game.installedMods.push({ id: item.id, name: item.name, version: item.version || '', customFiles: item.customFiles || {} });
+    saveGame();
+    syncToSheet();
+    showWorkshopRefreshBanner();
+    renderWorkshopBody();
+  }
+
+  function uninstallMod(item){
+    game.installedMods = (game.installedMods || []).filter(m => m && m.id !== item.id);
     saveGame();
     syncToSheet();
     showWorkshopRefreshBanner();
