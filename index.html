@@ -2155,6 +2155,196 @@
     max-width:520px;
     margin:0 auto;
   }
+
+  /* ---------- CHATS ---------- */
+  .chats-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .chat-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:14px;
+    padding:12px 14px;
+    cursor:pointer;
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .chat-row:hover{
+    transform:translate(-2px,-2px);
+    box-shadow:5px 5px 0 var(--ink);
+  }
+  .chat-row-info{
+    flex:1;
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .chat-row-name{
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:var(--rind);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .chat-row-preview{
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    color:var(--muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .chat-overlay{
+    position:fixed;
+    inset:0;
+    z-index:4700;
+    background:var(--night);
+    display:none;
+    align-items:stretch;
+    justify-content:stretch;
+    padding:0;
+  }
+  .chat-overlay.visible{
+    display:flex;
+  }
+  .chat-box{
+    position:relative;
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    background:var(--card);
+    border:none;
+    border-radius:0;
+    padding:24px;
+    box-shadow:none;
+  }
+  .chat-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    max-width:520px;
+    margin:0 auto 14px;
+    padding-right:26px;
+  }
+  .chat-name-input{
+    flex:1;
+    margin:0;
+  }
+  .chat-messages{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    width:100%;
+    max-width:520px;
+    margin:0 auto;
+  }
+  .chat-message-row{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    max-width:80%;
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:12px;
+    padding:8px 12px;
+  }
+  .chat-message-row.mine{
+    align-self:flex-end;
+    background:var(--brand-gradient);
+  }
+  .chat-message-sender{
+    font-family:'Fredoka One', cursive;
+    font-size:10.5px;
+    color:var(--rind);
+  }
+  .chat-message-row.mine .chat-message-sender{
+    color:var(--night);
+  }
+  .chat-message-text{
+    font-family:'Poppins', sans-serif;
+    font-size:12.5px;
+    color:var(--rind);
+    word-break:break-word;
+  }
+  .chat-message-row.mine .chat-message-text{
+    color:var(--night);
+  }
+  .chat-message-time{
+    font-family:'Poppins', sans-serif;
+    font-size:9.5px;
+    color:var(--muted);
+    align-self:flex-end;
+  }
+  .chat-message-row.mine .chat-message-time{
+    color:rgba(10,8,16,0.55);
+  }
+  .chat-composer{
+    display:flex;
+    gap:8px;
+    width:100%;
+    max-width:520px;
+    margin:14px auto 0;
+  }
+  .chat-message-input{
+    flex:1;
+    margin:0;
+  }
+
+  /* ---------- FRIEND PICKER ---------- */
+  .friend-picker-overlay{
+    position:fixed;
+    inset:0;
+    z-index:4750;
+    background:rgba(10,8,16,0.85);
+    backdrop-filter:blur(4px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .friend-picker-overlay.visible{
+    display:flex;
+  }
+  .friend-picker-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    width:100%;
+    max-height:320px;
+    overflow-y:auto;
+    margin-bottom:16px;
+  }
+  .friend-picker-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    width:100%;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:14px;
+    padding:10px 14px;
+    cursor:pointer;
+  }
+  .friend-picker-row input[type="checkbox"]{
+    width:18px;
+    height:18px;
+    flex-shrink:0;
+    accent-color:var(--melon);
+  }
+
   .workshop-item-card{
     width:100%;
     display:flex;
@@ -2641,6 +2831,34 @@
     <div class="workshop-body" id="workshop-body">
       <div class="empty-state">Loading...</div>
     </div>
+  </div>
+</div>
+
+<div class="chat-overlay" id="chat-overlay">
+  <div class="chat-box">
+    <button class="edit-profile-close" id="chat-close">&times;</button>
+    <div class="chat-header">
+      <input type="text" class="auth-input chat-name-input" id="chat-name-input" placeholder="Chat name" autocomplete="off">
+      <button class="workshop-icon-btn" id="chat-rename-btn">Save</button>
+      <button class="workshop-icon-btn" id="chat-add-friends-btn">Add Friends</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="empty-state">Loading...</div>
+    </div>
+    <div class="chat-composer">
+      <input type="text" class="auth-input chat-message-input" id="chat-message-input" placeholder="Type a message..." autocomplete="off" maxlength="500">
+      <button class="workshop-icon-btn" id="chat-send-btn">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="friend-picker-overlay" id="friend-picker-overlay">
+  <div class="auth-box wide">
+    <button class="edit-profile-close" id="friend-picker-close">&times;</button>
+    <h1 class="auth-heading" id="friend-picker-title">Select Friends</h1>
+    <div class="friend-picker-list" id="friend-picker-list"></div>
+    <p class="auth-error" id="friend-picker-error" style="display:none;"></p>
+    <button class="auth-btn" id="friend-picker-confirm">Confirm</button>
   </div>
 </div>
 
@@ -4585,6 +4803,7 @@
         <button class="stats-subtab-btn active" id="stats-subtab-overview" data-subtab="overview">Overview</button>
         <button class="stats-subtab-btn" id="stats-subtab-friends" data-subtab="friends">Friends</button>
         <button class="stats-subtab-btn" id="stats-subtab-mods" data-subtab="mods">Mods</button>
+        <button class="stats-subtab-btn" id="stats-subtab-messages" data-subtab="messages">Messages</button>
       </div>
 
       <div class="stats-subtab-pane" id="stats-pane-overview">
@@ -4628,12 +4847,24 @@
         </div>
         <div class="installed-mods-list" id="installed-mods-list"></div>
       </div>
+
+      <div class="stats-subtab-pane" id="stats-pane-messages" style="display:none;">
+        <div class="shop-card">
+          <div class="shop-info">
+            <h3>Messages</h3>
+            <p>Chat with your friends.</p>
+          </div>
+          <button class="buy-btn" id="new-chat-btn">New Chat</button>
+        </div>
+        <div class="chats-list" id="chats-list"></div>
+      </div>
     `;
 
     document.getElementById('stats-avatar-click').addEventListener('click', openEditProfile);
     document.getElementById('stats-name-click').addEventListener('click', openEditProfile);
     document.getElementById('gems-plus-btn').addEventListener('click', openGemsConvertDialog);
     document.getElementById('open-workshop-btn').addEventListener('click', openWorkshop);
+    document.getElementById('new-chat-btn').addEventListener('click', openNewChatPicker);
 
     document.querySelectorAll('.stats-subtab-btn').forEach(btn => {
       btn.addEventListener('click', () => switchStatsSubtab(btn.dataset.subtab));
@@ -4658,11 +4889,14 @@
     const overviewPane = document.getElementById('stats-pane-overview');
     const friendsPane = document.getElementById('stats-pane-friends');
     const modsPane = document.getElementById('stats-pane-mods');
+    const messagesPane = document.getElementById('stats-pane-messages');
     if (overviewPane) overviewPane.style.display = tab === 'overview' ? '' : 'none';
     if (friendsPane) friendsPane.style.display = tab === 'friends' ? '' : 'none';
     if (modsPane) modsPane.style.display = tab === 'mods' ? '' : 'none';
+    if (messagesPane) messagesPane.style.display = tab === 'messages' ? '' : 'none';
     if (tab === 'friends') loadFriendsList();
     if (tab === 'mods') renderInstalledModsList();
+    if (tab === 'messages') loadChatsList();
   }
 
   function renderInstalledModsList(){
@@ -4695,6 +4929,237 @@
         }
       });
     });
+  }
+
+  /* ---------- CHATS / MESSAGES ---------- */
+  let chatsListCache = [];
+  let activeChatId = null;
+  let activeChatMessages = [];
+  let activeChatParticipants = [];
+  let friendPickerMode = null;
+  let friendPickerFriendsCache = [];
+
+  function escapeChatHtml(str){
+    return String(str == null ? '' : str).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+
+  function formatChatTime(iso){
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    return sameDay
+      ? d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  async function loadChatsList(){
+    const listEl = document.getElementById('chats-list');
+    if (!listEl || !currentUsername) return;
+    listEl.innerHTML = '<div class="empty-state">Loading chats...</div>';
+    try {
+      const result = await sheetRequest({ action: 'getChats', username: currentUsername });
+      chatsListCache = (result.success && result.chats) ? result.chats : [];
+      renderChatsList();
+    } catch (e) {
+      listEl.innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
+    }
+  }
+
+  function renderChatsList(){
+    const listEl = document.getElementById('chats-list');
+    if (!listEl) return;
+
+    if (!chatsListCache.length) {
+      listEl.innerHTML = '<div class="empty-state">No chats yet. Start one with a friend!</div>';
+      return;
+    }
+
+    listEl.innerHTML = chatsListCache.map(chat => {
+      const previewText = chat.lastMessage
+        ? `${chat.lastMessage.sender === currentUsername ? 'You' : chat.lastMessage.sender}: ${chat.lastMessage.text}`
+        : 'No messages yet';
+      const timeLabel = formatChatTime(chat.lastMessage ? chat.lastMessage.createdAt : chat.updatedAt);
+      return `
+        <div class="chat-row" data-chat-id="${chat.id}">
+          <div class="chat-row-info">
+            <span class="chat-row-name">${escapeChatHtml(chat.name)}</span>
+            <span class="chat-row-preview">${escapeChatHtml(previewText)}</span>
+          </div>
+          <span class="chat-row-preview">${escapeChatHtml(timeLabel)}</span>
+        </div>
+      `;
+    }).join('');
+
+    listEl.querySelectorAll('.chat-row').forEach(row => {
+      row.addEventListener('click', () => openChat(row.dataset.chatId));
+    });
+  }
+
+  function openNewChatPicker(){
+    openFriendPicker('create', []);
+  }
+
+  async function openFriendPicker(mode, excludeUsernames){
+    friendPickerMode = mode;
+    const overlay = document.getElementById('friend-picker-overlay');
+    const titleEl = document.getElementById('friend-picker-title');
+    const listEl = document.getElementById('friend-picker-list');
+    const errorEl = document.getElementById('friend-picker-error');
+    errorEl.style.display = 'none';
+    titleEl.textContent = mode === 'create' ? 'Start a New Chat' : 'Add Friends to Chat';
+    listEl.innerHTML = '<div class="empty-state">Loading friends...</div>';
+    overlay.classList.add('visible');
+
+    try {
+      const result = await sheetRequest({ action: 'getFriends', username: currentUsername });
+      const friends = (result.success && result.friends) ? result.friends : [];
+      const excludeSet = new Set((excludeUsernames || []).map(u => String(u).toLowerCase()));
+      friendPickerFriendsCache = friends.filter(f => !excludeSet.has(f.username.toLowerCase()));
+
+      if (!friendPickerFriendsCache.length) {
+        listEl.innerHTML = '<div class="empty-state">No friends available to add.</div>';
+        return;
+      }
+
+      listEl.innerHTML = friendPickerFriendsCache.map(f => `
+        <label class="friend-picker-row">
+          <input type="checkbox" value="${escapeChatHtml(f.username)}">
+          <div class="leaderboard-avatar"><img src="${f.profileIcon || 'profile.png'}" alt=""></div>
+          <span class="leaderboard-name" style="color:${authColor(f.auth)}">${escapeChatHtml(f.username)}${authBadge(f.auth)}</span>
+        </label>
+      `).join('');
+    } catch (e) {
+      listEl.innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
+    }
+  }
+
+  document.getElementById('friend-picker-close').addEventListener('click', () => {
+    document.getElementById('friend-picker-overlay').classList.remove('visible');
+  });
+
+  document.getElementById('friend-picker-confirm').addEventListener('click', async () => {
+    const overlay = document.getElementById('friend-picker-overlay');
+    const errorEl = document.getElementById('friend-picker-error');
+    const selected = Array.from(document.querySelectorAll('#friend-picker-list input[type="checkbox"]:checked')).map(cb => cb.value);
+
+    if (!selected.length) {
+      errorEl.textContent = 'Select at least one friend.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    errorEl.style.display = 'none';
+
+    if (friendPickerMode === 'create') {
+      try {
+        const result = await sheetRequest({ action: 'createChat', username: currentUsername, participantUsernames: selected });
+        if (result.success && result.chat) {
+          overlay.classList.remove('visible');
+          loadChatsList();
+          openChat(result.chat.id);
+        } else {
+          errorEl.textContent = 'Something went wrong. Try again.';
+          errorEl.style.display = 'block';
+        }
+      } catch (e) {
+        errorEl.textContent = "Couldn't reach the database.";
+        errorEl.style.display = 'block';
+      }
+    } else if (friendPickerMode === 'add') {
+      try {
+        const result = await sheetRequest({ action: 'addChatParticipants', chatId: activeChatId, username: currentUsername, addUsernames: selected });
+        if (result.success) {
+          overlay.classList.remove('visible');
+          activeChatParticipants = result.participants || activeChatParticipants;
+          loadChatsList();
+        } else {
+          errorEl.textContent = 'Something went wrong. Try again.';
+          errorEl.style.display = 'block';
+        }
+      } catch (e) {
+        errorEl.textContent = "Couldn't reach the database.";
+        errorEl.style.display = 'block';
+      }
+    }
+  });
+
+  const chatOverlay = document.getElementById('chat-overlay');
+  document.getElementById('chat-close').addEventListener('click', () => chatOverlay.classList.remove('visible'));
+  document.getElementById('chat-add-friends-btn').addEventListener('click', () => {
+    if (activeChatId) openFriendPicker('add', activeChatParticipants);
+  });
+  document.getElementById('chat-rename-btn').addEventListener('click', async () => {
+    const input = document.getElementById('chat-name-input');
+    const newName = input.value.trim();
+    if (!newName || !activeChatId) return;
+    try {
+      await sheetRequest({ action: 'renameChat', chatId: activeChatId, username: currentUsername, name: newName });
+      loadChatsList();
+    } catch (e) {}
+  });
+  document.getElementById('chat-send-btn').addEventListener('click', sendActiveChatMessage);
+  document.getElementById('chat-message-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendActiveChatMessage();
+  });
+
+  async function openChat(chatId){
+    activeChatId = chatId;
+    chatOverlay.classList.add('visible');
+    document.getElementById('chat-name-input').value = '';
+    document.getElementById('chat-messages').innerHTML = '<div class="empty-state">Loading...</div>';
+
+    try {
+      const result = await sheetRequest({ action: 'getChatMessages', chatId, username: currentUsername });
+      if (!result.success) {
+        document.getElementById('chat-messages').innerHTML = '<div class="empty-state">Couldn\'t open that chat.</div>';
+        return;
+      }
+      document.getElementById('chat-name-input').value = result.chat.name || '';
+      activeChatParticipants = result.chat.participants || [];
+      activeChatMessages = result.messages || [];
+      renderChatMessages();
+    } catch (e) {
+      document.getElementById('chat-messages').innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
+    }
+  }
+
+  function renderChatMessages(){
+    const messagesEl = document.getElementById('chat-messages');
+    if (!messagesEl) return;
+
+    if (!activeChatMessages.length) {
+      messagesEl.innerHTML = '<div class="empty-state">No messages yet. Say hi!</div>';
+      return;
+    }
+
+    messagesEl.innerHTML = activeChatMessages.map(msg => `
+      <div class="chat-message-row${msg.sender === currentUsername ? ' mine' : ''}">
+        <span class="chat-message-sender">${escapeChatHtml(msg.sender)}</span>
+        <span class="chat-message-text">${escapeChatHtml(msg.text)}</span>
+        <span class="chat-message-time">${escapeChatHtml(formatChatTime(msg.createdAt))}</span>
+      </div>
+    `).join('');
+
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  async function sendActiveChatMessage(){
+    const input = document.getElementById('chat-message-input');
+    const text = input.value.trim();
+    if (!text || !activeChatId) return;
+    input.value = '';
+
+    try {
+      const result = await sheetRequest({ action: 'sendMessage', chatId: activeChatId, username: currentUsername, text });
+      if (result.success && result.message) {
+        activeChatMessages.push(result.message);
+        renderChatMessages();
+      }
+    } catch (e) {}
   }
 
   async function loadFriendRequests(){
@@ -5407,7 +5872,7 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbymeVYpUO6DG4DCjMJlMh91TNX3ySK5mL7SlTQBmhNhHuu1vdGZ0KVH6-uc0tUI1Ln2NQ/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzw8tmhppBB-xCQFnIs9XTBn1ALgNcaO8stWKskeBNH67894fyNb5ds8dLd_rd5hNG0Ng/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
