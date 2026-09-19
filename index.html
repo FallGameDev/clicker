@@ -999,6 +999,16 @@
     opacity:0.4;
     cursor:not-allowed;
   }
+  .buy-btn.uninstall{
+    background:var(--night);
+    color:var(--rind);
+  }
+  .installed-mods-list{
+    display:flex;
+    flex-direction:column;
+    gap:13px;
+    width:100%;
+  }
 
   .bulk-expand-btn{
     flex-shrink:0;
@@ -1798,14 +1808,14 @@
     opacity:1;
   }
 
-  /* ---------- EDIT PROFILE TABS & FRIENDS ---------- */
-  .edit-profile-tabs{
+  /* ---------- STATS SUBTABS & FRIENDS ---------- */
+  .stats-subtabs{
     display:flex;
     gap:8px;
     width:100%;
-    margin-bottom:16px;
+    margin-bottom:4px;
   }
-  .edit-profile-tab-btn{
+  .stats-subtab-btn{
     flex:1;
     font-family:'Fredoka One', cursive;
     font-size:12px;
@@ -1817,20 +1827,26 @@
     cursor:pointer;
     transition:transform .12s ease, background .15s ease, color .15s ease, box-shadow .12s ease;
   }
-  .edit-profile-tab-btn:hover{
+  .stats-subtab-btn:hover{
     color:var(--rind);
     transform:translate(-1px,-1px);
     box-shadow:2px 2px 0 var(--ink);
   }
-  .edit-profile-tab-btn.active{
+  .stats-subtab-btn.active{
     background:var(--brand-gradient);
     border-color:var(--ink);
     color:var(--night);
     box-shadow:var(--pop-sm);
     transform:translate(-1px,-1px);
   }
+  .stats-subtab-pane{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:13px;
+  }
   #friends-search-input{
-    margin-bottom:14px;
+    margin-bottom:4px;
   }
   .friends-list{
     display:flex;
@@ -2546,28 +2562,15 @@
   <div class="auth-box wide edit-profile-box">
     <button class="edit-profile-close" id="edit-profile-close">&times;</button>
     <h1 class="auth-heading">Edit Profile</h1>
-
-    <div class="edit-profile-tabs">
-      <button class="edit-profile-tab-btn active" id="edit-profile-tab-profile" data-tab="profile">Profile</button>
-      <button class="edit-profile-tab-btn" id="edit-profile-tab-friends" data-tab="friends">Friends</button>
-    </div>
-
-    <div class="edit-profile-tab-pane" id="edit-profile-pane-profile">
-      <div class="edit-profile-banner" id="edit-profile-banner-el"></div>
-      <input type="file" id="edit-banner-upload-input" accept="image/*" style="display:none">
-      <div class="icon-grid" id="edit-icon-grid"></div>
-      <button class="auth-btn secondary" id="edit-upload-icon-btn">Upload your own</button>
-      <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
-      <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
-      <textarea id="edit-description-input" class="auth-input edit-description" placeholder="Account description..." maxlength="280" rows="3"></textarea>
-      <button class="auth-btn" id="edit-profile-save">Save Changes</button>
-      <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
-    </div>
-
-    <div class="edit-profile-tab-pane" id="edit-profile-pane-friends" style="display:none;">
-      <input type="text" id="friends-search-input" class="auth-input" placeholder="Search your friends..." autocomplete="off">
-      <div class="friends-list" id="friends-list"></div>
-    </div>
+    <div class="edit-profile-banner" id="edit-profile-banner-el"></div>
+    <input type="file" id="edit-banner-upload-input" accept="image/*" style="display:none">
+    <div class="icon-grid" id="edit-icon-grid"></div>
+    <button class="auth-btn secondary" id="edit-upload-icon-btn">Upload your own</button>
+    <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
+    <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
+    <textarea id="edit-description-input" class="auth-input edit-description" placeholder="Account description..." maxlength="280" rows="3"></textarea>
+    <button class="auth-btn" id="edit-profile-save">Save Changes</button>
+    <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
   </div>
 </div>
 
@@ -4426,10 +4429,13 @@
   let leaderboardCategory = 'global';
   let leaderboardCache = null;
   let leaderboardAdminsCache = null;
+  let leaderboardFriendsCache = null;
+  let leaderboardFriendsLoading = false;
 
   const LEADERBOARD_CATEGORIES = [
     { id: 'global', label: 'Global' },
     { id: 'champions', label: 'Champions' },
+    { id: 'friends', label: 'Friends' },
     { id: 'admins', label: 'Admins' }
   ];
 
@@ -4463,17 +4469,73 @@
     }).join('');
   }
 
+  function currentLeaderboardEntries(){
+    if (leaderboardCategory === 'global') return leaderboardCache || [];
+    if (leaderboardCategory === 'champions') return (leaderboardCache || []).slice(0, 10);
+    if (leaderboardCategory === 'admins') return leaderboardAdminsCache || [];
+    if (leaderboardCategory === 'friends') return leaderboardFriendsCache || [];
+    return [];
+  }
+
+  async function loadFriendsLeaderboardCache(){
+    if (!currentUsername) {
+      leaderboardFriendsCache = [];
+      return;
+    }
+    try {
+      const friendsResult = await sheetRequest({ action: 'getFriends', username: currentUsername });
+      const friends = (friendsResult.success && friendsResult.friends) ? friendsResult.friends : [];
+      const accountResults = await Promise.all(
+        friends.map(f => sheetRequest({ action: 'getAccount', username: f.username }).catch(() => null))
+      );
+      const entries = [];
+      accountResults.forEach(res => {
+        if (res && res.success && res.account) {
+          entries.push({
+            username: res.account.username,
+            profileIcon: res.account.profileIcon,
+            auth: res.account.auth,
+            font: res.account.font,
+            clicks: res.account.clicks,
+            prestige: res.account.prestige
+          });
+        }
+      });
+      entries.push({
+        username: currentUsername,
+        profileIcon: currentProfileIcon,
+        auth: currentAuth,
+        font: currentFont,
+        clicks: game.clicks,
+        prestige: game.prestige || 0
+      });
+      entries.sort((a, b) => (Number(b.clicks) || 0) - (Number(a.clicks) || 0));
+      leaderboardFriendsCache = entries;
+    } catch (e) {
+      leaderboardFriendsCache = [];
+    }
+  }
+
   function renderLeaderboardList(){
     const categoryBar = LEADERBOARD_CATEGORIES.map(cat =>
       `<button class="shop-category-btn${leaderboardCategory === cat.id ? ' active' : ''}" data-category="${cat.id}">${cat.label}</button>`
     ).join('');
 
-    let entries = [];
-    if (leaderboardCategory === 'global') entries = leaderboardCache || [];
-    else if (leaderboardCategory === 'champions') entries = (leaderboardCache || []).slice(0, 10);
-    else if (leaderboardCategory === 'admins') entries = leaderboardAdminsCache || [];
+    const isFriendsLoading = leaderboardCategory === 'friends' && leaderboardFriendsCache === null;
+    if (isFriendsLoading && !leaderboardFriendsLoading) {
+      leaderboardFriendsLoading = true;
+      loadFriendsLeaderboardCache().then(() => {
+        leaderboardFriendsLoading = false;
+        renderLeaderboardList();
+      });
+    }
 
-    list.innerHTML = `<div class="shop-category-bar">${categoryBar}</div>` + renderLeaderboardRows(entries);
+    const entries = isFriendsLoading ? [] : currentLeaderboardEntries();
+    const bodyHtml = isFriendsLoading
+      ? '<div class="empty-state">Loading friends...</div>'
+      : renderLeaderboardRows(entries);
+
+    list.innerHTML = `<div class="shop-category-bar">${categoryBar}</div>` + bodyHtml;
 
     list.querySelectorAll('.shop-category-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -4497,6 +4559,7 @@
 
   async function renderLeaderboard(){
     list.innerHTML = '<div class="empty-state">Loading leaderboard...</div>';
+    leaderboardFriendsCache = null;
 
     try {
       const result = await sheetRequest({ action: 'getLeaderboard' });
@@ -4518,35 +4581,52 @@
 
   function renderStats(){
     list.innerHTML = `
-      <div class="stats-card">
-        <div class="stats-avatar" id="stats-avatar-click">
-          <img src="${currentProfileIcon || 'profile.png'}" alt="Profile">
+      <div class="stats-subtabs">
+        <button class="stats-subtab-btn active" id="stats-subtab-overview" data-subtab="overview">Overview</button>
+        <button class="stats-subtab-btn" id="stats-subtab-friends" data-subtab="friends">Friends</button>
+        <button class="stats-subtab-btn" id="stats-subtab-mods" data-subtab="mods">Mods</button>
+      </div>
+
+      <div class="stats-subtab-pane" id="stats-pane-overview">
+        <div class="stats-card">
+          <div class="stats-avatar" id="stats-avatar-click">
+            <img src="${currentProfileIcon || 'profile.png'}" alt="Profile">
+          </div>
+          <h2 class="stats-name" id="stats-name-click" style="color:${authColor(currentAuth)}">${currentUsername || 'Guest'}${authBadge(currentAuth)}</h2>
+          <div class="stats-moneys">
+            <img src="money.png" alt="Moneys">
+            <span>${game.clicks.toLocaleString()}</span>
+          </div>
+          <div class="stats-prestige">
+            <img src="heart.png" alt="Prestige">
+            <span>${(game.prestige || 0).toLocaleString()}</span>
+          </div>
+          <div class="stats-gems">
+            <img src="gems.png" alt="Gems">
+            <span>${(game.gems || 0).toLocaleString()}</span>
+            <button class="gems-plus-btn" id="gems-plus-btn" title="Convert Moneys to Gems">+</button>
+          </div>
         </div>
-        <h2 class="stats-name" id="stats-name-click" style="color:${authColor(currentAuth)}">${currentUsername || 'Guest'}${authBadge(currentAuth)}</h2>
-        <div class="stats-moneys">
-          <img src="money.png" alt="Moneys">
-          <span>${game.clicks.toLocaleString()}</span>
-        </div>
-        <div class="stats-prestige">
-          <img src="heart.png" alt="Prestige">
-          <span>${(game.prestige || 0).toLocaleString()}</span>
-        </div>
-        <div class="stats-gems">
-          <img src="gems.png" alt="Gems">
-          <span>${(game.gems || 0).toLocaleString()}</span>
-          <button class="gems-plus-btn" id="gems-plus-btn" title="Convert Moneys to Gems">+</button>
+        <div class="friend-requests-card" id="friend-requests-card" style="display:none;">
+          <h3>Friend Requests</h3>
+          <div class="friend-requests-list" id="friend-requests-list"></div>
         </div>
       </div>
-      <div class="shop-card">
-        <div class="shop-info">
-          <h3>Mods</h3>
-          <p>Open the Workshop to browse, install, and upload mods.</p>
-        </div>
-        <button class="buy-btn" id="open-workshop-btn">Open Workshop</button>
+
+      <div class="stats-subtab-pane" id="stats-pane-friends" style="display:none;">
+        <input type="text" id="friends-search-input" class="auth-input" placeholder="Search your friends..." autocomplete="off">
+        <div class="friends-list" id="friends-list"></div>
       </div>
-      <div class="friend-requests-card" id="friend-requests-card" style="display:none;">
-        <h3>Friend Requests</h3>
-        <div class="friend-requests-list" id="friend-requests-list"></div>
+
+      <div class="stats-subtab-pane" id="stats-pane-mods" style="display:none;">
+        <div class="shop-card">
+          <div class="shop-info">
+            <h3>Mods</h3>
+            <p>Open the Workshop to browse, install, and upload mods.</p>
+          </div>
+          <button class="buy-btn" id="open-workshop-btn">Open Workshop</button>
+        </div>
+        <div class="installed-mods-list" id="installed-mods-list"></div>
       </div>
     `;
 
@@ -4555,6 +4635,15 @@
     document.getElementById('gems-plus-btn').addEventListener('click', openGemsConvertDialog);
     document.getElementById('open-workshop-btn').addEventListener('click', openWorkshop);
 
+    document.querySelectorAll('.stats-subtab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchStatsSubtab(btn.dataset.subtab));
+    });
+
+    const friendsSearchInput = document.getElementById('friends-search-input');
+    if (friendsSearchInput) {
+      friendsSearchInput.addEventListener('input', () => renderFriendsList(friendsSearchInput.value.trim()));
+    }
+
     ensureFontLoaded(currentFont).then(family => {
       if (!family) return;
       const nameEl = document.getElementById('stats-name-click');
@@ -4562,6 +4651,50 @@
     });
 
     loadFriendRequests();
+  }
+
+  function switchStatsSubtab(tab){
+    document.querySelectorAll('.stats-subtab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.subtab === tab));
+    const overviewPane = document.getElementById('stats-pane-overview');
+    const friendsPane = document.getElementById('stats-pane-friends');
+    const modsPane = document.getElementById('stats-pane-mods');
+    if (overviewPane) overviewPane.style.display = tab === 'overview' ? '' : 'none';
+    if (friendsPane) friendsPane.style.display = tab === 'friends' ? '' : 'none';
+    if (modsPane) modsPane.style.display = tab === 'mods' ? '' : 'none';
+    if (tab === 'friends') loadFriendsList();
+    if (tab === 'mods') renderInstalledModsList();
+  }
+
+  function renderInstalledModsList(){
+    const listEl = document.getElementById('installed-mods-list');
+    if (!listEl) return;
+    const mods = game.installedMods || [];
+
+    if (!mods.length) {
+      listEl.innerHTML = '<div class="empty-state">You haven\'t installed any mods yet.</div>';
+      return;
+    }
+
+    listEl.innerHTML = mods.map(mod => `
+      <div class="shop-card installed-mod-row" data-mod-id="${mod.id}">
+        <div class="shop-info">
+          <h3>${mod.name}</h3>
+          <p>${mod.version ? 'Version ' + mod.version : 'No version info'}</p>
+        </div>
+        <button class="buy-btn uninstall" data-action="uninstall">Uninstall</button>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.installed-mod-row').forEach(row => {
+      const modId = row.dataset.modId;
+      row.querySelector('[data-action="uninstall"]').addEventListener('click', () => {
+        const mod = findInstalledMod(modId);
+        if (mod) {
+          uninstallMod(mod);
+          renderInstalledModsList();
+        }
+      });
+    });
   }
 
   async function loadFriendRequests(){
@@ -5699,34 +5832,20 @@
   let editSelectedBannerImage = null;
   let editBannerImageChanged = false;
 
-  /* ---------- FRIENDS TAB ---------- */
-  const editProfileTabBtns = document.querySelectorAll('.edit-profile-tab-btn');
-  const editProfilePaneProfile = document.getElementById('edit-profile-pane-profile');
-  const editProfilePaneFriends = document.getElementById('edit-profile-pane-friends');
-  const friendsSearchInput = document.getElementById('friends-search-input');
-  const friendsListEl = document.getElementById('friends-list');
-
+  /* ---------- FRIENDS (Stats subtab) ---------- */
   let friendsListCache = [];
   let friendsListLoaded = false;
 
-  editProfileTabBtns.forEach(btn => {
-    btn.addEventListener('click', () => switchEditProfileTab(btn.dataset.tab));
-  });
-
-  function switchEditProfileTab(tab){
-    editProfileTabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
-    editProfilePaneProfile.style.display = tab === 'profile' ? '' : 'none';
-    editProfilePaneFriends.style.display = tab === 'friends' ? '' : 'none';
-    if (tab === 'friends') loadFriendsList();
-  }
-
   async function loadFriendsList(){
+    const friendsListEl = document.getElementById('friends-list');
+    const friendsSearchInput = document.getElementById('friends-search-input');
+    if (!friendsListEl) return;
     friendsListEl.innerHTML = '<div class="empty-state">Loading friends...</div>';
     try {
       const result = await sheetRequest({ action: 'getFriends', username: currentUsername });
       friendsListCache = (result.success && result.friends) ? result.friends : [];
       friendsListLoaded = true;
-      renderFriendsList(friendsSearchInput.value.trim());
+      renderFriendsList(friendsSearchInput ? friendsSearchInput.value.trim() : '');
     } catch (e) {
       friendsListLoaded = false;
       friendsListEl.innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
@@ -5734,7 +5853,8 @@
   }
 
   function renderFriendsList(filterText){
-    if (!friendsListLoaded) return;
+    const friendsListEl = document.getElementById('friends-list');
+    if (!friendsListEl || !friendsListLoaded) return;
     const q = (filterText || '').toLowerCase();
     const filtered = friendsListCache.filter(f => f.username.toLowerCase().includes(q));
 
@@ -5752,13 +5872,10 @@
 
     friendsListEl.querySelectorAll('.friends-row').forEach(row => {
       row.addEventListener('click', () => {
-        closeEditProfile();
         openPublicProfile(row.dataset.username);
       });
     });
   }
-
-  friendsSearchInput.addEventListener('input', () => renderFriendsList(friendsSearchInput.value.trim()));
 
   /* ---------- FRIEND ACTIONS (API) ---------- */
   async function apiSendFriendRequest(toUsername){
@@ -7046,9 +7163,6 @@
       editUsernameInput.style.fontFamily = `'${family}'`;
     });
     renderEditIconGrid();
-    switchEditProfileTab('profile');
-    friendsListLoaded = false;
-    friendsSearchInput.value = '';
     editProfileOverlay.classList.add('visible');
   }
 
