@@ -3113,6 +3113,7 @@
   let SAVE_KEY = 'fallgamedev-clicker-save';
   let currentUsername = null;
   let currentProfileIcon = null;
+  let offlineMode = false;
   let currentAuth = 'none';
   let currentFont = 'Default';
   let currentDescription = '';
@@ -5992,6 +5993,9 @@
   // Content-Type: text/plain avoids a CORS preflight request, which
   // Apps Script Web Apps don't handle. The body is still valid JSON text.
   async function sheetRequest(payload){
+    if (offlineMode) {
+      throw new Error('offline');
+    }
     const res = await fetch(SHEET_API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
@@ -6067,7 +6071,7 @@
   }
 
   function syncToSheetBeacon(){
-    if (!currentUsername) return;
+    if (!currentUsername || offlineMode) return;
     // navigator.sendBeacon doesn't reliably follow the redirect Apps Script
     // Web Apps respond with, so a keepalive fetch is used instead - it
     // survives page unload the same way but actually follows the redirect.
@@ -8217,6 +8221,21 @@
     const session = getSession();
 
     if (session) {
+      if (!navigator.onLine) {
+        // No connection at load - go straight into offline mode using the
+        // last-known local data instead of even attempting a network call.
+        offlineMode = true;
+        currentUsername = session;
+        currentProfileIcon = getLastProfileIcon();
+        currentAuth = getLastAuth();
+        currentFont = getLastFont();
+        SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
+        applyAccountTheme(getLastTheme());
+        if (loadingStatusEl) loadingStatusEl.textContent = 'Offline - playing locally...';
+        hideLoadingScreen(startGame);
+        return;
+      }
+
       try {
         const result = await sheetRequest({ action: 'getAccount', username: session });
 
@@ -8264,7 +8283,10 @@
         }
       } catch (e) {
         // Network hiccup - fall back to the cached theme so the site still
-        // works offline, rather than blocking the person out entirely.
+        // works offline, rather than blocking the person out entirely. Stay
+        // in offline mode for the rest of the session even if the
+        // connection comes back, rather than silently resuming syncs.
+        offlineMode = true;
         currentUsername = session;
         currentProfileIcon = getLastProfileIcon();
         currentAuth = getLastAuth();
