@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.10.2 | Deployment: 190 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.10.2">
+<!-- Game version: 1.10.4 | Deployment: 192 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.10.4">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="maksy.ico" id="favicon-link">
@@ -6820,8 +6820,8 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  // Keeps the /u/3/ part on purpose (Omar's choice). See README, Backend.
-  const SHEET_API_URL = 'https://script.google.com/macros/u/3/s/AKfycbzjVrvyucLoOx1AtNiRN0jmd9BPcbhGey-Dp6UcHFXzcXxKGMJBhkT3VaQETJM4M-ZW0g/exec';
+  // Plain deployment URL only. A /u/N/ part is a browser account number and does not resolve for players. See README, Backend.
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbx8ZVrtoM4G74EbXQVrD8FzWsDyQlqnbWXKVZB6PDGayIowrnmTu8CYNQgCRPo_89NfiQ/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -6836,12 +6836,20 @@
     if (offlineMode) {
       throw new Error('offline');
     }
-    const res = await fetch(SHEET_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(payload)
-    });
-    return res.json();
+    try {
+      const res = await fetch(SHEET_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      });
+      return await res.json();
+    } catch (e) {
+      // Shows why the API could not be reached. "Failed to fetch" usually means a wrong URL or a
+      // deployment that is not set to Anyone. "Unexpected token <" means a Google page came back
+      // instead of JSON (sign in page or script error page).
+      console.warn('API request failed (' + payload.action + '):', e && e.message ? e.message : e);
+      throw e;
+    }
   }
 
   function getSession(){
