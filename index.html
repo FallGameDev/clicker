@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Game version: 1.10.0 | Deployment: 188 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.10.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="maksy.ico" id="favicon-link">
@@ -501,15 +503,50 @@
     padding:10px 18px;
     border-radius:14px;
     box-shadow:var(--pop-sm);
-    z-index:1000;
+    z-index:5000;
     opacity:0;
-    transition:opacity .3s ease, transform .3s cubic-bezier(.34,1.56,.64,1);
+    transition:opacity .3s ease, transform .3s cubic-bezier(.34,1.56,.64,1), top .3s ease;
     max-width:90vw;
     text-align:center;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
   }
   .offline-banner.visible{
     opacity:1;
     transform:translateX(-50%) translateY(0) scale(1);
+  }
+
+  /* ---------- NOTIFICATION CLOSE BUTTON ---------- */
+  .notif-close{
+    flex-shrink:0;
+    width:22px;
+    height:22px;
+    padding:0;
+    border-radius:50%;
+    border:2px solid var(--ink);
+    background:rgba(0,0,0,0.12);
+    color:inherit;
+    font-family:'Fredoka One', cursive;
+    font-size:15px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+  }
+  .notif-close:hover{
+    background:rgba(0,0,0,0.28);
+  }
+  .achievement-popup .notif-close{
+    color:var(--rind);
+    border-color:var(--rind);
+    background:transparent;
+    align-self:flex-start;
+  }
+  .achievement-popup .notif-close:hover{
+    background:rgba(128,128,128,0.25);
   }
 
   /* ---------- TABS ---------- */
@@ -1358,8 +1395,8 @@
     transform:translateX(140%);
     opacity:0;
     transition:transform .4s cubic-bezier(.34,1.56,.64,1), opacity .3s ease, top .3s ease;
-    max-width:260px;
-    pointer-events:none;
+    max-width:290px;
+    pointer-events:auto;
   }
   .achievement-popup.visible{
     transform:translateX(0);
@@ -1924,6 +1961,90 @@
   }
   .edit-profile-box{
     position:relative;
+    max-height:calc(100vh - 40px);
+    overflow-y:auto;
+  }
+  .edit-featured-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin:0 0 14px;
+  }
+  .edit-featured-label{
+    flex:0 0 auto;
+    white-space:nowrap;
+    text-align:left;
+    font-family:'Poppins', sans-serif;
+    font-size:12px;
+    font-weight:600;
+    color:var(--rind);
+    margin:0;
+  }
+  .edit-featured-row .edit-featured-select{
+    flex:1;
+    width:auto;
+    min-width:0;
+    margin:0;
+    cursor:pointer;
+  }
+  .edit-featured-select option{
+    background:var(--night);
+    color:var(--rind);
+  }
+  .public-profile-featured{
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    margin:0 0 14px;
+  }
+  .public-profile-featured.visible{
+    display:flex;
+  }
+  .public-profile-featured-label{
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--zap);
+  }
+  .public-profile-featured-chip{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    max-width:100%;
+    background:var(--night);
+    border:2px solid var(--zap);
+    border-radius:12px;
+    padding:8px 14px 8px 8px;
+    text-align:left;
+  }
+  .public-profile-featured-icon{
+    width:38px;
+    height:38px;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:9px;
+    border:2px solid var(--ink);
+    background:var(--brand-gradient);
+    font-family:'Fredoka One', cursive;
+    font-size:14px;
+    color:var(--night);
+  }
+  .public-profile-featured-text{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    min-width:0;
+  }
+  .public-profile-featured-name{
+    font-family:'Fredoka One', cursive;
+    font-size:14px;
+    color:var(--rind);
+    line-height:1.25;
   }
   .edit-profile-close{
     position:absolute;
@@ -2720,6 +2841,24 @@
     margin-bottom:10px;
   }
 
+  /* ---------- MOBILE BLOCK ---------- */
+  .mobile-block{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:100000;
+    background:var(--night);
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  body.mobile-blocked .mobile-block{
+    display:flex;
+  }
+  body.mobile-blocked > *:not(.mobile-block){
+    display:none !important;
+  }
+
   /* ---------- TUTORIAL ---------- */
   .tutorial-overlay{
     position:fixed;
@@ -2744,12 +2883,23 @@
   }
   .tutorial-overlay.action-step .tutorial-box{
     pointer-events:auto;
-    max-width:260px;
     text-align:left;
     box-shadow:var(--pop-lg);
   }
+  /* Every tutorial step uses the same window size. */
   .tutorial-box{
     text-align:center;
+    width:300px;
+    max-width:100%;
+    height:560px;
+    max-height:100%;
+    box-sizing:border-box;
+    display:flex;
+    flex-direction:column;
+    overflow-y:auto;
+  }
+  .tutorial-box .auth-sub{
+    flex:1 1 auto;
   }
   .tutorial-char{
     width:84px;
@@ -2757,6 +2907,59 @@
     object-fit:contain;
     margin:0 auto 14px;
     display:block;
+    flex-shrink:0;
+  }
+  .tutorial-emoji{
+    width:84px;
+    height:84px;
+    margin:0 auto 14px;
+    font-size:64px;
+    line-height:84px;
+    text-align:center;
+    flex-shrink:0;
+  }
+  .tutorial-actions{
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+  }
+  /* Phones: a shorter, full width window at the bottom so the Clicker and
+     the tabs stay visible above it. Same size on every step. */
+  @media (max-width:480px){
+    .tutorial-overlay{
+      padding:12px;
+    }
+    .tutorial-box{
+      width:100%;
+      max-width:none;
+      height:360px;
+      padding:14px 16px;
+    }
+    .tutorial-box .tutorial-char,
+    .tutorial-box .tutorial-emoji{
+      width:44px;
+      height:44px;
+      margin-bottom:6px;
+    }
+    .tutorial-box .tutorial-emoji{
+      font-size:34px;
+      line-height:44px;
+    }
+    .tutorial-box .auth-sub{
+      margin-bottom:10px;
+    }
+    .tutorial-actions{
+      flex-direction:row;
+      gap:8px;
+    }
+    .tutorial-actions .auth-btn{
+      flex:1;
+      min-height:40px;
+      padding:10px;
+    }
+    .tutorial-actions .auth-btn.secondary{
+      margin-top:0;
+    }
   }
   .tutorial-progress{
     font-family:'Fredoka One', cursive;
@@ -2766,6 +2969,73 @@
   }
   .tutorial-hint{
     color:var(--tab-color) !important;
+  }
+
+  /* ---------- TUTORIAL ARROW AND BIGGIE ---------- */
+  .tutorial-arrow{
+    position:fixed;
+    left:0;
+    top:0;
+    z-index:4950;
+    pointer-events:none;
+    opacity:0;
+    transition:opacity .25s ease;
+    transform-origin:50% 50%;
+  }
+  .tutorial-arrow.visible{
+    opacity:1;
+  }
+  .tutorial-arrow img{
+    display:block;
+    width:100%;
+    height:100%;
+    filter:drop-shadow(1.5px 0 0 var(--ink)) drop-shadow(-1.5px 0 0 var(--ink)) drop-shadow(0 1.5px 0 var(--ink)) drop-shadow(0 -1.5px 0 var(--ink));
+    animation:tutorial-arrow-bob .9s ease-in-out infinite;
+  }
+  body.low-perf .tutorial-arrow img{
+    filter:none;
+    animation:none;
+  }
+  @keyframes tutorial-arrow-bob{
+    0%, 100%{ transform:translateX(0); }
+    50%{ transform:translateX(-10px); }
+  }
+
+  .tutorial-biggie{
+    position:fixed;
+    left:0;
+    top:0;
+    width:min(180px, 38vw);
+    height:auto;
+    aspect-ratio:1 / 1;
+    z-index:5600;
+    pointer-events:none;
+    display:none;
+    opacity:0;
+    transform-origin:50% 50%;
+  }
+  .tutorial-biggie.show{
+    display:block;
+    animation:tutorial-biggie-stretch 1.7s ease-out forwards;
+  }
+  @media (prefers-reduced-motion: reduce){
+    .tutorial-biggie.show{
+      animation:none !important;
+      opacity:1;
+      transform:translate(-50%, -50%) skew(-6deg, 0deg) scale(1.8, 0.9);
+    }
+  }
+  /* Pops in, squashes, then stretches wide and wobbles (skew) before fading. */
+  @keyframes tutorial-biggie-stretch{
+    0%{   opacity:0; transform:translate(-50%, -50%) skew(0deg, 0deg)   scale(0.1, 0.1); }
+    8%{   opacity:1; transform:translate(-50%, -50%) skew(0deg, 0deg)   scale(1.1, 1.1); }
+    16%{  opacity:1; transform:translate(-50%, -50%) skew(-8deg, 0deg)  scale(0.85, 1.25); }
+    30%{  opacity:1; transform:translate(-50%, -50%) skew(10deg, 2deg)  scale(1.6, 0.95); }
+    45%{  opacity:1; transform:translate(-50%, -50%) skew(-14deg, 3deg) scale(2.3, 0.85); }
+    60%{  opacity:1; transform:translate(-50%, -50%) skew(12deg, -3deg) scale(2.7, 0.8); }
+    75%{  opacity:1; transform:translate(-50%, -50%) skew(-10deg, 2deg) scale(2.5, 0.9); }
+    90%{  opacity:1; transform:translate(-50%, -50%) skew(6deg, -2deg)  scale(2.7, 0.8); }
+    100%{ opacity:0; transform:translate(-50%, -50%) skew(0deg, 0deg)   scale(3, 0.7); }
   }
 
   /* ---------- AUTH BADGE ---------- */
@@ -2843,6 +3113,32 @@
 </style>
 </head>
 <body>
+
+<script>
+  /* Phones and tablets are not supported. This runs first so the game never
+     flashes on screen. The main script below checks IS_MOBILE_BLOCKED and stops. */
+  (function(){
+    function isMobileDevice(){
+      var ua = navigator.userAgent || '';
+      if (/Android|iPhone|iPad|iPod|Mobile|Windows Phone|BlackBerry|Opera Mini|IEMobile/i.test(ua)) return true;
+      // iPadOS asks for the desktop site by default and reports itself as a Mac.
+      if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
+      if (navigator.userAgentData && navigator.userAgentData.mobile) return true;
+      // Touch only devices with no hover (for example a phone asking for the desktop site).
+      if (!/Windows NT|CrOS/i.test(ua) && window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches) return true;
+      return false;
+    }
+    window.IS_MOBILE_BLOCKED = isMobileDevice();
+    if (window.IS_MOBILE_BLOCKED) document.body.classList.add('mobile-blocked');
+  })();
+</script>
+
+<div class="mobile-block" id="mobile-block">
+  <div class="auth-box">
+    <h1 class="auth-heading">PC and Mac Only</h1>
+    <p class="auth-sub" style="margin-bottom:0;">The Clicker Game is optimized for PC and Mac browsers and needs higher end specs than a phone or tablet can offer. Please open it on a computer to play.</p>
+  </div>
+</div>
 
 <div id="loading-screen" class="loading-screen">
   <div class="loading-content">
@@ -2939,6 +3235,10 @@
     <input type="file" id="edit-icon-upload-input" accept="image/*" style="display:none">
     <input type="text" id="edit-username-input" class="auth-input" placeholder="Username" autocomplete="off" style="margin-top:16px;">
     <textarea id="edit-description-input" class="auth-input edit-description" placeholder="Account description..." maxlength="280" rows="3"></textarea>
+    <div class="edit-featured-row">
+      <label class="edit-featured-label" for="edit-featured-select">Featured achievement</label>
+      <select id="edit-featured-select" class="auth-input edit-featured-select" title="Shown on your public profile. You can only pick achievements you have unlocked."></select>
+    </div>
     <button class="auth-btn" id="edit-profile-save">Save Changes</button>
     <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
   </div>
@@ -2964,6 +3264,16 @@
       <h2 id="public-profile-name"></h2>
       <p class="public-profile-detail" id="public-profile-birthday"></p>
       <p class="public-profile-detail" id="public-profile-description"></p>
+      <div class="public-profile-featured" id="public-profile-featured">
+        <span class="public-profile-featured-label">Featured Achievement</span>
+        <div class="public-profile-featured-chip">
+          <div class="public-profile-featured-icon" id="public-profile-featured-icon"></div>
+          <div class="public-profile-featured-text">
+            <span class="achievement-difficulty" id="public-profile-featured-diff"></span>
+            <span class="public-profile-featured-name" id="public-profile-featured-name"></span>
+          </div>
+        </div>
+      </div>
       <div class="public-profile-moneys">
         <img src="money.png" alt="Moneys">
         <span id="public-profile-clicks"></span>
@@ -3046,15 +3356,20 @@
 
 <div class="tutorial-overlay" id="tutorial-overlay">
   <div class="auth-box tutorial-box">
-    <img src="tutorial-guide.png" alt="" class="tutorial-char">
+    <img src="tutorial-guide.png" alt="" class="tutorial-char" id="tutorial-char">
+    <div class="tutorial-emoji" id="tutorial-emoji" style="display:none;"></div>
     <p class="tutorial-progress" id="tutorial-progress"></p>
     <h1 class="auth-heading" id="tutorial-title"></h1>
     <p class="auth-sub" id="tutorial-text"></p>
     <p class="auth-error tutorial-hint" id="tutorial-hint" style="display:none;"></p>
-    <button class="auth-btn" id="tutorial-next">Next</button>
-    <button class="auth-btn secondary" id="tutorial-skip">Skip Tutorial</button>
+    <div class="tutorial-actions">
+      <button class="auth-btn" id="tutorial-next">Next</button>
+      <button class="auth-btn secondary" id="tutorial-skip">Skip Tutorial</button>
+    </div>
   </div>
 </div>
+<div class="tutorial-arrow" id="tutorial-arrow"><img src="arrow.png" alt=""></div>
+<img src="biggie.png" alt="" class="tutorial-biggie" id="tutorial-biggie">
 
 <div class="page">
 
@@ -3115,6 +3430,18 @@
 </div>
 
 <script>
+  /* ---------- MOBILE BLOCK ----------
+     Phones and tablets are not supported (see the early script after <body>).
+     Throwing here stops the rest of the game from starting. */
+  if (window.IS_MOBILE_BLOCKED) {
+    window.addEventListener('error', function(e){
+      if (e.error && e.error.mobileBlocked) e.preventDefault();
+    });
+    const mobileStop = new Error('Mobile devices are not supported.');
+    mobileStop.mobileBlocked = true;
+    throw mobileStop;
+  }
+
   /* ---------- LOW PERFORMANCE MODE ---------- */
   const LOW_PERF_KEY = 'lowPerfMode';
   function isLikelyLowPowerDevice(){
@@ -3331,6 +3658,7 @@
       sfxMuted: false,
       lightMode: false,
       unlockedAchievements: [],
+      featuredAchievement: '',
       prestige: 0,
       boosts: 0,
       totalPrestige: 0,
@@ -4308,6 +4636,67 @@
     }
   }
 
+  /* ---------- NOTIFICATIONS (shared) ---------- */
+  const NOTIFICATION_DURATION_MS = 6000;
+
+  // Adds a close button, shows the element, and auto-closes after 6 seconds.
+  // onRemove runs once the element has been removed from the page.
+  function addNotificationClose(el, onRemove){
+    let closed = false;
+    let timer = null;
+
+    function close(){
+      if (closed) return;
+      closed = true;
+      clearTimeout(timer);
+      el.classList.remove('visible');
+      setTimeout(() => {
+        el.remove();
+        if (onRemove) onRemove();
+      }, 500);
+    }
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'notif-close';
+    btn.setAttribute('aria-label', 'Close notification');
+    btn.innerHTML = '&times;';
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      close();
+    });
+    el.appendChild(btn);
+
+    requestAnimationFrame(() => el.classList.add('visible'));
+    timer = setTimeout(close, NOTIFICATION_DURATION_MS);
+    return close;
+  }
+
+  let activeBanners = [];
+
+  function repositionBanners(){
+    let y = 16;
+    activeBanners.forEach(b => {
+      b.style.top = y + 'px';
+      y += b.offsetHeight + 8;
+    });
+  }
+
+  function showBanner(text){
+    const banner = document.createElement('div');
+    banner.className = 'offline-banner';
+    const msg = document.createElement('span');
+    msg.textContent = text;
+    banner.appendChild(msg);
+    document.body.appendChild(banner);
+    activeBanners.push(banner);
+    repositionBanners();
+    addNotificationClose(banner, () => {
+      activeBanners = activeBanners.filter(b => b !== banner);
+      repositionBanners();
+    });
+  }
+
   /* ---------- OFFLINE EARNINGS ---------- */
   function formatDuration(seconds){
     const h = Math.floor(seconds / 3600);
@@ -4321,15 +4710,7 @@
   }
 
   function showOfflineBanner(earned, seconds){
-    const banner = document.createElement('div');
-    banner.className = 'offline-banner';
-    banner.textContent = `Welcome back! +${earned.toLocaleString()} clicks earned while away (${formatDuration(seconds)}).`;
-    document.body.appendChild(banner);
-    requestAnimationFrame(() => banner.classList.add('visible'));
-    setTimeout(() => {
-      banner.classList.remove('visible');
-      setTimeout(() => banner.remove(), 500);
-    }, 5000);
+    showBanner(`Welcome back! +${earned.toLocaleString()} clicks earned while away (${formatDuration(seconds)}).`);
   }
 
   function applyOfflineEarnings(){
@@ -5024,6 +5405,7 @@
       const btn = document.createElement('button');
       btn.className = 'tab-btn' + (tab.id === activeTab ? ' active' : '');
       btn.textContent = tab.label;
+      btn.dataset.tab = tab.id;
       btn.addEventListener('click', () => {
         activeTab = tab.id;
         tutorialVisitedTabs.add(tab.id);
@@ -5538,7 +5920,12 @@
   });
 
   const chatOverlay = document.getElementById('chat-overlay');
-  document.getElementById('chat-close').addEventListener('click', () => chatOverlay.classList.remove('visible'));
+  document.getElementById('chat-close').addEventListener('click', () => {
+    chatOverlay.classList.remove('visible');
+    // Refresh the list now so previews and new chats are up to date.
+    chatLastListPoll = Date.now();
+    refreshChatsListSilently().catch(() => {});
+  });
   document.getElementById('chat-add-friends-btn').addEventListener('click', () => {
     if (activeChatId) openFriendPicker('add', activeChatParticipants);
   });
@@ -5561,6 +5948,7 @@
     chatOverlay.classList.add('visible');
     document.getElementById('chat-name-input').value = '';
     document.getElementById('chat-messages').innerHTML = '<div class="empty-state loading-state">Loading...</div>';
+    chatLastOpenPoll = Date.now();
 
     try {
       const result = await sheetRequest({ action: 'getChatMessages', chatId, username: currentUsername });
@@ -5577,9 +5965,15 @@
     }
   }
 
-  function renderChatMessages(){
+  // forceBottom: jump to the newest message (opening a chat, sending).
+  // When false (background refresh) the view only follows new messages if the
+  // person was already at the bottom, so reading older messages is not interrupted.
+  function renderChatMessages(forceBottom = true){
     const messagesEl = document.getElementById('chat-messages');
     if (!messagesEl) return;
+
+    const wasAtBottom = messagesEl.scrollHeight - messagesEl.scrollTop - messagesEl.clientHeight < 40;
+    const previousTop = messagesEl.scrollTop;
 
     if (!activeChatMessages.length) {
       messagesEl.innerHTML = '<div class="empty-state">No messages yet. Say hi!</div>';
@@ -5598,8 +5992,10 @@
       </div>
     `).join('');
 
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    messagesEl.scrollTop = (forceBottom || wasAtBottom) ? messagesEl.scrollHeight : previousTop;
   }
+
+  let chatSendsInFlight = 0;
 
   async function sendActiveChatMessage(){
     const input = document.getElementById('chat-message-input');
@@ -5617,18 +6013,23 @@
     });
     renderChatMessages();
 
+    chatSendsInFlight++;
     try {
       const result = await sheetRequest({ action: 'sendMessage', chatId: activeChatId, username: currentUsername, text });
       const idx = activeChatMessages.findIndex(m => m.id === tempId);
       if (idx !== -1) {
         if (result.success && result.message) {
-          activeChatMessages[idx] = result.message;
+          const alreadyThere = activeChatMessages.some(m => m.id === result.message.id);
+          if (alreadyThere) activeChatMessages.splice(idx, 1);
+          else activeChatMessages[idx] = result.message;
         } else {
           activeChatMessages[idx].pending = false;
           activeChatMessages[idx].failed = true;
         }
       }
       renderChatMessages();
+      // The chat list preview should show the message that was just sent.
+      chatLastListPoll = 0;
     } catch (e) {
       const idx = activeChatMessages.findIndex(m => m.id === tempId);
       if (idx !== -1) {
@@ -5636,8 +6037,78 @@
         activeChatMessages[idx].failed = true;
         renderChatMessages();
       }
+    } finally {
+      chatSendsInFlight--;
     }
   }
+
+  /* ---------- CHAT LIVE REFRESH ----------
+     There is no push from the backend, so the open chat and the chat list are
+     checked on a timer. Requests never overlap, and nothing is fetched while
+     the browser tab is hidden. */
+  const CHAT_POLL_OPEN_MS = 3000;
+  const CHAT_POLL_LIST_MS = 8000;
+  let chatPollBusy = false;
+  let chatLastOpenPoll = 0;
+  let chatLastListPoll = 0;
+
+  async function refreshActiveChat(){
+    const chatId = activeChatId;
+    if (!chatId) return;
+    const result = await sheetRequest({ action: 'getChatMessages', chatId, username: currentUsername });
+    // Ignore the answer if the chat was closed or switched, or a send is in progress.
+    if (!result || !result.success || chatId !== activeChatId || chatSendsInFlight > 0) return;
+
+    const serverMessages = result.messages || [];
+    const currentServerMessages = activeChatMessages.filter(m => !m.pending && !m.failed);
+    const sig = list => list.map(m => m.id).join('|');
+    if (result.chat && Array.isArray(result.chat.participants)) activeChatParticipants = result.chat.participants;
+    if (sig(serverMessages) === sig(currentServerMessages)) return;
+
+    const localOnly = activeChatMessages.filter(m => m.pending || m.failed);
+    activeChatMessages = serverMessages.concat(localOnly);
+    renderChatMessages(false);
+  }
+
+  async function refreshChatsListSilently(){
+    const result = await sheetRequest({ action: 'getChats', username: currentUsername });
+    if (!result || !result.success || !Array.isArray(result.chats)) return;
+    const sig = list => list.map(c => [
+      c.id, c.name, c.updatedAt || '',
+      c.lastMessage ? (c.lastMessage.createdAt || '') + (c.lastMessage.text || '') : ''
+    ].join('~')).join('|');
+    if (sig(result.chats) === sig(chatsListCache)) return;
+    chatsListCache = result.chats;
+    renderChatsList();
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) { chatLastOpenPoll = 0; chatLastListPoll = 0; }
+  });
+
+  setInterval(async () => {
+    if (document.hidden || chatPollBusy || !currentUsername) return;
+    const now = Date.now();
+    const chatOpen = chatOverlay.classList.contains('visible') && activeChatId;
+    const pane = document.getElementById('stats-pane-messages');
+    const listVisible = !!document.getElementById('chats-list') && pane && pane.style.display !== 'none';
+
+    let job = null;
+    if (chatOpen) {
+      if (now - chatLastOpenPoll < CHAT_POLL_OPEN_MS) return;
+      chatLastOpenPoll = now;
+      job = refreshActiveChat;
+    } else if (listVisible) {
+      if (now - chatLastListPoll < CHAT_POLL_LIST_MS) return;
+      chatLastListPoll = now;
+      job = refreshChatsListSilently;
+    } else {
+      return;
+    }
+
+    chatPollBusy = true;
+    try { await job(); } catch (e) {} finally { chatPollBusy = false; }
+  }, 1000);
 
   async function loadFriendRequests(){
     const card = document.getElementById('friend-requests-card');
@@ -6415,6 +6886,7 @@
       prestige: game.prestige || 0,
       boosts: game.boosts || 0,
       achievements: game.unlockedAchievements || [],
+      featuredAchievement: game.featuredAchievement || '',
       goatOwned: game.goatOwned || 0,
       effectsOwned: game.effectsOwned || false,
       selectedEffect: game.selectedEffect || 'none',
@@ -6516,6 +6988,10 @@
       prestige: source.prestige || 0,
       boosts: source.boosts || 0,
       unlockedAchievements: mergedAchievements,
+      // Prefer the server value once the backend stores it, otherwise keep the local one.
+      featuredAchievement: account.featuredAchievement !== undefined
+        ? String(account.featuredAchievement || '')
+        : String((savedRaw && savedRaw.featuredAchievement) || ''),
       totalPrestige: previousTotalPrestige,
       goatOwned: source.goatOwned || 0,
       effectsOwned: !!source.effectsOwned,
@@ -6828,6 +7304,7 @@
   let editSelectedFavColor = null;
   let editSelectedBannerImage = null;
   let editBannerImageChanged = false;
+  let editSelectedFeatured = '';
 
   /* ---------- FRIENDS (Stats subtab) ---------- */
   let friendsListCache = [];
@@ -7001,6 +7478,29 @@
     }
   });
 
+  // Shows the achievement the player picked. Your own profile falls back to the
+  // local choice until the backend returns the field.
+  function renderPublicProfileFeatured(account, isSelf){
+    const box = document.getElementById('public-profile-featured');
+    let id = account.featuredAchievement;
+    let owned = Array.isArray(account.achievements) ? account.achievements : null;
+    if (id === undefined && isSelf) {
+      id = game.featuredAchievement;
+      owned = game.unlockedAchievements || [];
+    }
+    const a = id ? findAchievement(String(id)) : null;
+    if (!a || (owned && !owned.includes(a.id))) {
+      box.classList.remove('visible');
+      return;
+    }
+    document.getElementById('public-profile-featured-icon').textContent = a.icon;
+    document.getElementById('public-profile-featured-name').textContent = a.label;
+    const diff = document.getElementById('public-profile-featured-diff');
+    diff.textContent = a.difficulty;
+    diff.className = 'achievement-difficulty diff-' + a.difficulty.toLowerCase();
+    box.classList.add('visible');
+  }
+
   async function openPublicProfile(identifier, skipUrlUpdate){
     if (!identifier) return;
 
@@ -7011,6 +7511,7 @@
     publicProfileBirthday.textContent = '';
     publicProfileClicks.textContent = '';
     publicProfileDescription.textContent = '';
+    document.getElementById('public-profile-featured').classList.remove('visible');
     publicProfileBanner.style.background = 'var(--melon)';
     publicProfileModActions.style.display = 'none';
     publicProfileRestoreRow.style.display = 'none';
@@ -7044,6 +7545,7 @@
       const viewerAuth = String(currentAuth || 'none').trim().toLowerCase();
       const targetAuth = String(account.auth || 'none').trim().toLowerCase();
       const isSelf = String(account.username || '').toLowerCase() === String(currentUsername || '').toLowerCase();
+      renderPublicProfileFeatured(account, isSelf);
       const canModerate = STAFF_AUTHS.indexOf(viewerAuth) !== -1 && PROTECTED_AUTHS.indexOf(targetAuth) === -1 && !isSelf;
       publicProfileModActions.style.display = canModerate ? 'flex' : 'none';
       publicProfileRestoreRow.style.display = (viewerAuth === 'owner' && !isSelf) ? 'flex' : 'none';
@@ -7517,27 +8019,14 @@
     activeAchievementPopups.push(popup);
     repositionAchievementPopups();
 
-    requestAnimationFrame(() => popup.classList.add('visible'));
-    setTimeout(() => {
-      popup.classList.remove('visible');
-      setTimeout(() => {
-        popup.remove();
-        activeAchievementPopups = activeAchievementPopups.filter(p => p !== popup);
-        repositionAchievementPopups();
-      }, 500);
-    }, 4000);
+    addNotificationClose(popup, () => {
+      activeAchievementPopups = activeAchievementPopups.filter(p => p !== popup);
+      repositionAchievementPopups();
+    });
   }
 
   function showAchievementHintBanner(text){
-    const banner = document.createElement('div');
-    banner.className = 'offline-banner';
-    banner.textContent = text;
-    document.body.appendChild(banner);
-    requestAnimationFrame(() => banner.classList.add('visible'));
-    setTimeout(() => {
-      banner.classList.remove('visible');
-      setTimeout(() => banner.remove(), 500);
-    }, 4000);
+    showBanner(text);
   }
 
   const HINT_KEY = 'achievementHints';
@@ -7640,15 +8129,7 @@
   }
 
   function showCursorHint(){
-    const banner = document.createElement('div');
-    banner.className = 'offline-banner';
-    banner.textContent = 'Press Fn+M to show.';
-    document.body.appendChild(banner);
-    requestAnimationFrame(() => banner.classList.add('visible'));
-    setTimeout(() => {
-      banner.classList.remove('visible');
-      setTimeout(() => banner.remove(), 500);
-    }, 3000);
+    showBanner('Press Fn+M to show.');
   }
 
   function renderSettings(){
@@ -7686,6 +8167,14 @@
           <option value="right">Right</option>
         </select>
       </div>` : ''}
+      <!-- TEMP: remove this card and its click handler when done testing notifications -->
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Test Notifications (Temporary)</h3>
+          <p>Fires a sample achievement popup so you can test the 6 second timer and close button.</p>
+        </div>
+        <button class="buy-btn" id="test-notifications">Test</button>
+      </div>
       <div class="shop-card">
         <div class="shop-info">
           <h3>Reset Data</h3>
@@ -7759,6 +8248,11 @@
         applyLayoutMode();
       });
     }
+
+    // TEMP: test button handler
+    document.getElementById('test-notifications').addEventListener('click', () => {
+      showAchievementToast({ icon: '\ud83c\udfc6', label: 'Test Achievement', difficulty: 'Hard' });
+    });
 
     document.getElementById('open-reset-data').addEventListener('click', openConfirmReset);
     document.getElementById('replay-tutorial').addEventListener('click', () => maybeShowTutorial(true));
@@ -7877,8 +8371,10 @@
   function doResetData(){
     document.querySelectorAll('.dvd-logo, .crewmate, .noob, .screaming-goat').forEach(el => el.remove());
     const keepAchievements = game.unlockedAchievements || [];
+    const keepFeatured = game.featuredAchievement || '';
     game = defaultGame();
     game.unlockedAchievements = keepAchievements;
+    game.featuredAchievement = keepFeatured;
     saveGame();
     syncToSheet();
     updateCounter();
@@ -7913,7 +8409,9 @@
     const keepPrestigeMult = game.prestigeMultOwned || 0;
     const keepAutoBuyer = game.autoBuyerOwned || false;
     const keepGems = game.gems || 0;
+    const keepFeatured = game.featuredAchievement || '';
     game = defaultGame();
+    game.featuredAchievement = keepFeatured;
     game.prestige = keepPrestige;
     game.boosts = keepBoosts;
     game.totalPrestige = keepTotalPrestige;
@@ -8026,64 +8524,95 @@
      Most steps require an action (requirement) before "Next" enables.
      requirement: function returning true once satisfied, or null for
      a step that just needs reading (always enabled).
+     corner: true shows the window at the bottom left (no dark backdrop)
+     even when the step has no requirement. Steps with a requirement
+     always use the bottom left.
+     emoji: shows this emoji at the top of the window instead of the
+     guide image.
+     target: function returning the element the arrow points at. The
+     arrow is hidden once the requirement is done.
+     allow: function returning the elements the player may click on this
+     step (defaults to the target). Any other click is blocked and Biggie
+     shows up under the cursor.
+     freeRoam: true turns off click blocking for the step.
      ------------------------------------------------- */
   const TUTORIAL_STEPS = [
     {
       title: "Welcome to The Clicker Game!",
-      text: "So glad you're here! See that changing emoji button at the top? That's your Clicker. Every time you tap it, you earn money, which you can use to buy upgrades, cosmetics, and more. Let's walk through the basics together!",
+      text: "So glad you're here! See that big emoji button at the top? That's your Clicker. Every time you tap it, you earn money, which you can use to buy upgrades, cosmetics, and more. Let's walk through the basics together!",
+      emoji: '\ud83d\ude0a',
+      corner: true,
+      target: () => avatarEl,
       requirement: null
     },
     {
       title: "Try It Out!",
       text: "Give that emoji button a tap! Every click earns you coins immediately. Try tapping it a few times to start building up your balance.",
       hint: "I'm waiting right here for your first click...",
+      target: () => avatarEl,
       requirement: () => game.clicks >= 1
     },
     {
       title: "You're a Natural!",
       text: "Nice work! Keep tapping the avatar until your total reaches 10 moneys. Watch the counter at the top of the page to track your progress.",
       hint: "0/10 so far - you've got this!",
+      target: () => avatarEl,
       requirement: () => game.clicks >= 10
     },
     {
       title: "Time to Shop!",
       text: "Now for the fun part! Tap the Shop tab at the top of the page. Buying items in the shop is the main key to winning the game. Upgrades generate far more money automatically than clicking alone, so checking the shop regularly will help you get rich fast!",
       hint: "Whenever you're ready, tap the Shop tab above.",
+      target: () => tutorialTabButton('shop'),
       requirement: () => tutorialVisitedTabs.has('shop')
     },
     {
       title: "Treat Yourself!",
       text: "In the Shop, find the card called Click Boost and tap its Buy button. It permanently increases how many moneys you earn per click, so every tap from here on out counts for more.",
       hint: "Grab a Click Boost whenever you're ready.",
+      // Points at the Buy button. If the Shop is not open the arrow points at
+      // the Shop tab, and if the player cannot afford it yet, at the Clicker.
+      target: () => {
+        const buy = document.getElementById('buy-boost');
+        if (buy) return buy.disabled ? avatarEl : buy;
+        return tutorialTabButton('shop');
+      },
+      allow: () => [document.getElementById('buy-boost'), tutorialTabButton('shop'), avatarEl],
       requirement: () => game.clickBoostOwned >= 1
     },
     {
       title: "Feel That Power!",
       text: "Keep clicking the avatar - now that you have a Click Boost, you'll notice your total climbs faster. Get your moneys up to 50 to continue.",
       hint: "0/50 so far - look at you go!",
+      target: () => avatarEl,
       requirement: () => game.clicks >= 50
     },
     {
       title: "Meet Your Stats",
       text: "Tap the Stats tab up top. That's your home base - it shows your profile, your total moneys, and lets you edit your avatar and username by tapping on them.",
       hint: "Take a peek - tap the Stats tab above.",
+      target: () => tutorialTabButton('stats'),
       requirement: () => tutorialVisitedTabs.has('stats')
     },
     {
       title: "See Who's Winning!",
       text: "Curious how you stack up against everyone else playing? Tap the Leaderboard tab to see the top players ranked by moneys, plus separate views for friends and top-ranked players.",
       hint: "Check it out - tap the Leaderboard tab above.",
+      target: () => tutorialTabButton('leaderboard'),
       requirement: () => tutorialVisitedTabs.has('leaderboard')
     },
     {
       title: "A Few Surprises Await",
       text: "Tap the Achievements tab. It tracks fun milestones as you play - some are shown outright, others stay hidden as '???' until you actually unlock them, so keep an eye out.",
       hint: "Go take a look - tap the Achievements tab above.",
+      target: () => tutorialTabButton('achievements'),
       requirement: () => tutorialVisitedTabs.has('achievements')
     },
     {
       title: "You're All Set!",
       text: "That covers the basics! From here, explore on your own: the Settings tab has display and performance options, the Shop has plenty more upgrades to unlock, and Preferences (once you own a customization item) lets you personalize your cursor, background, music, and more. Have a blast!",
+      corner: true,
+      freeRoam: true,
       requirement: null
     }
   ];
@@ -8093,10 +8622,193 @@
   const tutorialText = document.getElementById('tutorial-text');
   const tutorialHint = document.getElementById('tutorial-hint');
   const tutorialProgress = document.getElementById('tutorial-progress');
+  const tutorialChar = document.getElementById('tutorial-char');
+  const tutorialEmoji = document.getElementById('tutorial-emoji');
   const tutorialNextBtn = document.getElementById('tutorial-next');
   const tutorialSkipBtn = document.getElementById('tutorial-skip');
   let tutorialStepIndex = 0;
   let tutorialPollTimer = null;
+
+  /* ---------- TUTORIAL GUIDES (arrow and Biggie) ----------
+     The arrow (arrow.png) points at the element the current step wants
+     clicked. Biggie (biggie.png) shows up under the cursor and stretches
+     out whenever the player clicks something the step does not allow.
+     ------------------------------------------------- */
+  const tutorialArrowEl = document.getElementById('tutorial-arrow');
+  const tutorialBiggieEl = document.getElementById('tutorial-biggie');
+  // Where the arrow tip and the drawn area sit inside arrow.png (fractions of the image).
+  const ARROW_TIP = { x: 0.209, y: 0.4725 };
+  const ARROW_DRAWN = { x0: 0.209, y0: 0.166, x1: 0.95, y1: 0.746 };
+  let tutorialGuideActive = false;
+  let tutorialGuideRaf = null;
+  let tutorialArrowShowAt = 0;
+  let tutorialArrowLastScroll = 0;
+
+  function tutorialTabButton(id){
+    return tabBar.querySelector('.tab-btn[data-tab="' + id + '"]');
+  }
+
+  // Tries a few spots around the target (right, below, above) and picks the
+  // one that stays on screen and avoids covering the tutorial window.
+  function placeTutorialArrow(rect){
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const S = Math.round(Math.min(210, Math.max(140, vw * 0.36)));
+    const gap = 4;
+    const margin = 6;
+    const box = document.querySelector('.tutorial-box');
+    const boxRect = box ? box.getBoundingClientRect() : null;
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const candidates = [
+      { deg: 0,   ax: rect.right + gap, ay: cy },
+      { deg: 55,  ax: cx, ay: rect.bottom + gap },
+      { deg: -40, ax: cx, ay: rect.top - gap },
+      { deg: 55,  ax: rect.left + rect.width * 0.2, ay: rect.bottom + gap },
+      { deg: -40, ax: rect.left + rect.width * 0.2, ay: rect.top - gap },
+      { deg: 0,   ax: rect.right - rect.width * 0.15, ay: cy }
+    ];
+    let best = null;
+
+    candidates.forEach((c, i) => {
+      const r = c.deg * Math.PI / 180;
+      const cos = Math.cos(r);
+      const sin = Math.sin(r);
+      const rot = (x, y) => [x * cos - y * sin, x * sin + y * cos];
+      const tipVec = rot((ARROW_TIP.x - 0.5) * S, (ARROW_TIP.y - 0.5) * S);
+      const tx = c.ax - S / 2 - tipVec[0];
+      const ty = c.ay - S / 2 - tipVec[1];
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      [[ARROW_DRAWN.x0, ARROW_DRAWN.y0], [ARROW_DRAWN.x1, ARROW_DRAWN.y0],
+       [ARROW_DRAWN.x1, ARROW_DRAWN.y1], [ARROW_DRAWN.x0, ARROW_DRAWN.y1]].forEach(pt => {
+        const p = rot((pt[0] - 0.5) * S, (pt[1] - 0.5) * S);
+        const X = S / 2 + tx + p[0];
+        const Y = S / 2 + ty + p[1];
+        minX = Math.min(minX, X); maxX = Math.max(maxX, X);
+        minY = Math.min(minY, Y); maxY = Math.max(maxY, Y);
+      });
+      const overflow = Math.max(0, margin - minX) + Math.max(0, maxX - (vw - margin))
+        + Math.max(0, margin - minY) + Math.max(0, maxY - (vh - margin));
+      let overlap = 0;
+      if (boxRect) {
+        const ox = Math.max(0, Math.min(maxX, boxRect.right) - Math.max(minX, boxRect.left));
+        const oy = Math.max(0, Math.min(maxY, boxRect.bottom) - Math.max(minY, boxRect.top));
+        overlap = ox * oy;
+      }
+      const score = overflow * 50 + overlap / 200 + i * 3;
+      if (!best || score < best.score) best = { score: score, tx: tx, ty: ty, deg: c.deg };
+    });
+
+    tutorialArrowEl.style.width = S + 'px';
+    tutorialArrowEl.style.height = S + 'px';
+    tutorialArrowEl.style.transform = 'translate(' + best.tx + 'px, ' + best.ty + 'px) rotate(' + best.deg + 'deg)';
+  }
+
+  function tutorialGuideTick(){
+    if (!tutorialGuideActive) return;
+    const step = TUTORIAL_STEPS[tutorialStepIndex];
+    const now = performance.now();
+    let target = null;
+    if (step && step.target && (!step.requirement || !step.requirement())) target = step.target();
+    let show = false;
+
+    if (target && now >= tutorialArrowShowAt) {
+      const rect = target.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        // On phones the tutorial window is wide and sits at the bottom, so the
+        // visible area is only what is above it.
+        const box = document.querySelector('.tutorial-box');
+        const boxRect = box ? box.getBoundingClientRect() : null;
+        const visibleBottom = (boxRect && boxRect.width > window.innerWidth * 0.6 && boxRect.top > window.innerHeight * 0.3)
+          ? boxRect.top : window.innerHeight;
+        const offscreen = rect.top < 0 || rect.bottom > visibleBottom
+          || rect.left < 0 || rect.right > window.innerWidth;
+        if (offscreen && now - tutorialArrowLastScroll > 1200) {
+          tutorialArrowLastScroll = now;
+          window.scrollBy({ top: rect.top + rect.height / 2 - visibleBottom / 2, behavior: 'smooth' });
+        }
+        placeTutorialArrow(rect);
+        show = true;
+      }
+    }
+
+    tutorialArrowEl.classList.toggle('visible', show);
+    tutorialGuideRaf = requestAnimationFrame(tutorialGuideTick);
+  }
+
+  function startTutorialGuides(){
+    tutorialGuideActive = true;
+    cancelAnimationFrame(tutorialGuideRaf);
+    tutorialGuideRaf = requestAnimationFrame(tutorialGuideTick);
+  }
+
+  function stopTutorialGuides(){
+    tutorialGuideActive = false;
+    cancelAnimationFrame(tutorialGuideRaf);
+    tutorialArrowEl.classList.remove('visible');
+    clearTimeout(tutorialBiggieTimer);
+    tutorialBiggieEl.classList.remove('show');
+  }
+
+  let tutorialBiggieTimer = null;
+
+  // If biggie.png cannot be loaded (for example it is not in the same folder
+  // as index.html), swap in a simple drawn Biggie so a blocked click is never silent.
+  const BIGGIE_FALLBACK_SRC = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='800' height='800' viewBox='0 0 800 800'>" +
+    "<path d='M60 730 L170 640 M665 650 L745 765 M30 330 L80 310 M720 340 L790 395' stroke='#000' stroke-width='18' stroke-linecap='round' fill='none'/>" +
+    "<ellipse cx='400' cy='450' rx='340' ry='215' fill='#f00' stroke='#000' stroke-width='18'/>" +
+    "<rect x='235' y='45' width='235' height='170' rx='40' fill='#f5efbb' stroke='#000' stroke-width='16'/>" +
+    "<path d='M245 105 L270 50 L320 80 L370 35 L420 70 L455 45 L470 105 Z' fill='#7a5a16' stroke='#000' stroke-width='12'/>" +
+    "<circle cx='275' cy='135' r='9'/><circle cx='430' cy='135' r='9'/>" +
+    "<ellipse cx='352' cy='160' rx='38' ry='24' fill='#f5d9a0' stroke='#000' stroke-width='10'/>" +
+    "</svg>"
+  );
+
+  function ensureBiggieImage(){
+    if (tutorialBiggieEl.src === BIGGIE_FALLBACK_SRC) return;
+    if (tutorialBiggieEl.complete && tutorialBiggieEl.naturalWidth === 0) {
+      console.warn('biggie.png could not be loaded. Put it in the same folder as index.html.');
+      tutorialBiggieEl.src = BIGGIE_FALLBACK_SRC;
+    }
+  }
+  tutorialBiggieEl.addEventListener('error', ensureBiggieImage);
+  ensureBiggieImage();
+
+  function showTutorialBiggie(x, y){
+    ensureBiggieImage();
+    clearTimeout(tutorialBiggieTimer);
+    tutorialBiggieEl.classList.remove('show');
+    void tutorialBiggieEl.offsetWidth;
+    tutorialBiggieEl.style.left = x + 'px';
+    tutorialBiggieEl.style.top = y + 'px';
+    tutorialBiggieEl.classList.add('show');
+    tutorialBiggieTimer = setTimeout(() => tutorialBiggieEl.classList.remove('show'), 1650);
+  }
+
+  // Blocks clicks on anything the current step does not allow.
+  window.addEventListener('click', e => {
+    if (!tutorialGuideActive) return;
+    const step = TUTORIAL_STEPS[tutorialStepIndex];
+    if (!step || step.freeRoam) return;
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest('.tutorial-box, .achievement-popup, .offline-banner')) return;
+
+    const allowed = (step.allow ? step.allow() : [step.target ? step.target() : null]).filter(Boolean);
+    if (allowed.some(el => el === t || el.contains(t))) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    let x = e.clientX;
+    let y = e.clientY;
+    if (!e.detail && !x && !y) {
+      const r = t.getBoundingClientRect();
+      x = r.left + r.width / 2;
+      y = r.top + r.height / 2;
+    }
+    showTutorialBiggie(x, y);
+  }, true);
 
   function tutorialStepDone(step){
     return !step.requirement || step.requirement();
@@ -8116,7 +8828,12 @@
     tutorialTitle.textContent = step.title;
     tutorialText.textContent = step.text;
     tutorialNextBtn.textContent = (tutorialStepIndex === TUTORIAL_STEPS.length - 1) ? "Got it!" : "Next";
-    tutorialOverlay.classList.toggle('action-step', !!step.requirement);
+    tutorialOverlay.classList.toggle('action-step', !!step.requirement || !!step.corner);
+    tutorialArrowEl.classList.remove('visible');
+    tutorialArrowShowAt = performance.now() + 350;
+    tutorialChar.style.display = step.emoji ? 'none' : 'block';
+    tutorialEmoji.style.display = step.emoji ? 'block' : 'none';
+    if (step.emoji) tutorialEmoji.textContent = step.emoji;
     updateTutorialButtonState();
 
     // Step 2 ("Try It Out!") asks the person to tap the Clicker at the top
@@ -8136,6 +8853,7 @@
     tutorialStepIndex++;
     if (tutorialStepIndex >= TUTORIAL_STEPS.length) {
       clearInterval(tutorialPollTimer);
+      stopTutorialGuides();
       tutorialOverlay.classList.remove('visible');
       switchBgSong(DEFAULT_BG_SONG);
       return;
@@ -8145,6 +8863,7 @@
 
   tutorialSkipBtn.addEventListener('click', () => {
     clearInterval(tutorialPollTimer);
+    stopTutorialGuides();
     tutorialOverlay.classList.remove('visible');
     switchBgSong(DEFAULT_BG_SONG);
   });
@@ -8154,10 +8873,35 @@
     tutorialStepIndex = 0;
     renderTutorialStep();
     tutorialOverlay.classList.add('visible');
+    startTutorialGuides();
     switchBgSong(TUTORIAL_BG_SONG);
   }
 
+  /* ---------- FEATURED ACHIEVEMENT ---------- */
+  function findAchievement(id){
+    return ACHIEVEMENTS.find(a => a.id === id) || null;
+  }
+
+  function renderEditFeaturedSelect(){
+    const select = document.getElementById('edit-featured-select');
+    const unlocked = game.unlockedAchievements || [];
+    const owned = ACHIEVEMENTS.filter(a => unlocked.includes(a.id));
+
+    select.innerHTML = '';
+    select.add(new Option(owned.length ? 'None' : 'No achievements unlocked yet', ''));
+    owned.forEach(a => select.add(new Option(a.label + ' (' + a.difficulty + ')', a.id)));
+    select.disabled = owned.length === 0;
+    if (!owned.some(a => a.id === editSelectedFeatured)) editSelectedFeatured = '';
+    select.value = editSelectedFeatured;
+  }
+
+  document.getElementById('edit-featured-select').addEventListener('change', (e) => {
+    editSelectedFeatured = e.target.value;
+  });
+
   function openEditProfile(){
+    editSelectedFeatured = game.featuredAchievement || '';
+    renderEditFeaturedSelect();
     editSelectedIcon = currentProfileIcon;
     editSelectedFavColor = null;
     editSelectedBannerImage = currentBannerImage || null;
@@ -8217,7 +8961,8 @@
         profileIcon: editSelectedIcon || currentProfileIcon,
         description: editDescriptionInput.value.trim(),
         favColor: editSelectedFavColor !== null ? editSelectedFavColor : getLastTheme(),
-        bannerImage: editSelectedBannerImage || ''
+        bannerImage: editSelectedBannerImage || '',
+        featuredAchievement: editSelectedFeatured
       };
 
       const result = await sheetRequest(payload);
@@ -8237,6 +8982,10 @@
       currentProfileIcon = result.account.profileIcon;
       currentDescription = result.account.description || '';
       currentBannerImage = result.account.bannerImage || '';
+      // Use the server's value once the backend returns it, otherwise the choice just made.
+      game.featuredAchievement = result.account.featuredAchievement !== undefined
+        ? String(result.account.featuredAchievement || '')
+        : editSelectedFeatured;
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
       setSession(currentUsername, result.account.favColor || getLastTheme(), currentProfileIcon, currentAuth, currentFont);
       applyAccountTheme(result.account.favColor);
