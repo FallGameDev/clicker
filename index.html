@@ -3460,7 +3460,8 @@
     return n;
   }
   function autoClickerCost(){ return 50 * (game.autoClickerOwned + 1); }
-  const DVD_COST = 100;
+  const DVD_BASE_COST = 100;
+  function dvdCost(){ return (game.dvdOwned * 10) + DVD_BASE_COST; }
   const AMOGUS_COST = 100;
   const MUSIC_PLAYER_COST = 500;
   const CURSOR_COST = 300;
@@ -3675,9 +3676,9 @@
   }
 
   function buyDvd(){
-    if (game.clicks < DVD_COST) return;
+    if (game.clicks < dvdCost()) return;
     playSound('money.mp3');
-    game.clicks -= DVD_COST;
+    game.clicks -= dvdCost();
     if (game.dvdOwned === 0) game.dvdBehind = true;
     game.dvdOwned += 1;
     updateCounter();
@@ -3801,7 +3802,7 @@
           <h3>DVD Logo</h3>
           <p>Spawns a bouncing logo that changes color on every wall bounce. <span class="owned">Owned: ${game.dvdOwned}</span></p>
         </div>
-        <button class="buy-btn" id="buy-dvd" ${game.clicks < DVD_COST ? 'disabled' : ''}>Buy (${DVD_COST})</button>
+        <button class="buy-btn" id="buy-dvd" ${game.clicks < dvdCost() ? 'disabled' : ''}>Buy (${dvdCost()})</button>
       </div>` },
       { category: 'visuals', html: `
       <div class="shop-card">
@@ -4028,9 +4029,7 @@
   /* ---------- MUSIC PLAYER ---------- */
   const SONGS = [
     { label: "Tidal Wave (Shiawase)", file: "shiawave__tidalwave_.mp3" },
-    { label: "that friend who can always catch your tune", file: "tfwcacyt.mp3" },
     { label: "Lo-Fi Beats", file: "lofi.mp3" },
-    { label: "Minecraft", file: "minecraft.mp3" },
     { label: "FIVE FIVE!", file: "55.mp3" },
     { label: "Lyin' 2 Me", file: "l2m.mp3" },
     { label: "Good to Be Alive", file: "gtba.mp3" },
@@ -4117,13 +4116,11 @@
   }
 
   songSelect.addEventListener('change', () => {
-    const wasPlaying = !songAudio.paused;
     game.selectedSong = parseInt(songSelect.value, 10);
     game.songChosen = true;
     loadSong(songSelect.value);
     saveGame();
-    if (wasPlaying) songAudio.play();
-    else playBtn.innerHTML = '&#9658;';
+    songAudio.play().catch(() => {});
   });
 
   playBtn.addEventListener('click', () => {
@@ -4616,6 +4613,7 @@
   });
 
   function showFontManager(){
+    updatePickerVisibility();
     if (game.fontManagerChosen) {
       fontManagerSelect.value = game.selectedUiFont;
       applyUiFont(game.selectedUiFont);
@@ -5052,7 +5050,7 @@
     const autoBtn = document.getElementById('buy-auto');
     if (autoBtn) { autoBtn.disabled = game.clicks < autoClickerCost(); autoBtn.textContent = 'Buy (' + autoClickerCost() + ')'; }
     const dvdBtn = document.getElementById('buy-dvd');
-    if (dvdBtn) dvdBtn.disabled = game.clicks < DVD_COST;
+    if (dvdBtn) { dvdBtn.disabled = game.clicks < dvdCost(); dvdBtn.textContent = 'Buy (' + dvdCost() + ')'; }
     const amogusBtn = document.getElementById('buy-amogus');
     if (amogusBtn) amogusBtn.disabled = game.clicks < AMOGUS_COST;
     const musicBtn = document.getElementById('buy-music');
