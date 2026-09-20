@@ -6,7 +6,7 @@
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="maksy.ico" id="favicon-link">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Poppins:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   @font-face{
     font-family:'PusabFont';
@@ -23,7 +23,7 @@
 
   body.ui-font-fredoka *{ font-family:'Fredoka One', cursive !important; }
   body.ui-font-mefont *{ font-family:'MeFontCustom', cursive !important; }
-  body.ui-font-sans *{ font-family:sans-serif !important; }
+  body.ui-font-sans *{ font-family:'Inter', sans-serif !important; }
   body.ui-font-wingdings *{ font-family:'Wingdings', sans-serif !important; }
   body.ui-font-poppins *{ font-family:'Poppins', sans-serif !important; }
 
@@ -3097,7 +3097,7 @@
           <select id="effect-select"></select>
         </div>
 
-        <div class="cursor-picker visible" id="font-manager-picker">
+        <div class="cursor-picker" id="font-manager-picker">
           <select id="font-manager-select"></select>
         </div>
       </div>
@@ -3280,6 +3280,9 @@
     } else {
       avatarEl.classList.add('emoji-mode');
       avatarEmojiEl.textContent = currentAvatarEmoji;
+      // Keep the browser tab favicon synced with the clicker's emoji - see
+      // the maintenance note on renderEmojiFavicon() further down.
+      renderEmojiFavicon(currentAvatarEmoji);
     }
   }
 
@@ -3337,6 +3340,7 @@
       effectChosen: false,
       selectedUiFont: '',
       fontManagerChosen: false,
+      fontManagerOwned: false,
       megaBoostOwned: 0,
       turboClickerOwned: 0,
       luckyCharmOwned: false,
@@ -3413,6 +3417,9 @@
     if (avatarEl.classList.contains('emoji-mode')) {
       currentAvatarEmoji = pickRandomFaceEmoji();
       avatarEmojiEl.textContent = currentAvatarEmoji;
+      // Every time the clicker's emoji changes, the tab favicon must
+      // change with it - see the maintenance note on renderEmojiFavicon().
+      renderEmojiFavicon(currentAvatarEmoji);
     }
     if (game.effectsOwned && game.selectedEffect === 'confetti') spawnConfettiBurst();
     if (game.effectsOwned && game.selectedEffect === 'shake') triggerScreenShake();
@@ -3466,6 +3473,7 @@
   const NOOB_COST = 250;
   const GOAT_COST = 350;
   const EFFECTS_COST = 750;
+  const FONT_MANAGER_COST = 900;
   const LUCKY_CHARM_COST = 2500;
   function megaBoostCost(){ return 500 * (game.megaBoostOwned + 1); }
   function turboClickerCost(){ return 750 * (game.turboClickerOwned + 1); }
@@ -3573,6 +3581,18 @@
     syncToSheet();
     renderShop();
     showEffectPicker();
+  }
+
+  function buyFontManager(){
+    if (game.fontManagerOwned || game.clicks < FONT_MANAGER_COST) return;
+    playSound('money.mp3');
+    game.clicks -= FONT_MANAGER_COST;
+    game.fontManagerOwned = true;
+    updateCounter();
+    saveGame();
+    syncToSheet();
+    renderShop();
+    showFontManager();
   }
 
   function buyMegaBoost(){
@@ -3756,7 +3776,7 @@
       <div class="shop-card clickboost-card">
         <div class="shop-info">
           <h3>Click Boost</h3>
-          <p>+1 click power per click. <span class="owned">Owned: ${game.clickBoostOwned}</span></p>
+          <p>Increases the value of every single tap. Each click is currently worth ${game.clickPower}. <span class="owned">Owned: ${game.clickBoostOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-boost" ${game.clicks < clickBoostCost() ? 'disabled' : ''}>Buy (${clickBoostCost()})</button>
         <button class="bulk-expand-btn${clickBoostExpanded ? ' open' : ''}" id="clickboost-expand-btn" title="More options">&#9662;</button>
@@ -3771,7 +3791,7 @@
       <div class="shop-card">
         <div class="shop-info">
           <h3>Clicker</h3>
-          <p>+1 click every second, automatically. <span class="owned">Owned: ${game.autoClickerOwned}</span></p>
+          <p>Automatically clicks the main button for you once every second, earning income even when you aren't tapping. <span class="owned">Owned: ${game.autoClickerOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-auto" ${game.clicks < autoClickerCost() ? 'disabled' : ''}>Buy (${autoClickerCost()})</button>
       </div>` },
@@ -3854,6 +3874,14 @@
           <p>One-time buy. Adds a picker to choose an effect that plays on every click. Default: None.</p>
         </div>
         <button class="buy-btn" id="buy-effects" ${game.effectsOwned ? 'disabled' : (game.clicks < EFFECTS_COST ? 'disabled' : '')}>${game.effectsOwned ? 'Owned' : 'Buy (' + EFFECTS_COST + ')'}</button>
+      </div>` },
+      { category: 'customization', html: `
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Font Manager</h3>
+          <p>One-time buy. Adds a picker to change the font used across the whole UI.</p>
+        </div>
+        <button class="buy-btn" id="buy-font-manager" ${game.fontManagerOwned ? 'disabled' : (game.clicks < FONT_MANAGER_COST ? 'disabled' : '')}>${game.fontManagerOwned ? 'Owned' : 'Buy (' + FONT_MANAGER_COST + ')'}</button>
       </div>` },
       { category: 'plain', html: `
       <div class="shop-card">
@@ -3983,6 +4011,7 @@
     bind('buy-offline', buyOfflineEarnings);
     bind('buy-icon', buyIconModifier);
     bind('buy-effects', buyEffects);
+    bind('buy-font-manager', buyFontManager);
     bind('buy-autokill', buyAutoKill);
     bind('buy-noob', buyNoob);
     bind('buy-goat', buyGoat);
@@ -4474,6 +4503,27 @@
     if (faviconLink) faviconLink.href = file;
   }
 
+  // MAINTENANCE NOTE: the browser tab favicon is kept in sync with the
+  // clicker avatar's emoji here. Whenever the avatar's random emoji
+  // changes (see updateAvatarIconDisplay() and the avatarEl click handler
+  // near the top of the script, where currentAvatarEmoji is set), this
+  // function must be called too so the tab icon always matches what's
+  // shown on the clicker button. If a real custom icon is ever chosen
+  // instead, applyIcon() above takes over and sets the favicon to that
+  // file directly - don't call both for the same state.
+  function renderEmojiFavicon(emoji){
+    if (!faviconLink) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.font = '52px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, 32, 36);
+    faviconLink.href = canvas.toDataURL('image/png');
+  }
+
   iconSelect.addEventListener('change', () => {
     game.selectedIcon = iconSelect.value;
     game.iconChosen = true;
@@ -4953,10 +5003,12 @@
     bgPickerEl.classList.toggle('visible', !!game.bgOwned);
     iconPickerEl.classList.toggle('visible', !!game.iconModifierOwned);
     effectPickerEl.classList.toggle('visible', !!game.effectsOwned);
+    const fontManagerPickerEl = document.getElementById('font-manager-picker');
+    if (fontManagerPickerEl) fontManagerPickerEl.classList.toggle('visible', !!game.fontManagerOwned);
 
-    // Font Manager needs no purchase, so Preferences is always reachable.
+    const anyPickerOwned = !!(game.musicPlayerOwned || game.cursorsOwned || game.bgOwned || game.iconModifierOwned || game.effectsOwned || game.fontManagerOwned);
     const preferencesDropdownEl = document.getElementById('preferences-dropdown');
-    if (preferencesDropdownEl) preferencesDropdownEl.classList.add('visible');
+    if (preferencesDropdownEl) preferencesDropdownEl.classList.toggle('visible', anyPickerOwned);
   }
 
   const preferencesToggleEl = document.getElementById('preferences-toggle');
@@ -6369,6 +6421,7 @@
       goatOwned: game.goatOwned || 0,
       effectsOwned: game.effectsOwned || false,
       selectedEffect: game.selectedEffect || 'none',
+      fontManagerOwned: game.fontManagerOwned || false,
       megaBoostOwned: game.megaBoostOwned || 0,
       turboClickerOwned: game.turboClickerOwned || 0,
       luckyCharmOwned: game.luckyCharmOwned || false,
@@ -6432,7 +6485,8 @@
           iconChosen: !!savedRaw.iconChosen,
           effectChosen: !!savedRaw.effectChosen,
           selectedUiFont: savedRaw.selectedUiFont,
-          fontManagerChosen: !!savedRaw.fontManagerChosen
+          fontManagerChosen: !!savedRaw.fontManagerChosen,
+          fontManagerOwned: !!savedRaw.fontManagerOwned
         };
       }
     } catch (e) {}
@@ -6472,6 +6526,10 @@
       effectChosen: !!previousPickerPrefs.effectChosen,
       selectedUiFont: previousPickerPrefs.selectedUiFont || '',
       fontManagerChosen: !!previousPickerPrefs.fontManagerChosen,
+      // The backend doesn't have a column for this yet (see chat note) -
+      // prefer server truth once it exists, fall back to the local value
+      // in the meantime so a real purchase doesn't get wiped on login.
+      fontManagerOwned: source.fontManagerOwned !== undefined ? !!source.fontManagerOwned : !!previousPickerPrefs.fontManagerOwned,
       selectedSong: previousPickerPrefs.selectedSong !== undefined ? previousPickerPrefs.selectedSong : 0,
       songChosen: !!previousPickerPrefs.songChosen,
       selectedCursor: previousPickerPrefs.selectedCursor !== undefined ? previousPickerPrefs.selectedCursor : 'default',
@@ -7975,12 +8033,12 @@
   const TUTORIAL_STEPS = [
     {
       title: "Welcome to The Clicker Game!",
-      text: "So glad you're here! See that big avatar below? That's your Clicker. Every time you tap it, you earn moneys, and moneys are what let you buy upgrades, cosmetics, and more. Let's walk through the basics together!",
+      text: "So glad you're here! See that changing emoji button at the top? That's your Clicker. Every time you tap it, you earn money, which you can use to buy upgrades, cosmetics, and more. Let's walk through the basics together!",
       requirement: null
     },
     {
       title: "Try It Out!",
-      text: "Go ahead, tap (or click) the avatar once. You'll see your moneys counter above it go up - that's the whole game in a nutshell, and it only gets more interesting from here.",
+      text: "Give that emoji button a tap! Every click earns you coins immediately. Try tapping it a few times to start building up your balance.",
       hint: "I'm waiting right here for your first click...",
       requirement: () => game.clicks >= 1
     },
@@ -7992,7 +8050,7 @@
     },
     {
       title: "Time to Shop!",
-      text: "Now for the fun part. Look at the row of tabs near the top of the page - tap the one labeled Shop to see everything you can spend your moneys on.",
+      text: "Now for the fun part! Tap the Shop tab at the top of the page. Buying items in the shop is the main key to winning the game. Upgrades generate far more money automatically than clicking alone, so checking the shop regularly will help you get rich fast!",
       hint: "Whenever you're ready, tap the Shop tab above.",
       requirement: () => tutorialVisitedTabs.has('shop')
     },
@@ -8063,6 +8121,13 @@
     tutorialNextBtn.textContent = (tutorialStepIndex === TUTORIAL_STEPS.length - 1) ? "Got it!" : "Next";
     tutorialOverlay.classList.toggle('action-step', !!step.requirement);
     updateTutorialButtonState();
+
+    // Step 2 ("Try It Out!") asks the person to tap the Clicker at the top
+    // of the page - scroll back up so it's actually in view, in case they
+    // scrolled down reading the previous step or exploring beforehand.
+    if (tutorialStepIndex === 1) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 
     clearInterval(tutorialPollTimer);
     tutorialPollTimer = setInterval(updateTutorialButtonState, 400);
@@ -8523,7 +8588,7 @@
     if (game.iconModifierOwned) showIconPicker();
     else updateAvatarIconDisplay();
     if (game.effectsOwned) showEffectPicker();
-    showFontManager();
+    if (game.fontManagerOwned) showFontManager();
     for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
     updateDvdVisibility();
     for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
