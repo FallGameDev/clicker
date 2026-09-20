@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.10.0 | Deployment: 188 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.10.0">
+<!-- Game version: 1.10.2 | Deployment: 190 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.10.2">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="maksy.ico" id="favicon-link">
@@ -6820,7 +6820,8 @@
   const PROFILE_ICON_KEY = 'fgd_last_profile_icon';
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbxpIZH_rW8qX3Yq-g-ikrvUvEhNgjoaa9kjhluahScvxcHzEJkBq19silOTYQ_yb24qgA/exec';
+  // Keeps the /u/3/ part on purpose (Omar's choice). See README, Backend.
+  const SHEET_API_URL = 'https://script.google.com/macros/u/3/s/AKfycbzjVrvyucLoOx1AtNiRN0jmd9BPcbhGey-Dp6UcHFXzcXxKGMJBhkT3VaQETJM4M-ZW0g/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
