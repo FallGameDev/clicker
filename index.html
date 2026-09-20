@@ -21,6 +21,12 @@
     src:url('MeFont.ttf') format('truetype');
   }
 
+  body.ui-font-fredoka *{ font-family:'Fredoka One', cursive !important; }
+  body.ui-font-mefont *{ font-family:'MeFontCustom', cursive !important; }
+  body.ui-font-sans *{ font-family:sans-serif !important; }
+  body.ui-font-wingdings *{ font-family:'Wingdings', sans-serif !important; }
+  body.ui-font-poppins *{ font-family:'Poppins', sans-serif !important; }
+
   :root{
     --night:#181428;
     --card:#221c38;
@@ -168,6 +174,17 @@
 
   /* ---------- LAYOUT MODES (PC/TABLET ONLY) ---------- */
   @media (min-width:481px){
+    .page-sidebar .avatar{
+      width:190px;
+      height:190px;
+      margin-bottom:24px;
+    }
+    .page-sidebar .click-counter{
+      font-size:16px;
+      padding:7px 20px;
+      margin-bottom:20px;
+    }
+
     body.layout-left .page,
     body.layout-right .page{
       max-width:900px;
@@ -191,21 +208,16 @@
     body.layout-right .page-sidebar{ order:2; }
     body.layout-right .page-main{ order:1; }
 
-    body.layout-left .page-sidebar .avatar,
-    body.layout-right .page-sidebar .avatar{
-      width:190px;
-      height:190px;
-      margin-bottom:24px;
-    }
-    body.layout-left .page-sidebar .click-counter,
-    body.layout-right .page-sidebar .click-counter{
-      font-size:16px;
-      padding:7px 20px;
-      margin-bottom:20px;
-    }
     body.layout-left .page-main .preferences-dropdown,
     body.layout-right .page-main .preferences-dropdown{
       margin-bottom:22px;
+    }
+  }
+  /* Center layout on a wide screen: let the whole page fill more of it
+     instead of staying pinned to the original phone-width column. */
+  @media (min-width:769px){
+    body:not(.layout-left):not(.layout-right) .page{
+      max-width:680px;
     }
   }
   .layout-select{
@@ -259,6 +271,23 @@
     height:100%;
     object-fit:cover;
     display:block;
+  }
+  .avatar-emoji{
+    display:none;
+    width:100%;
+    height:100%;
+    align-items:center;
+    justify-content:center;
+    font-size:52px;
+    line-height:1;
+    background:var(--card);
+    user-select:none;
+  }
+  .avatar.emoji-mode img{
+    display:none;
+  }
+  .avatar.emoji-mode .avatar-emoji{
+    display:flex;
   }
 
   .name{
@@ -666,6 +695,11 @@
     color:var(--muted);
     font-size:13px;
     width:100%;
+  }
+  .empty-state.loading-state{
+    background:var(--card);
+    border-style:solid;
+    color:var(--rind);
   }
 
   /* ---------- LEADERBOARD ---------- */
@@ -1625,6 +1659,15 @@
     font-family:'Poppins', sans-serif;
     font-size:12.5px;
     color:var(--muted);
+  }
+  .loading-tip{
+    margin-top:18px;
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    font-style:italic;
+    color:var(--muted);
+    opacity:0.8;
+    max-width:280px;
   }
 
   /* ---------- AUTH FLOW ---------- */
@@ -2805,6 +2848,7 @@
       <div class="loading-bar-fill" id="loading-bar-fill"></div>
     </div>
     <div class="loading-status" id="loading-status">Loading API...</div>
+    <div class="loading-tip" id="loading-tip"></div>
   </div>
 </div>
 
@@ -2962,7 +3006,7 @@
       <button class="auth-btn" id="workshop-refresh-btn">Refresh</button>
     </div>
     <div class="workshop-body" id="workshop-body">
-      <div class="empty-state">Loading...</div>
+      <div class="empty-state loading-state">Loading...</div>
     </div>
   </div>
 </div>
@@ -2976,7 +3020,7 @@
       <button class="workshop-icon-btn" id="chat-add-friends-btn">Add Friends</button>
     </div>
     <div class="chat-messages" id="chat-messages">
-      <div class="empty-state">Loading...</div>
+      <div class="empty-state loading-state">Loading...</div>
     </div>
     <div class="chat-composer">
       <input type="text" class="auth-input chat-message-input" id="chat-message-input" placeholder="Type a message..." autocomplete="off" maxlength="500">
@@ -3016,6 +3060,7 @@
 
     <div class="avatar" id="avatar">
       <img src="profile.png" alt="FallGameDev profile picture">
+      <span class="avatar-emoji" id="avatar-emoji"></span>
     </div>
 
     <audio id="song-audio"></audio>
@@ -3047,6 +3092,10 @@
 
         <div class="icon-picker" id="effect-picker">
           <select id="effect-select"></select>
+        </div>
+
+        <div class="cursor-picker visible" id="font-manager-picker">
+          <select id="font-manager-select"></select>
         </div>
       </div>
     </div>
@@ -3213,6 +3262,23 @@
   const list = document.getElementById('link-list');
   const counterEl = document.getElementById('click-counter');
   const avatarEl = document.getElementById('avatar');
+  const avatarEmojiEl = document.getElementById('avatar-emoji');
+
+  const FACE_EMOJIS = ['😀','😃','😄','😁','😆','😅','🙂','😊','😇','🙃','😉','😍','🥰','😘','😋','😝','🤪','🤨','🧐','😎','🤩','🥳','😏','😮','😲','🥺','😴','🤯','🥶','🥵','😱','🤠','🤓','😈','👻','🤖','🐵','🙈'];
+  function pickRandomFaceEmoji(){
+    return FACE_EMOJIS[Math.floor(Math.random() * FACE_EMOJIS.length)];
+  }
+  let currentAvatarEmoji = pickRandomFaceEmoji();
+
+  function updateAvatarIconDisplay(){
+    if (game.iconModifierOwned && game.iconChosen && game.selectedIcon && game.selectedIcon !== 'profile.png') {
+      avatarEl.classList.remove('emoji-mode');
+      applyIcon(game.selectedIcon);
+    } else {
+      avatarEl.classList.add('emoji-mode');
+      avatarEmojiEl.textContent = currentAvatarEmoji;
+    }
+  }
 
   /* ---------- CLICKER GAME STATE ---------- */
   let SAVE_KEY = 'fallgamedev-clicker-save';
@@ -3266,6 +3332,8 @@
       effectsOwned: false,
       selectedEffect: 'none',
       effectChosen: false,
+      selectedUiFont: '',
+      fontManagerChosen: false,
       megaBoostOwned: 0,
       turboClickerOwned: 0,
       luckyCharmOwned: false,
@@ -3279,7 +3347,7 @@
 
   let game = defaultGame();
 
-  const PICKER_CHOSEN_KEYS = ['songChosen', 'cursorChosen', 'bgChosen', 'iconChosen', 'effectChosen'];
+  const PICKER_CHOSEN_KEYS = ['songChosen', 'cursorChosen', 'bgChosen', 'iconChosen', 'effectChosen', 'fontManagerChosen'];
 
   function loadGame(){
     try {
@@ -3339,6 +3407,10 @@
     saveGame();
     refreshShopAffordability();
     refreshStatsMoneys();
+    if (avatarEl.classList.contains('emoji-mode')) {
+      currentAvatarEmoji = pickRandomFaceEmoji();
+      avatarEmojiEl.textContent = currentAvatarEmoji;
+    }
     if (game.effectsOwned && game.selectedEffect === 'confetti') spawnConfettiBurst();
     if (game.effectsOwned && game.selectedEffect === 'shake') triggerScreenShake();
   });
@@ -4402,7 +4474,7 @@
   iconSelect.addEventListener('change', () => {
     game.selectedIcon = iconSelect.value;
     game.iconChosen = true;
-    applyIcon(game.selectedIcon);
+    updateAvatarIconDisplay();
     saveGame();
   });
 
@@ -4410,10 +4482,10 @@
     updatePickerVisibility();
     if (game.iconChosen) {
       iconSelect.value = game.selectedIcon;
-      applyIcon(game.selectedIcon);
     } else {
       iconSelect.value = '';
     }
+    updateAvatarIconDisplay();
   }
 
   const EFFECTS = [
@@ -4450,6 +4522,53 @@
   function showEffectPicker(){
     updatePickerVisibility();
     effectSelect.value = game.effectChosen ? (game.selectedEffect || 'none') : '';
+  }
+
+  /* ---------- FONT MANAGER ---------- */
+  const fontManagerSelect = document.getElementById('font-manager-select');
+  const UI_FONTS = [
+    { label: 'Fredoka One', value: 'fredoka' },
+    { label: 'MeFont', value: 'mefont' },
+    { label: 'Sans Serif', value: 'sans' },
+    { label: 'Wingdings', value: 'wingdings' },
+    { label: 'Poppins', value: 'poppins' }
+  ];
+  const UI_FONT_CLASSES = UI_FONTS.map(f => 'ui-font-' + f.value);
+
+  UI_FONTS.forEach(entry => {
+    const opt = document.createElement('option');
+    opt.value = entry.value;
+    opt.textContent = entry.label;
+    fontManagerSelect.appendChild(opt);
+  });
+
+  (function(){
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Choose a font';
+    placeholder.disabled = true;
+    fontManagerSelect.insertBefore(placeholder, fontManagerSelect.firstChild);
+  })();
+
+  function applyUiFont(value){
+    document.body.classList.remove(...UI_FONT_CLASSES);
+    if (value) document.body.classList.add('ui-font-' + value);
+  }
+
+  fontManagerSelect.addEventListener('change', () => {
+    game.selectedUiFont = fontManagerSelect.value;
+    game.fontManagerChosen = true;
+    applyUiFont(game.selectedUiFont);
+    saveGame();
+  });
+
+  function showFontManager(){
+    if (game.fontManagerChosen) {
+      fontManagerSelect.value = game.selectedUiFont;
+      applyUiFont(game.selectedUiFont);
+    } else {
+      fontManagerSelect.value = '';
+    }
   }
 
   /* ---------- DVD LOGO ---------- */
@@ -4832,9 +4951,9 @@
     iconPickerEl.classList.toggle('visible', !!game.iconModifierOwned);
     effectPickerEl.classList.toggle('visible', !!game.effectsOwned);
 
-    const anyPickerOwned = !!(game.musicPlayerOwned || game.cursorsOwned || game.bgOwned || game.iconModifierOwned || game.effectsOwned);
+    // Font Manager needs no purchase, so Preferences is always reachable.
     const preferencesDropdownEl = document.getElementById('preferences-dropdown');
-    if (preferencesDropdownEl) preferencesDropdownEl.classList.toggle('visible', anyPickerOwned);
+    if (preferencesDropdownEl) preferencesDropdownEl.classList.add('visible');
   }
 
   const preferencesToggleEl = document.getElementById('preferences-toggle');
@@ -5029,7 +5148,7 @@
 
     const entries = isFriendsLoading ? [] : currentLeaderboardEntries();
     const bodyHtml = isFriendsLoading
-      ? '<div class="empty-state">Loading friends...</div>'
+      ? '<div class="empty-state loading-state">Loading friends...</div>'
       : renderLeaderboardRows(entries);
 
     list.innerHTML = `<div class="shop-category-bar">${categoryBar}</div>` + bodyHtml;
@@ -5055,7 +5174,7 @@
   }
 
   async function renderLeaderboard(){
-    list.innerHTML = '<div class="empty-state">Loading leaderboard...</div>';
+    list.innerHTML = '<div class="empty-state loading-state">Loading leaderboard...</div>';
     leaderboardFriendsCache = null;
 
     try {
@@ -5238,7 +5357,7 @@
   async function loadChatsList(){
     const listEl = document.getElementById('chats-list');
     if (!listEl || !currentUsername) return;
-    listEl.innerHTML = '<div class="empty-state">Loading chats...</div>';
+    listEl.innerHTML = '<div class="empty-state loading-state">Loading chats...</div>';
     try {
       const result = await sheetRequest({ action: 'getChats', username: currentUsername });
       chatsListCache = (result.success && result.chats) ? result.chats : [];
@@ -5290,7 +5409,7 @@
     const errorEl = document.getElementById('friend-picker-error');
     errorEl.style.display = 'none';
     titleEl.textContent = mode === 'create' ? 'Start a New Chat' : 'Add Friends to Chat';
-    listEl.innerHTML = '<div class="empty-state">Loading friends...</div>';
+    listEl.innerHTML = '<div class="empty-state loading-state">Loading friends...</div>';
     overlay.classList.add('visible');
 
     try {
@@ -5389,7 +5508,7 @@
     activeChatId = chatId;
     chatOverlay.classList.add('visible');
     document.getElementById('chat-name-input').value = '';
-    document.getElementById('chat-messages').innerHTML = '<div class="empty-state">Loading...</div>';
+    document.getElementById('chat-messages').innerHTML = '<div class="empty-state loading-state">Loading...</div>';
 
     try {
       const result = await sheetRequest({ action: 'getChatMessages', chatId, username: currentUsername });
@@ -5578,7 +5697,7 @@
   async function openWorkshop(){
     workshopView = 'browse';
     workshopOverlay.classList.add('visible');
-    workshopBody.innerHTML = '<div class="empty-state">Loading...</div>';
+    workshopBody.innerHTML = '<div class="empty-state loading-state">Loading...</div>';
     document.getElementById('workshop-profile-btn-img').src = currentProfileIcon || 'profile.png';
     document.getElementById('workshop-profile-btn-name').textContent = currentUsername || 'Guest';
     updateWorkshopGemsDisplay();
@@ -6308,7 +6427,9 @@
           bgChosen: !!savedRaw.bgChosen,
           selectedIcon: savedRaw.selectedIcon,
           iconChosen: !!savedRaw.iconChosen,
-          effectChosen: !!savedRaw.effectChosen
+          effectChosen: !!savedRaw.effectChosen,
+          selectedUiFont: savedRaw.selectedUiFont,
+          fontManagerChosen: !!savedRaw.fontManagerChosen
         };
       }
     } catch (e) {}
@@ -6346,6 +6467,8 @@
       effectsOwned: !!source.effectsOwned,
       selectedEffect: source.selectedEffect || 'none',
       effectChosen: !!previousPickerPrefs.effectChosen,
+      selectedUiFont: previousPickerPrefs.selectedUiFont || '',
+      fontManagerChosen: !!previousPickerPrefs.fontManagerChosen,
       selectedSong: previousPickerPrefs.selectedSong !== undefined ? previousPickerPrefs.selectedSong : 0,
       songChosen: !!previousPickerPrefs.songChosen,
       selectedCursor: previousPickerPrefs.selectedCursor !== undefined ? previousPickerPrefs.selectedCursor : 'default',
@@ -6452,6 +6575,20 @@
   const loadingScreenEl = document.getElementById('loading-screen');
   const loadingStatusEl = document.getElementById('loading-status');
   const loadingBarFillEl = document.getElementById('loading-bar-fill');
+  const loadingTipEl = document.getElementById('loading-tip');
+
+  function loadRandomLoadingTip(){
+    if (!loadingTipEl) return;
+    fetch('messages.json')
+      .then(res => res.json())
+      .then(list => {
+        if (Array.isArray(list) && list.length) {
+          loadingTipEl.textContent = list[Math.floor(Math.random() * list.length)];
+        }
+      })
+      .catch(() => {});
+  }
+  loadRandomLoadingTip();
 
   const LINE_COUNT_KEY = 'fgd_prev_line_count';
 
@@ -6642,7 +6779,7 @@
     const friendsListEl = document.getElementById('friends-list');
     const friendsSearchInput = document.getElementById('friends-search-input');
     if (!friendsListEl) return;
-    friendsListEl.innerHTML = '<div class="empty-state">Loading friends...</div>';
+    friendsListEl.innerHTML = '<div class="empty-state loading-state">Loading friends...</div>';
     try {
       const result = await sheetRequest({ action: 'getFriends', username: currentUsername });
       friendsListCache = (result.success && result.friends) ? result.friends : [];
@@ -7460,13 +7597,6 @@
     list.innerHTML = `
       <div class="shop-card">
         <div class="shop-info">
-          <h3>Hide Cursor</h3>
-          <p>Hide the mouse cursor while playing.</p>
-        </div>
-        <button class="buy-btn" id="toggle-hide-cursor">${game.hideCursor ? 'Show Cursor' : 'Hide Cursor'}</button>
-      </div>
-      <div class="shop-card">
-        <div class="shop-info">
           <h3>Sound Effects</h3>
           <p>Mute all sound effects and the default background song (everything except a song you pick in the Music Player).</p>
         </div>
@@ -7542,14 +7672,6 @@
       </div>
     `;
 
-    document.getElementById('toggle-hide-cursor').addEventListener('click', () => {
-      game.hideCursor = !game.hideCursor;
-      applyCursorVisibility();
-      saveGame();
-      renderSettings();
-      if (game.hideCursor) showCursorHint();
-    });
-
     document.getElementById('toggle-mute-sfx').addEventListener('click', () => {
       game.sfxMuted = !game.sfxMuted;
       saveGame();
@@ -7617,7 +7739,7 @@
       <h1 class="auth-heading">Credits</h1>
       <p class="auth-sub">The admins, mods, devs, directors, and owner behind this game.</p>
       <div id="credits-list" style="max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
-        <div class="empty-state">Loading...</div>
+        <div class="empty-state loading-state">Loading...</div>
       </div>
       <button class="auth-btn secondary" id="confirm-cancel">Close</button>
     `;
@@ -7850,60 +7972,60 @@
   const TUTORIAL_STEPS = [
     {
       title: "Welcome to The Clicker Game!",
-      text: "So glad you're here! This little guy is your Clicker - every tap earns you moneys. Let's get you started!",
+      text: "So glad you're here! See that big avatar below? That's your Clicker. Every time you tap it, you earn moneys, and moneys are what let you buy upgrades, cosmetics, and more. Let's walk through the basics together!",
       requirement: null
     },
     {
       title: "Try It Out!",
-      text: "Go ahead, give the avatar a click and watch your very first moneys roll in!",
+      text: "Go ahead, tap (or click) the avatar once. You'll see your moneys counter above it go up - that's the whole game in a nutshell, and it only gets more interesting from here.",
       hint: "I'm waiting right here for your first click...",
       requirement: () => game.clicks >= 1
     },
     {
       title: "You're a Natural!",
-      text: "Nice work! Keep that momentum going and get your total up to 10 clicks.",
+      text: "Nice work! Keep tapping the avatar until your total reaches 10 moneys. Watch the counter at the top of the page to track your progress.",
       hint: "0/10 so far - you've got this!",
       requirement: () => game.clicks >= 10
     },
     {
       title: "Time to Shop!",
-      text: "Now for the fun part. Hop over to the Shop tab and see what's waiting for you.",
+      text: "Now for the fun part. Look at the row of tabs near the top of the page - tap the one labeled Shop to see everything you can spend your moneys on.",
       hint: "Whenever you're ready, tap the Shop tab above.",
       requirement: () => tutorialVisitedTabs.has('shop')
     },
     {
       title: "Treat Yourself!",
-      text: "Pick up a Click Boost - it makes every single click worth even more. Totally worth it!",
+      text: "In the Shop, find the card called Click Boost and tap its Buy button. It permanently increases how many moneys you earn per click, so every tap from here on out counts for more.",
       hint: "Grab a Click Boost whenever you're ready.",
       requirement: () => game.clickBoostOwned >= 1
     },
     {
       title: "Feel That Power!",
-      text: "Now try reaching 50 clicks - you'll notice it flies by so much faster with your new boost!",
+      text: "Keep clicking the avatar - now that you have a Click Boost, you'll notice your total climbs faster. Get your moneys up to 50 to continue.",
       hint: "0/50 so far - look at you go!",
       requirement: () => game.clicks >= 50
     },
     {
       title: "Meet Your Stats",
-      text: "The Stats tab is your little home base - your profile, your moneys, all in one place.",
+      text: "Tap the Stats tab up top. That's your home base - it shows your profile, your total moneys, and lets you edit your avatar and username by tapping on them.",
       hint: "Take a peek - tap the Stats tab above.",
       requirement: () => tutorialVisitedTabs.has('stats')
     },
     {
       title: "See Who's Winning!",
-      text: "Curious how you stack up against everyone else? The Leaderboard has all the answers.",
+      text: "Curious how you stack up against everyone else playing? Tap the Leaderboard tab to see the top players ranked by moneys, plus separate views for friends and top-ranked players.",
       hint: "Check it out - tap the Leaderboard tab above.",
       requirement: () => tutorialVisitedTabs.has('leaderboard')
     },
     {
       title: "A Few Surprises Await",
-      text: "The Achievements tab tracks fun milestones as you play - some are secret until you unlock them!",
+      text: "Tap the Achievements tab. It tracks fun milestones as you play - some are shown outright, others stay hidden as '???' until you actually unlock them, so keep an eye out.",
       hint: "Go take a look - tap the Achievements tab above.",
       requirement: () => tutorialVisitedTabs.has('achievements')
     },
     {
       title: "You're All Set!",
-      text: "That's everything you need to know! There's plenty more to discover on your own - Settings, more upgrades, surprises galore. Have a blast!",
+      text: "That covers the basics! From here, explore on your own: the Settings tab has display and performance options, the Shop has plenty more upgrades to unlock, and Preferences (once you own a customization item) lets you personalize your cursor, background, music, and more. Have a blast!",
       requirement: null
     }
   ];
@@ -8389,15 +8511,16 @@
     loadCustomAssets();
     applyOfflineEarnings();
     updateCounter();
-    applyCursorVisibility();
-    if (game.hideCursor) showCursorHint();
     applyLightMode();
     switchBgSong(DEFAULT_BG_SONG);
+    updatePickerVisibility();
     if (game.musicPlayerOwned) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
     if (game.iconModifierOwned) showIconPicker();
+    else updateAvatarIconDisplay();
     if (game.effectsOwned) showEffectPicker();
+    showFontManager();
     for (let i = 0; i < game.dvdOwned; i++) spawnDvd();
     updateDvdVisibility();
     for (let i = 0; i < game.amogusAlive; i++) spawnCrewmate();
