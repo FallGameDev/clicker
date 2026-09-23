@@ -566,7 +566,27 @@
     border-radius:12px;
     padding:10px 8px;
     cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
     transition:transform .12s ease, background .15s ease, color .15s ease, box-shadow .12s ease;
+  }
+  .tab-btn .tab-icon{
+    display:none;
+    width:20px;
+    height:20px;
+    flex-shrink:0;
+  }
+  .tab-btn .tab-icon svg{
+    width:100%;
+    height:100%;
+    display:block;
+  }
+  .tab-btn .tab-label{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
   }
   .tab-btn:hover{
     color:var(--rind);
@@ -1378,6 +1398,114 @@
   }
   body.low-perf #fps-counter{
     display:block;
+  }
+
+  /* ---------- DEBUG PANEL ---------- */
+  .debug-panel{
+    position:fixed;
+    top:70px;
+    left:16px;
+    z-index:9997;
+    width:230px;
+    max-width:calc(100vw - 32px);
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:14px;
+    box-shadow:var(--pop);
+    font-family:'Poppins', sans-serif;
+    color:var(--cream);
+  }
+  .debug-panel-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding:9px 12px;
+    background:var(--brand-gradient);
+    color:var(--night);
+    font-family:'Fredoka One', cursive;
+    font-size:12.5px;
+    border-radius:11px 11px 0 0;
+    cursor:grab;
+    user-select:none;
+    touch-action:none;
+  }
+  .debug-panel-header:active{ cursor:grabbing; }
+  .debug-panel-close{
+    background:none;
+    border:none;
+    color:var(--night);
+    font-size:18px;
+    line-height:1;
+    cursor:pointer;
+    padding:0 2px;
+  }
+  .debug-panel-body{
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    padding:12px;
+  }
+  .debug-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    font-size:11.5px;
+    padding:3px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .debug-row span:first-child{ color:var(--muted); }
+  .debug-row span:last-child{
+    font-weight:600;
+    color:var(--rind);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    max-width:60%;
+  }
+  .debug-panel-btn{
+    width:100%;
+    font-size:11.5px;
+    padding:9px;
+    margin-top:2px;
+  }
+  .debug-ratio-row{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-top:2px;
+  }
+  .debug-ratio-row label{
+    font-size:11px;
+    color:var(--muted);
+  }
+  .debug-ratio-row select{
+    font-family:'Poppins', sans-serif;
+    font-size:12px;
+    padding:8px 10px;
+    border-radius:8px;
+    border:2px solid var(--ink);
+    background:var(--night);
+    color:var(--rind);
+    cursor:pointer;
+  }
+  .debug-ratio-preview{
+    margin-top:4px;
+    border:2px solid var(--ink);
+    border-radius:10px;
+    overflow:hidden;
+    background:#000;
+    width:100%;
+    max-height:60vh;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+  }
+  .debug-ratio-preview iframe{
+    border:0;
+    display:block;
+    flex-shrink:0;
   }
 
   .achievement-popup{
@@ -2841,24 +2969,6 @@
     margin-bottom:10px;
   }
 
-  /* ---------- MOBILE BLOCK ---------- */
-  .mobile-block{
-    display:none;
-    position:fixed;
-    inset:0;
-    z-index:100000;
-    background:var(--night);
-    align-items:center;
-    justify-content:center;
-    padding:24px;
-  }
-  body.mobile-blocked .mobile-block{
-    display:flex;
-  }
-  body.mobile-blocked > *:not(.mobile-block){
-    display:none !important;
-  }
-
   /* ---------- TUTORIAL ---------- */
   .tutorial-overlay{
     position:fixed;
@@ -3080,10 +3190,42 @@
 
   @media (max-width:480px){
     .page{ padding:0 16px; }
+    .click-counter{
+      font-size:15px;
+      padding:8px 22px;
+      letter-spacing:0.2px;
+    }
+    .avatar{
+      width:132px;
+      height:132px;
+      margin-bottom:22px;
+    }
+    .avatar-emoji{ font-size:100px; }
+    .tabs{
+      gap:10px;
+      margin-bottom:24px;
+      justify-content:space-between;
+    }
     .tab-btn{
-      font-size:11px;
-      padding:12px 6px;
-      min-height:40px;
+      flex:0 0 auto;
+      width:54px;
+      height:54px;
+      padding:0;
+      border-radius:50%;
+      gap:0;
+    }
+    .tab-btn .tab-icon{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:24px;
+      height:24px;
+    }
+    .tab-btn .tab-label{
+      display:none;
+    }
+    .tab-btn.active{
+      transform:none;
     }
     .shop-category-btn{
       font-size:11px;
@@ -3113,32 +3255,6 @@
 </style>
 </head>
 <body>
-
-<script>
-  /* Phones and tablets are not supported. This runs first so the game never
-     flashes on screen. The main script below checks IS_MOBILE_BLOCKED and stops. */
-  (function(){
-    function isMobileDevice(){
-      var ua = navigator.userAgent || '';
-      if (/Android|iPhone|iPad|iPod|Mobile|Windows Phone|BlackBerry|Opera Mini|IEMobile/i.test(ua)) return true;
-      // iPadOS asks for the desktop site by default and reports itself as a Mac.
-      if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
-      if (navigator.userAgentData && navigator.userAgentData.mobile) return true;
-      // Touch only devices with no hover (for example a phone asking for the desktop site).
-      if (!/Windows NT|CrOS/i.test(ua) && window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches) return true;
-      return false;
-    }
-    window.IS_MOBILE_BLOCKED = isMobileDevice();
-    if (window.IS_MOBILE_BLOCKED) document.body.classList.add('mobile-blocked');
-  })();
-</script>
-
-<div class="mobile-block" id="mobile-block">
-  <div class="auth-box">
-    <h1 class="auth-heading">PC and Mac Only</h1>
-    <p class="auth-sub" style="margin-bottom:0;">The Clicker Game is optimized for PC and Mac browsers and needs higher end specs than a phone or tablet can offer. Please open it on a computer to play.</p>
-  </div>
-</div>
 
 <div id="loading-screen" class="loading-screen">
   <div class="loading-content">
@@ -3354,6 +3470,36 @@
 
 <div id="fps-counter">FPS: 0</div>
 
+<div class="debug-panel" id="debug-panel" style="display:none;">
+  <div class="debug-panel-header" id="debug-panel-header">
+    <span>&#128027; Debug Mode</span>
+    <button class="debug-panel-close" id="debug-panel-close" aria-label="Close debug panel">&times;</button>
+  </div>
+  <div class="debug-panel-body">
+    <div class="debug-row"><span>FPS</span><span id="debug-stat-fps">0</span></div>
+    <div class="debug-row"><span>Username</span><span id="debug-stat-username">-</span></div>
+    <div class="debug-row"><span>Moneys</span><span id="debug-stat-clicks">0</span></div>
+    <div class="debug-row"><span>Prestige</span><span id="debug-stat-prestige">0</span></div>
+    <div class="debug-row"><span>Gems</span><span id="debug-stat-gems">0</span></div>
+    <div class="debug-row"><span>Click Power</span><span id="debug-stat-power">1</span></div>
+
+    <button class="buy-btn debug-panel-btn" id="debug-test-notification">Test Notification</button>
+
+    <div class="debug-ratio-row">
+      <label for="debug-ratio-select">Page Ratio</label>
+      <select id="debug-ratio-select">
+        <option value="default">Default</option>
+        <option value="phone">Phone</option>
+        <option value="tablet">Tablet</option>
+        <option value="pc">PC</option>
+      </select>
+    </div>
+    <div class="debug-ratio-preview" id="debug-ratio-preview" style="display:none;">
+      <iframe id="debug-ratio-frame" title="Page ratio preview"></iframe>
+    </div>
+  </div>
+</div>
+
 <div class="tutorial-overlay" id="tutorial-overlay">
   <div class="auth-box tutorial-box">
     <img src="tutorial-guide.png" alt="" class="tutorial-char" id="tutorial-char">
@@ -3430,18 +3576,6 @@
 </div>
 
 <script>
-  /* ---------- MOBILE BLOCK ----------
-     Phones and tablets are not supported (see the early script after <body>).
-     Throwing here stops the rest of the game from starting. */
-  if (window.IS_MOBILE_BLOCKED) {
-    window.addEventListener('error', function(e){
-      if (e.error && e.error.mobileBlocked) e.preventDefault();
-    });
-    const mobileStop = new Error('Mobile devices are not supported.');
-    mobileStop.mobileBlocked = true;
-    throw mobileStop;
-  }
-
   /* ---------- LOW PERFORMANCE MODE ---------- */
   const LOW_PERF_KEY = 'lowPerfMode';
   function isLikelyLowPowerDevice(){
@@ -3508,6 +3642,8 @@
       frames++;
       if (now - lastTime >= 1000) {
         if (fpsEl) fpsEl.textContent = 'FPS: ' + frames;
+        window.lastFPS = frames;
+        updateDebugPanelStats();
         frames = 0;
         lastTime = now;
       }
@@ -3575,6 +3711,14 @@
       image: "https://placehold.co/100x100/c1aef0/181428?text=IO"
     }
   ];
+
+  const TAB_ICONS = {
+    stats: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7v1H4v-1z"/></svg>',
+    leaderboard: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h10v4a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 13v3M9 19h6l-1-3H10l-1 3z"/></svg>',
+    shop: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 8l1.5-4h13L20 8v2a2.5 2.5 0 0 1-4.5 1.5A2.5 2.5 0 0 1 11 10a2.5 2.5 0 0 1-4.5 1.5A2.5 2.5 0 0 1 4 10V8z"/><path d="M5 10.8V20h14v-9.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 20v-5a2.5 2.5 0 0 1 5 0v5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    achievements: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5L7 21l5-2.5L17 21l-1.5-6.5"/></svg>',
+    settings: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/><path d="M19.4 13a7.4 7.4 0 0 0 .1-1 7.4 7.4 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.6a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.4 7.4 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.6a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>'
+  };
 
   const TABS = [
     { id: "stats", label: "Stats", data: null },
@@ -4374,6 +4518,15 @@
   const loopBtn = document.getElementById('loop-btn');
   const defaultBgAudio = document.getElementById('default-bg-audio');
 
+  /* A debug-panel ratio preview loads this same page in an iframe so real
+     media queries fire at that width. Mute audio in there to avoid a second
+     copy of the music playing on top of the parent page. */
+  const DEBUG_PREVIEW_FRAME = new URLSearchParams(location.search).get('debugPreview') === '1';
+  if (DEBUG_PREVIEW_FRAME) {
+    if (songAudio) songAudio.muted = true;
+    if (defaultBgAudio) defaultBgAudio.muted = true;
+  }
+
   const DEFAULT_BG_SONG = 'manthishotelreallysucksidontgetcoolmusicoranythingimjuststuckwithBAHABAHAHABAHABAHAB.mp3';
   const TUTORIAL_BG_SONG = 'yourhired.mp3';
   const AUTH_BG_SONG = 'go ahead, start crying.mp3';
@@ -4381,7 +4534,7 @@
   function updateDefaultBgVolume(){
     if (!defaultBgAudio) return;
     const songPlaying = songAudio && !songAudio.paused;
-    defaultBgAudio.volume = (game.sfxMuted || songPlaying) ? 0 : 0.3;
+    defaultBgAudio.volume = (game.sfxMuted || songPlaying || DEBUG_PREVIEW_FRAME) ? 0 : 0.3;
   }
 
   function armBgAudioResumeOnInteraction(){
@@ -5404,7 +5557,9 @@
     TABS.forEach(tab => {
       const btn = document.createElement('button');
       btn.className = 'tab-btn' + (tab.id === activeTab ? ' active' : '');
-      btn.textContent = tab.label;
+      btn.innerHTML = '<span class="tab-icon">' + (TAB_ICONS[tab.id] || '') + '</span><span class="tab-label">' + tab.label + '</span>';
+      btn.title = tab.label;
+      btn.setAttribute('aria-label', tab.label);
       btn.dataset.tab = tab.id;
       btn.addEventListener('click', () => {
         activeTab = tab.id;
@@ -8141,6 +8296,114 @@
     showBanner('Press Fn+M to show.');
   }
 
+  /* ---------- DEBUG PANEL ---------- */
+  const debugPanelEl = document.getElementById('debug-panel');
+  const debugPanelHeaderEl = document.getElementById('debug-panel-header');
+  const debugRatioFrame = document.getElementById('debug-ratio-frame');
+  const debugRatioPreview = document.getElementById('debug-ratio-preview');
+  const DEBUG_RATIO_SIZES = {
+    phone: { w: 390, h: 780 },
+    tablet: { w: 810, h: 1080 },
+    pc: { w: 1280, h: 800 }
+  };
+
+  function updateDebugPanelStats(){
+    if (!debugPanelEl || debugPanelEl.style.display === 'none') return;
+    const fpsSpan = document.getElementById('debug-stat-fps');
+    if (fpsSpan) fpsSpan.textContent = window.lastFPS != null ? window.lastFPS : 0;
+    const userSpan = document.getElementById('debug-stat-username');
+    if (userSpan) userSpan.textContent = currentUsername || 'Guest';
+    const clicksSpan = document.getElementById('debug-stat-clicks');
+    if (clicksSpan) clicksSpan.textContent = game.clicks.toLocaleString();
+    const prestigeSpan = document.getElementById('debug-stat-prestige');
+    if (prestigeSpan) prestigeSpan.textContent = (game.prestige || 0).toLocaleString();
+    const gemsSpan = document.getElementById('debug-stat-gems');
+    if (gemsSpan) gemsSpan.textContent = (game.gems || 0).toLocaleString();
+    const powerSpan = document.getElementById('debug-stat-power');
+    if (powerSpan) powerSpan.textContent = game.clickPower;
+  }
+
+  function setDebugRatio(value){
+    if (!debugRatioFrame || !debugRatioPreview) return;
+    if (value === 'default' || !DEBUG_RATIO_SIZES[value]) {
+      debugRatioPreview.style.display = 'none';
+      debugRatioFrame.removeAttribute('src');
+      return;
+    }
+    const size = DEBUG_RATIO_SIZES[value];
+    const containerWidth = debugPanelEl.clientWidth - 24 || 200;
+    const scale = Math.min(1, containerWidth / size.w);
+    debugRatioFrame.style.width = size.w + 'px';
+    debugRatioFrame.style.height = size.h + 'px';
+    debugRatioFrame.style.transform = 'scale(' + scale + ')';
+    debugRatioFrame.style.transformOrigin = 'top left';
+    debugRatioPreview.style.height = Math.round(size.h * scale) + 'px';
+    debugRatioPreview.style.display = 'flex';
+    if (!debugRatioFrame.getAttribute('src')) {
+      const url = new URL(location.href);
+      url.searchParams.set('debugPreview', '1');
+      debugRatioFrame.src = url.toString();
+    }
+  }
+
+  function openDebugPanel(){
+    if (!debugPanelEl) return;
+    debugPanelEl.style.display = 'block';
+    updateDebugPanelStats();
+  }
+
+  function closeDebugPanel(){
+    if (!debugPanelEl) return;
+    debugPanelEl.style.display = 'none';
+    if (debugRatioFrame) debugRatioFrame.removeAttribute('src');
+    if (debugRatioPreview) debugRatioPreview.style.display = 'none';
+    const ratioSelect = document.getElementById('debug-ratio-select');
+    if (ratioSelect) ratioSelect.value = 'default';
+  }
+
+  (function initDebugPanel(){
+    if (!debugPanelEl || !debugPanelHeaderEl) return;
+
+    document.getElementById('debug-panel-close').addEventListener('click', closeDebugPanel);
+    document.getElementById('debug-test-notification').addEventListener('click', () => {
+      showAchievementToast({ icon: '\ud83c\udfc6', label: 'Test Achievement', difficulty: 'Hard' });
+    });
+    document.getElementById('debug-ratio-select').addEventListener('change', (e) => {
+      setDebugRatio(e.target.value);
+    });
+
+    let dragging = false, offsetX = 0, offsetY = 0;
+    function dragStart(e){
+      dragging = true;
+      const point = e.touches ? e.touches[0] : e;
+      const rect = debugPanelEl.getBoundingClientRect();
+      offsetX = point.clientX - rect.left;
+      offsetY = point.clientY - rect.top;
+      debugPanelEl.style.left = rect.left + 'px';
+      debugPanelEl.style.top = rect.top + 'px';
+      debugPanelEl.style.right = 'auto';
+    }
+    function dragMove(e){
+      if (!dragging) return;
+      if (e.cancelable) e.preventDefault();
+      const point = e.touches ? e.touches[0] : e;
+      let left = point.clientX - offsetX;
+      let top = point.clientY - offsetY;
+      left = Math.max(4, Math.min(window.innerWidth - debugPanelEl.offsetWidth - 4, left));
+      top = Math.max(4, Math.min(window.innerHeight - 40, top));
+      debugPanelEl.style.left = left + 'px';
+      debugPanelEl.style.top = top + 'px';
+    }
+    function dragEnd(){ dragging = false; }
+
+    debugPanelHeaderEl.addEventListener('mousedown', dragStart);
+    document.addEventListener('mousemove', dragMove);
+    document.addEventListener('mouseup', dragEnd);
+    debugPanelHeaderEl.addEventListener('touchstart', dragStart, { passive: true });
+    document.addEventListener('touchmove', dragMove, { passive: false });
+    document.addEventListener('touchend', dragEnd);
+  })();
+
   function renderSettings(){
     list.innerHTML = `
       <div class="shop-card">
@@ -8176,13 +8439,13 @@
           <option value="right">Right</option>
         </select>
       </div>` : ''}
-      <!-- TEMP: remove this card and its click handler when done testing notifications -->
+      <!-- Debug Mode: opens a draggable panel with FPS, stats, a test notification button, and a page ratio preview -->
       <div class="shop-card">
         <div class="shop-info">
-          <h3>Test Notifications (Temporary)</h3>
-          <p>Fires a sample achievement popup so you can test the 6 second timer and close button.</p>
+          <h3>Debug Mode</h3>
+          <p>Opens a draggable panel with FPS, a few of your stats, a test notification button, and a page ratio preview.</p>
         </div>
-        <button class="buy-btn" id="test-notifications">Test</button>
+        <button class="buy-btn" id="open-debug-panel">Open</button>
       </div>
       <div class="shop-card">
         <div class="shop-info">
@@ -8258,10 +8521,7 @@
       });
     }
 
-    // TEMP: test button handler
-    document.getElementById('test-notifications').addEventListener('click', () => {
-      showAchievementToast({ icon: '\ud83c\udfc6', label: 'Test Achievement', difficulty: 'Hard' });
-    });
+    document.getElementById('open-debug-panel').addEventListener('click', openDebugPanel);
 
     document.getElementById('open-reset-data').addEventListener('click', openConfirmReset);
     document.getElementById('replay-tutorial').addEventListener('click', () => maybeShowTutorial(true));
