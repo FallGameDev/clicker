@@ -3883,6 +3883,12 @@
   let currentAvatarEmoji = pickRandomFaceEmoji();
 
   function updateAvatarIconDisplay(){
+    const category = currentIconCategory();
+    if (category) {
+      if (!game.lastIconPick) game.lastIconPick = rollIconPick(category);
+      applyIconPick(category, game.lastIconPick);
+      return;
+    }
     if (game.iconModifierOwned && game.iconChosen && game.selectedIcon && game.selectedIcon !== 'profile.png') {
       avatarEl.classList.remove('emoji-mode');
       applyIcon(game.selectedIcon);
@@ -3934,6 +3940,7 @@
       iconModifierOwned: false,
       selectedIcon: 'profile.png',
       iconChosen: false,
+      lastIconPick: null,
       autoKillOwned: false,
       noobOwned: 0,
       hideCursor: false,
@@ -4024,7 +4031,10 @@
     saveGame();
     refreshShopAffordability();
     refreshStatsMoneys();
-    if (avatarEl.classList.contains('emoji-mode')) {
+    const category = currentIconCategory();
+    if (category) {
+      rerollIconPick(category);
+    } else if (avatarEl.classList.contains('emoji-mode')) {
       currentAvatarEmoji = pickRandomFaceEmoji();
       avatarEmojiEl.textContent = currentAvatarEmoji;
       // Every time the clicker's emoji changes, the tab favicon must
@@ -5117,19 +5127,90 @@
   }
 
   /* ---------- ICON MODIFIER ----------
-     Add your own icons to this list. Each entry needs:
-       label - shown in the dropdown
-       file  - an image filename (uploaded to the server) used for both
-               the clicker avatar and the browser tab icon
-     Example:
-       { label: "Ghost", file: "ghost.png" }
+     "Default" and any single-file entries below use a real image filename
+     (uploaded to the server) for both the clicker avatar and the browser
+     tab icon, same as before. The three theme entries (Food / Symbols /
+     Items) and Special instead use `category:<name>` as their value - on
+     pick, and again on every click, one entry from that category's pool is
+     rolled at random and shown, the same way the plain default avatar
+     rolls a random face emoji. Food/Symbols/Items roll a random emoji;
+     Special rolls a random real image, so it isn't just more emoji.
+     Add more entries to ICON_EMOJI_POOLS / SPECIAL_ICON_FILES any time.
   ------------------------------------------------- */
   const ICONS = [
     { label: "Default", file: "profile.png" },
-    { label: "Rose", file: "rose.png" },
-    { label: "Banana", file: "nana.png" },
-    { label: "Pickle", file: "rick.png" }
+    { label: "Food", file: "category:food" },
+    { label: "Symbols", file: "category:symbols" },
+    { label: "Items", file: "category:items" },
+    { label: "Special", file: "category:special" }
   ];
+
+  const ICON_EMOJI_POOLS = {
+    food: ['\ud83c\udf55','\ud83c\udf54','\ud83c\udf2e','\ud83c\udf63','\ud83c\udf69','\ud83c\udf6a','\ud83c\udf49','\ud83c\udf47','\ud83c\udf53','\ud83e\udd51','\ud83c\udf3d','\ud83c\udf7f','\ud83e\uddc0','\ud83c\udf66','\ud83c\udf6b','\ud83c\udf6d','\ud83e\udd50','\ud83e\udd68','\ud83c\udf5c','\ud83c\udf71'],
+    symbols: ['\u2728','\u26a0\ufe0f','\u2622\ufe0f','\u2623\ufe0f','\u267b\ufe0f','\u2705','\u274c','\u2764\ufe0f','\ud83d\udcaf','\ud83d\udd25','\u2b50','\u262e\ufe0f','\u267e\ufe0f','\ud83d\udd1e','\ud83d\udeab','\u26a1','\ud83d\udd31','\ud83c\udd97','\u2660\ufe0f','\u2663\ufe0f'],
+    items: ['\ud83d\udd11','\ud83d\udc8e','\ud83c\udf81','\ud83d\udd28','\ud83e\ude93','\ud83c\udf92','\ud83e\uddf0','\ud83e\ude84','\ud83e\uddf2','\ud83d\udd26','\ud83e\uddea','\ud83d\udce6','\ud83d\udddd\ufe0f','\ud83d\udee0\ufe0f','\ud83c\udfaf','\ud83e\uddf5','\ud83e\ude99','\ud83e\udea8','\ud83d\udcc0','\u2699\ufe0f']
+  };
+
+  // Special pulls from the game's own account profile picture set, so it's
+  // real artwork rather than another wall of unicode glyphs.
+  const SPECIAL_ICON_FILES = ['profiles/cat1.png', 'profiles/cat2.png', 'profiles/cat3.png', 'profiles/cat4.png', 'profiles/basketball.png', 'profiles/bovine.png'];
+
+  // Kept as an escaped literal (not typed directly) purely so a plain text
+  // search of this file doesn't surface it out of context.
+  const ADULT_SYMBOL_EMOJI = '\ud83d\udd1e';
+  const SYMBOLS_HEADS_UP_ACHIEVEMENT_ID = 'symbols_heads_up';
+
+  function currentIconCategory(){
+    return (typeof game.selectedIcon === 'string' && game.selectedIcon.indexOf('category:') === 0)
+      ? game.selectedIcon.slice('category:'.length)
+      : null;
+  }
+
+  function rollIconPick(category){
+    if (category === 'special') {
+      return SPECIAL_ICON_FILES[Math.floor(Math.random() * SPECIAL_ICON_FILES.length)];
+    }
+    const pool = ICON_EMOJI_POOLS[category];
+    return pool ? pool[Math.floor(Math.random() * pool.length)] : null;
+  }
+
+  function applyIconPick(category, pick){
+    if (!pick) return;
+    if (category === 'special') {
+      avatarEl.classList.remove('emoji-mode');
+      applyIcon(pick);
+    } else {
+      avatarEl.classList.add('emoji-mode');
+      avatarEmojiEl.textContent = pick;
+      renderEmojiFavicon(pick);
+    }
+  }
+
+  function rerollIconPick(category){
+    game.lastIconPick = rollIconPick(category);
+    applyIconPick(category, game.lastIconPick);
+    saveGame();
+  }
+
+  // Reloading the page never re-rolls a category pick on its own (see
+  // updateAvatarIconDisplay()) - it only re-rolls on a fresh category
+  // selection or a click. That's what makes this check meaningful: if the
+  // Symbols pick that was showing when the page was last saved is still
+  // the content-warning emoji now, the player genuinely reloaded on it.
+  function checkSymbolsHeadsUpOnLoad(){
+    if (currentIconCategory() !== 'symbols' || game.lastIconPick !== ADULT_SYMBOL_EMOJI) return;
+    if (!game.unlockedAchievements) game.unlockedAchievements = [];
+    if (game.unlockedAchievements.includes(SYMBOLS_HEADS_UP_ACHIEVEMENT_ID)) return;
+    game.unlockedAchievements.push(SYMBOLS_HEADS_UP_ACHIEVEMENT_ID);
+    saveGame();
+    syncToSheet();
+    const achievement = findAchievement(SYMBOLS_HEADS_UP_ACHIEVEMENT_ID);
+    if (achievement) {
+      showAchievementToast(achievement);
+      const bonus = BONUS_HINTS_BY_DIFFICULTY[achievement.difficulty] || 0;
+      if (bonus > 0) addBonusHints(bonus);
+    }
+  }
 
   const iconPickerEl = document.getElementById('icon-picker');
   const iconSelect = document.getElementById('icon-select');
@@ -5187,6 +5268,8 @@
   iconSelect.addEventListener('change', () => {
     game.selectedIcon = iconSelect.value;
     game.iconChosen = true;
+    const category = currentIconCategory();
+    if (category) game.lastIconPick = rollIconPick(category);
     updateAvatarIconDisplay();
     saveGame();
   });
@@ -7340,6 +7423,7 @@
           bgChosen: !!savedRaw.bgChosen,
           selectedIcon: savedRaw.selectedIcon,
           iconChosen: !!savedRaw.iconChosen,
+          lastIconPick: savedRaw.lastIconPick,
           effectChosen: !!savedRaw.effectChosen,
           selectedUiFont: savedRaw.selectedUiFont,
           fontManagerChosen: !!savedRaw.fontManagerChosen,
@@ -7399,6 +7483,10 @@
       bgChosen: !!previousPickerPrefs.bgChosen,
       selectedIcon: previousPickerPrefs.selectedIcon !== undefined ? previousPickerPrefs.selectedIcon : 'profile.png',
       iconChosen: !!previousPickerPrefs.iconChosen,
+      // Local-only, like selectedIcon above - this is what lets the reload
+      // happen "on" whatever emoji/image was last shown instead of always
+      // rerolling on login. See checkSymbolsHeadsUpOnLoad().
+      lastIconPick: previousPickerPrefs.lastIconPick !== undefined ? previousPickerPrefs.lastIconPick : null,
       megaBoostOwned: source.megaBoostOwned || 0,
       turboClickerOwned: source.turboClickerOwned || 0,
       luckyCharmOwned: !!source.luckyCharmOwned,
@@ -8344,6 +8432,12 @@
     { id: 'noob_5', icon: 'N', label: 'Noob Squad', desc: 'Own 5 Roblox Noobs.', difficulty: 'Medium', check: g => g.noobOwned >= 5 },
     { id: 'noob_25', icon: 'N', label: 'Oof Simulator', desc: 'Own 25 Roblox Noobs.', difficulty: 'Hard', check: g => g.noobOwned >= 25 },
     { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', difficulty: 'Medium', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
+    // Not part of the normal auto-scan below (check always returns false) -
+    // this one is only ever granted manually, by checkSymbolsHeadsUpOnLoad(),
+    // and `secret: true` keeps it out of the Get a Hint pool entirely so it
+    // never gets spoiled ahead of time, no matter which difficulty tiers are
+    // still locked.
+    { id: 'symbols_heads_up', icon: '\ud83d\udc40', label: 'Thanks for the heads up!', desc: 'Reload the page while your Symbols icon had landed on a certain content warning label.', difficulty: 'Extreme', secret: true, check: () => false },
     { id: 'auto_kill', icon: '\ud83d\udc80', label: 'No Mercy', desc: 'Buy Auto Kill.', difficulty: 'Medium', check: g => g.autoKillOwned },
     { id: 'offline_earner', icon: '\ud83d\udcb0', label: 'Set for Life', desc: 'Buy Offline Earnings.', difficulty: 'Medium', check: g => g.offlineEarningsOwned },
     { id: 'completionist', icon: '\ud83c\udfc6', label: 'Completionist', desc: 'Own every upgrade in the Plain and Customization shop categories.', difficulty: 'Hard', check: g => g.autoKillOwned && g.offlineEarningsOwned && g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned && g.clickBoostOwned >= 1 && g.autoClickerOwned >= 1 },
@@ -8462,7 +8556,7 @@
       showAchievementHintBanner(`Out of hints. Try again in ${nextHintWaitMinutes()} min.`);
       return;
     }
-    const locked = ACHIEVEMENTS.filter(a => !(game.unlockedAchievements || []).includes(a.id));
+    const locked = ACHIEVEMENTS.filter(a => !a.secret && !(game.unlockedAchievements || []).includes(a.id));
     if (!locked.length) {
       showAchievementHintBanner("You've unlocked every achievement!");
       return;
@@ -9795,6 +9889,7 @@
 
   function startGame(){
     loadGame();
+    checkSymbolsHeadsUpOnLoad();
     if (game.amogusAlive === undefined) game.amogusAlive = game.amogusOwned;
     loadCustomAssets();
     applyOfflineEarnings();
