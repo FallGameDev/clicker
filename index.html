@@ -1490,23 +1490,6 @@
     color:var(--rind);
     cursor:pointer;
   }
-  .debug-ratio-preview{
-    margin-top:4px;
-    border:2px solid var(--ink);
-    border-radius:10px;
-    overflow:hidden;
-    background:#000;
-    width:100%;
-    max-height:60vh;
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-  }
-  .debug-ratio-preview iframe{
-    border:0;
-    display:block;
-    flex-shrink:0;
-  }
 
   .achievement-popup{
     position:fixed;
@@ -3252,6 +3235,164 @@
     .leaderboard-name{ font-size:13px; }
     .stats-name{ font-size:16px; }
   }
+
+  /* ---------- DEBUG PAGE RATIO OVERRIDE ----------
+     Set from the Debug Mode panel (Settings). These force the page into a
+     phone / tablet / PC layout regardless of the real window width, by
+     mirroring the values above with !important so they win over whichever
+     real @media block also happens to match. "Default" removes the class
+     and the page goes back to responding to the real window size. */
+  body.debug-ratio-phone .page{
+    max-width:420px !important;
+    padding:0 16px !important;
+  }
+  body.debug-ratio-phone .click-counter{
+    font-size:15px !important;
+    padding:8px 22px !important;
+    letter-spacing:0.2px !important;
+  }
+  body.debug-ratio-phone .avatar{
+    width:132px !important;
+    height:132px !important;
+    margin-bottom:22px !important;
+  }
+  body.debug-ratio-phone .avatar-emoji{ font-size:100px !important; }
+  body.debug-ratio-phone .tabs{
+    gap:10px !important;
+    margin-bottom:24px !important;
+    justify-content:space-between !important;
+  }
+  body.debug-ratio-phone .tab-btn{
+    flex:0 0 auto !important;
+    width:54px !important;
+    height:54px !important;
+    padding:0 !important;
+    border-radius:50% !important;
+    gap:0 !important;
+  }
+  body.debug-ratio-phone .tab-btn .tab-icon{
+    display:flex !important;
+    width:24px !important;
+    height:24px !important;
+  }
+  body.debug-ratio-phone .tab-btn .tab-label{ display:none !important; }
+  body.debug-ratio-phone .tab-btn.active{ transform:none !important; }
+  body.debug-ratio-phone .shop-category-btn{
+    font-size:11px !important;
+    padding:10px 6px !important;
+    min-height:38px !important;
+  }
+  body.debug-ratio-phone .buy-btn{
+    font-size:13px !important;
+    padding:12px 14px !important;
+    min-height:40px !important;
+  }
+  body.debug-ratio-phone .shop-card,
+  body.debug-ratio-phone .leaderboard-row,
+  body.debug-ratio-phone .achievement-card,
+  body.debug-ratio-phone .stats-card{ padding:14px !important; }
+  body.debug-ratio-phone .shop-info h3{ font-size:14px !important; }
+  body.debug-ratio-phone .shop-info p{ font-size:12px !important; line-height:1.5 !important; }
+  body.debug-ratio-phone .auth-input,
+  body.debug-ratio-phone .auth-btn{
+    font-size:15px !important;
+    padding:13px 14px !important;
+    min-height:44px !important;
+  }
+  body.debug-ratio-phone .color-grid{ grid-template-columns:repeat(2, 1fr) !important; gap:8px !important; }
+  body.debug-ratio-phone .icon-grid{ grid-template-columns:repeat(3, 1fr) !important; gap:8px !important; }
+  body.debug-ratio-phone .stats-name{ font-size:16px !important; }
+
+  /* Tablet: same bigger avatar/counter as a real 481-768px window, page
+     column stays phone-narrow (matches the real in-between behavior). */
+  body.debug-ratio-tablet .page{
+    max-width:420px !important;
+    padding:0 !important;
+  }
+  /* PC: same bigger avatar/counter, plus the wide centered column a real
+     >=769px window gets. */
+  body.debug-ratio-pc .page{
+    max-width:680px !important;
+    padding:0 !important;
+  }
+  body.debug-ratio-tablet .avatar,
+  body.debug-ratio-pc .avatar{
+    width:190px !important;
+    height:190px !important;
+    margin-bottom:24px !important;
+  }
+  body.debug-ratio-tablet .avatar-emoji,
+  body.debug-ratio-pc .avatar-emoji{ font-size:144px !important; }
+  body.debug-ratio-tablet .click-counter,
+  body.debug-ratio-pc .click-counter{
+    font-size:16px !important;
+    padding:7px 20px !important;
+    margin-bottom:20px !important;
+    letter-spacing:normal !important;
+  }
+  body.debug-ratio-tablet .tabs,
+  body.debug-ratio-pc .tabs{
+    gap:8px !important;
+    margin-bottom:22px !important;
+    justify-content:flex-start !important;
+  }
+  body.debug-ratio-tablet .tab-btn,
+  body.debug-ratio-pc .tab-btn{
+    flex:1 !important;
+    width:auto !important;
+    height:auto !important;
+    padding:10px 8px !important;
+    border-radius:12px !important;
+    gap:6px !important;
+  }
+  body.debug-ratio-tablet .tab-btn .tab-icon,
+  body.debug-ratio-pc .tab-btn .tab-icon{ display:none !important; }
+  body.debug-ratio-tablet .tab-btn .tab-label,
+  body.debug-ratio-pc .tab-btn .tab-label{ display:inline !important; }
+  body.debug-ratio-tablet .tab-btn.active,
+  body.debug-ratio-pc .tab-btn.active{ transform:translate(-1px,-1px) !important; }
+  body.debug-ratio-tablet .shop-category-btn,
+  body.debug-ratio-pc .shop-category-btn{
+    font-size:11.5px !important;
+    padding:8px 6px !important;
+    min-height:0 !important;
+  }
+  body.debug-ratio-tablet .buy-btn,
+  body.debug-ratio-pc .buy-btn{
+    font-size:11.5px !important;
+    padding:9px 12px !important;
+    min-height:0 !important;
+  }
+  body.debug-ratio-tablet .shop-card,
+  body.debug-ratio-pc .shop-card{ padding:12px 16px !important; }
+  body.debug-ratio-tablet .leaderboard-row,
+  body.debug-ratio-pc .leaderboard-row{ padding:10px 14px !important; }
+  body.debug-ratio-tablet .achievement-card,
+  body.debug-ratio-pc .achievement-card{ padding:12px 16px !important; }
+  body.debug-ratio-tablet .stats-card,
+  body.debug-ratio-pc .stats-card{ padding:28px 20px !important; }
+  body.debug-ratio-tablet .shop-info h3,
+  body.debug-ratio-pc .shop-info h3{ font-size:13px !important; }
+  body.debug-ratio-tablet .shop-info p,
+  body.debug-ratio-pc .shop-info p{ font-size:11px !important; line-height:1.4 !important; }
+  body.debug-ratio-tablet .auth-input,
+  body.debug-ratio-pc .auth-input{
+    font-size:14px !important;
+    padding:11px 14px !important;
+    min-height:0 !important;
+  }
+  body.debug-ratio-tablet .auth-btn,
+  body.debug-ratio-pc .auth-btn{
+    font-size:14px !important;
+    padding:12px !important;
+    min-height:0 !important;
+  }
+  body.debug-ratio-tablet .color-grid,
+  body.debug-ratio-pc .color-grid{ grid-template-columns:repeat(2, 1fr) !important; gap:10px !important; }
+  body.debug-ratio-tablet .icon-grid,
+  body.debug-ratio-pc .icon-grid{ grid-template-columns:repeat(3, 1fr) !important; gap:12px !important; }
+  body.debug-ratio-tablet .stats-name,
+  body.debug-ratio-pc .stats-name{ font-size:18px !important; }
 </style>
 </head>
 <body>
@@ -3493,9 +3634,6 @@
         <option value="tablet">Tablet</option>
         <option value="pc">PC</option>
       </select>
-    </div>
-    <div class="debug-ratio-preview" id="debug-ratio-preview" style="display:none;">
-      <iframe id="debug-ratio-frame" title="Page ratio preview"></iframe>
     </div>
   </div>
 </div>
@@ -4518,15 +4656,6 @@
   const loopBtn = document.getElementById('loop-btn');
   const defaultBgAudio = document.getElementById('default-bg-audio');
 
-  /* A debug-panel ratio preview loads this same page in an iframe so real
-     media queries fire at that width. Mute audio in there to avoid a second
-     copy of the music playing on top of the parent page. */
-  const DEBUG_PREVIEW_FRAME = new URLSearchParams(location.search).get('debugPreview') === '1';
-  if (DEBUG_PREVIEW_FRAME) {
-    if (songAudio) songAudio.muted = true;
-    if (defaultBgAudio) defaultBgAudio.muted = true;
-  }
-
   const DEFAULT_BG_SONG = 'manthishotelreallysucksidontgetcoolmusicoranythingimjuststuckwithBAHABAHAHABAHABAHAB.mp3';
   const TUTORIAL_BG_SONG = 'yourhired.mp3';
   const AUTH_BG_SONG = 'go ahead, start crying.mp3';
@@ -4534,7 +4663,7 @@
   function updateDefaultBgVolume(){
     if (!defaultBgAudio) return;
     const songPlaying = songAudio && !songAudio.paused;
-    defaultBgAudio.volume = (game.sfxMuted || songPlaying || DEBUG_PREVIEW_FRAME) ? 0 : 0.3;
+    defaultBgAudio.volume = (game.sfxMuted || songPlaying) ? 0 : 0.3;
   }
 
   function armBgAudioResumeOnInteraction(){
@@ -8299,13 +8428,8 @@
   /* ---------- DEBUG PANEL ---------- */
   const debugPanelEl = document.getElementById('debug-panel');
   const debugPanelHeaderEl = document.getElementById('debug-panel-header');
-  const debugRatioFrame = document.getElementById('debug-ratio-frame');
-  const debugRatioPreview = document.getElementById('debug-ratio-preview');
-  const DEBUG_RATIO_SIZES = {
-    phone: { w: 390, h: 780 },
-    tablet: { w: 810, h: 1080 },
-    pc: { w: 1280, h: 800 }
-  };
+  const DEBUG_RATIO_CLASSES = ['debug-ratio-phone', 'debug-ratio-tablet', 'debug-ratio-pc'];
+  let currentDebugRatio = 'default';
 
   function updateDebugPanelStats(){
     if (!debugPanelEl || debugPanelEl.style.display === 'none') return;
@@ -8324,41 +8448,27 @@
   }
 
   function setDebugRatio(value){
-    if (!debugRatioFrame || !debugRatioPreview) return;
-    if (value === 'default' || !DEBUG_RATIO_SIZES[value]) {
-      debugRatioPreview.style.display = 'none';
-      debugRatioFrame.removeAttribute('src');
-      return;
-    }
-    const size = DEBUG_RATIO_SIZES[value];
-    const containerWidth = debugPanelEl.clientWidth - 24 || 200;
-    const scale = Math.min(1, containerWidth / size.w);
-    debugRatioFrame.style.width = size.w + 'px';
-    debugRatioFrame.style.height = size.h + 'px';
-    debugRatioFrame.style.transform = 'scale(' + scale + ')';
-    debugRatioFrame.style.transformOrigin = 'top left';
-    debugRatioPreview.style.height = Math.round(size.h * scale) + 'px';
-    debugRatioPreview.style.display = 'flex';
-    if (!debugRatioFrame.getAttribute('src')) {
-      const url = new URL(location.href);
-      url.searchParams.set('debugPreview', '1');
-      debugRatioFrame.src = url.toString();
+    currentDebugRatio = DEBUG_RATIO_CLASSES.some(c => c === 'debug-ratio-' + value) ? value : 'default';
+    document.body.classList.remove(...DEBUG_RATIO_CLASSES);
+    if (currentDebugRatio !== 'default') {
+      document.body.classList.add('debug-ratio-' + currentDebugRatio);
     }
   }
 
   function openDebugPanel(){
     if (!debugPanelEl) return;
     debugPanelEl.style.display = 'block';
+    const ratioSelect = document.getElementById('debug-ratio-select');
+    if (ratioSelect) ratioSelect.value = currentDebugRatio;
     updateDebugPanelStats();
   }
 
   function closeDebugPanel(){
     if (!debugPanelEl) return;
     debugPanelEl.style.display = 'none';
-    if (debugRatioFrame) debugRatioFrame.removeAttribute('src');
-    if (debugRatioPreview) debugRatioPreview.style.display = 'none';
-    const ratioSelect = document.getElementById('debug-ratio-select');
-    if (ratioSelect) ratioSelect.value = 'default';
+    /* The forced ratio (if any) stays applied to the page after closing,
+       so you can actually look at the page. Reopening the panel picks the
+       select back up to whatever is still active. */
   }
 
   (function initDebugPanel(){
