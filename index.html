@@ -5286,6 +5286,9 @@
 
   /* ---------- DVD LOGO ---------- */
   const DVD_COLORS = ['#57ab46', '#79cf67', '#c1aef0', '#faf3df', '#ff6f9c', '#66c2ff'];
+  const DVD_FRAME_MS = 1000 / 60; // matches the ~60fps step size the visible animation moves by
+  let dvdSharedDims = null; // {w,h} — same text/font for every DVD logo, so this is measured once and reused
+  let dvdInstances = [];
 
   function lowPerfDvdCount(total){
     if (total <= 0) return 0;
@@ -5301,8 +5304,19 @@
     nodes.forEach((el, i) => {
       el.classList.toggle('perf-hidden', i >= visibleCount);
     });
+    dvdInstances = dvdInstances.filter(inst => document.body.contains(inst.el));
+    dvdInstances.forEach(inst => inst.syncMode());
   }
 
+  /* A hidden (perf-hidden) DVD logo still needs to earn its bounce payouts on
+     time, but nothing needs to see it move, so there's no reason to keep
+     stepping its position every animation frame (that per-frame offsetWidth/
+     transform work is what was causing the lag). Instead, while hidden it
+     runs in "math" mode: given its position, velocity, and the screen size,
+     the exact time of its next wall bounce is solved for directly and a
+     single setTimeout is scheduled for that moment, jumping straight from
+     bounce to bounce. Visible logos keep the original frame-by-frame
+     animation so they still visually move. */
   function spawnDvd(){
     const dvd = document.createElement('div');
     dvd.className = 'dvd-logo';
@@ -5310,51 +5324,132 @@
     dvd.textContent = 'DVD\nVIDEO';
     document.body.appendChild(dvd);
 
-    let x = Math.random() * (window.innerWidth - 90);
-    let y = Math.random() * (window.innerHeight - 60);
-    let vx = (Math.random() < 0.5 ? -1 : 1) * (1.8 + Math.random() * 1.2);
-    let vy = (Math.random() < 0.5 ? -1 : 1) * (1.8 + Math.random() * 1.2);
-    let colorIndex = Math.floor(Math.random() * DVD_COLORS.length);
-    dvd.style.color = DVD_COLORS[colorIndex];
+    if (!dvdSharedDims) {
+      dvdSharedDims = { w: dvd.offsetWidth || 90, h: dvd.offsetHeight || 60 };
+    }
+    const w = dvdSharedDims.w;
+    const h = dvdSharedDims.h;
 
-    function tick(){
-      if (!document.body.contains(dvd)) return;
+    const state = {
+      el: dvd,
+      w, h,
+      x: Math.random() * (window.innerWidth - w),
+      y: Math.random() * (window.innerHeight - h),
+      vx: (Math.random() < 0.5 ? -1 : 1) * (1.8 + Math.random() * 1.2),
+      vy: (Math.random() < 0.5 ? -1 : 1) * (1.8 + Math.random() * 1.2),
+      colorIndex: Math.floor(Math.random() * DVD_COLORS.length),
+      mode: null,
+      rafId: null,
+      timeoutId: null
+    };
+    dvd.style.color = DVD_COLORS[state.colorIndex];
 
-      const w = dvd.offsetWidth || 90;
-      const h = dvd.offsetHeight || 60;
+    function onBounce(xBounced, yBounced){
+      state.colorIndex = (state.colorIndex + 1) % DVD_COLORS.length;
+      state.el.style.color = DVD_COLORS[state.colorIndex];
+      earnClicks(game.clickPower);
+      if (xBounced && yBounced) earnClicks(CORNER_BONUS);
+      updateCounter();
+      saveGame();
+      refreshShopAffordability();
+      refreshStatsMoneys();
+    }
 
-      x += vx;
-      y += vy;
+    function renderTick(){
+      if (state.mode !== 'render' || !document.body.contains(state.el)) return;
+
+      const maxX = window.innerWidth - state.w;
+      const maxY = window.innerHeight - state.h;
+
+      state.x += state.vx;
+      state.y += state.vy;
 
       let xBounced = false;
       let yBounced = false;
 
-      if (x <= 0) { x = 0; vx = Math.abs(vx); xBounced = true; }
-      if (x + w >= window.innerWidth) { x = window.innerWidth - w; vx = -Math.abs(vx); xBounced = true; }
-      if (y <= 0) { y = 0; vy = Math.abs(vy); yBounced = true; }
-      if (y + h >= window.innerHeight) { y = window.innerHeight - h; vy = -Math.abs(vy); yBounced = true; }
+      if (state.x <= 0) { state.x = 0; state.vx = Math.abs(state.vx); xBounced = true; }
+      if (state.x >= maxX) { state.x = maxX; state.vx = -Math.abs(state.vx); xBounced = true; }
+      if (state.y <= 0) { state.y = 0; state.vy = Math.abs(state.vy); yBounced = true; }
+      if (state.y >= maxY) { state.y = maxY; state.vy = -Math.abs(state.vy); yBounced = true; }
 
-      if (xBounced || yBounced) {
-        colorIndex = (colorIndex + 1) % DVD_COLORS.length;
-        dvd.style.color = DVD_COLORS[colorIndex];
-        earnClicks(game.clickPower);
+      if (xBounced || yBounced) onBounce(xBounced, yBounced);
 
-        if (xBounced && yBounced) {
-          earnClicks(CORNER_BONUS);
-        }
-
-        updateCounter();
-        saveGame();
-        refreshShopAffordability();
-        refreshStatsMoneys();
-      }
-
-      dvd.style.transform = `translate(${x}px, ${y}px)`;
-      requestAnimationFrame(tick);
+      state.el.style.transform = `translate(${state.x}px, ${state.y}px)`;
+      state.rafId = requestAnimationFrame(renderTick);
     }
 
-    requestAnimationFrame(tick);
+    function scheduleMathBounce(){
+      if (state.mode !== 'math' || !document.body.contains(state.el)) return;
+
+      const maxX = window.innerWidth - state.w;
+      const maxY = window.innerHeight - state.h;
+
+      // Distance left to whichever wall each axis is currently heading toward,
+      // divided by speed, gives the number of (60fps-equivalent) frames until
+      // that axis would bounce -- the same average-distance/speed math the
+      // frame loop was implicitly doing one tiny step at a time.
+      const distX = state.vx > 0 ? (maxX - state.x) : (state.x - 0);
+      const distY = state.vy > 0 ? (maxY - state.y) : (state.y - 0);
+      const framesToX = distX / Math.abs(state.vx);
+      const framesToY = distY / Math.abs(state.vy);
+      const frames = Math.max(0, Math.min(framesToX, framesToY));
+
+      state.timeoutId = setTimeout(() => {
+        if (state.mode !== 'math' || !document.body.contains(state.el)) return;
+
+        state.x += state.vx * frames;
+        state.y += state.vy * frames;
+
+        const EPS = 0.01;
+        const xBounced = Math.abs(frames - framesToX) <= EPS;
+        const yBounced = Math.abs(frames - framesToY) <= EPS;
+
+        if (xBounced) { state.x = state.vx > 0 ? maxX : 0; state.vx = -state.vx; }
+        if (yBounced) { state.y = state.vy > 0 ? maxY : 0; state.vy = -state.vy; }
+
+        if (xBounced || yBounced) onBounce(xBounced, yBounced);
+
+        scheduleMathBounce();
+      }, frames * DVD_FRAME_MS);
+    }
+
+    function setMode(next){
+      if (state.mode === next) return;
+      if (state.rafId) cancelAnimationFrame(state.rafId);
+      if (state.timeoutId) clearTimeout(state.timeoutId);
+      state.rafId = null;
+      state.timeoutId = null;
+      state.mode = next;
+      if (next === 'render') {
+        state.el.style.transform = `translate(${state.x}px, ${state.y}px)`;
+        state.rafId = requestAnimationFrame(renderTick);
+      } else {
+        scheduleMathBounce();
+      }
+    }
+
+    state.syncMode = function(){
+      setMode(state.el.classList.contains('perf-hidden') ? 'math' : 'render');
+    };
+
+    state.onResize = function(){
+      if (state.mode !== 'math') return;
+      if (state.timeoutId) clearTimeout(state.timeoutId);
+      state.x = Math.max(0, Math.min(state.x, window.innerWidth - state.w));
+      state.y = Math.max(0, Math.min(state.y, window.innerHeight - state.h));
+      scheduleMathBounce();
+    };
+
+    dvdInstances.push(state);
+    state.syncMode();
   }
+
+  // A resized window shifts where the walls are, so any DVD logo currently
+  // coasting toward a scheduled math-mode bounce needs that bounce re-timed
+  // against the new width/height rather than the stale one it was given.
+  window.addEventListener('resize', () => {
+    dvdInstances.forEach(inst => inst.onResize && inst.onResize());
+  });
 
   function toggleDvdLayer(){
     game.dvdBehind = !game.dvdBehind;
