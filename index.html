@@ -1080,20 +1080,70 @@
 
   /* ---------- ACHIEVEMENTS ---------- */
   .achievement-card{
+    position:relative;
+    overflow:hidden;
     width:100%;
     display:flex;
     align-items:center;
     gap:14px;
     background:var(--card);
     border:2px solid var(--ink);
+    border-left:6px solid var(--ink);
     border-radius:14px;
     padding:12px 16px;
     opacity:0.45;
     box-shadow:var(--pop-sm);
+    animation:achievementPopIn .3s ease both;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  @keyframes achievementPopIn{
+    from{ transform:translateY(6px) scale(0.97); }
+    to{ transform:translateY(0) scale(1); }
   }
   .achievement-card.unlocked{
     opacity:1;
     border-color:var(--zap);
+  }
+  .achievement-card.unlocked:hover{
+    transform:translate(-2px,-2px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .achievement-card.diff-easy.unlocked{
+    border-left-color:var(--melon-light);
+    box-shadow:0 0 0 1px rgba(87,171,70,0.3), var(--pop-sm);
+  }
+  .achievement-card.diff-medium.unlocked{
+    border-left-color:var(--zap);
+    box-shadow:0 0 14px -4px rgba(255,203,61,0.6), var(--pop-sm);
+  }
+  .achievement-card.diff-hard.unlocked{
+    border-left-color:var(--pow);
+    box-shadow:0 0 14px -4px rgba(255,93,160,0.6), var(--pop-sm);
+  }
+  .achievement-card.diff-extreme.unlocked{
+    border-left-color:#ff5c5c;
+    box-shadow:0 0 18px -2px rgba(255,60,60,0.65), var(--pop-sm);
+  }
+  /* A little legendary shimmer sweep, since Extreme unlocks are the rarest. */
+  .achievement-card.diff-extreme.unlocked::after{
+    content:'';
+    position:absolute;
+    top:0;
+    left:-60%;
+    width:40%;
+    height:100%;
+    background:linear-gradient(115deg, transparent, rgba(255,255,255,0.35), transparent);
+    animation:achievementShine 3.2s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes achievementShine{
+    0%{ left:-60%; }
+    55%{ left:130%; }
+    100%{ left:130%; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .achievement-card{ animation:none; }
+    .achievement-card.diff-extreme.unlocked::after{ animation:none; display:none; }
   }
   .achievement-icon{
     width:36px;
@@ -1112,6 +1162,10 @@
     background:var(--brand-gradient);
     color:var(--night);
   }
+  .achievement-card.diff-easy.unlocked .achievement-icon{ background:linear-gradient(135deg, var(--melon-light), #3f8a30); }
+  .achievement-card.diff-medium.unlocked .achievement-icon{ background:linear-gradient(135deg, var(--zap), #ff9a3c); }
+  .achievement-card.diff-hard.unlocked .achievement-icon{ background:linear-gradient(135deg, var(--pow), #ff2f78); }
+  .achievement-card.diff-extreme.unlocked .achievement-icon{ background:linear-gradient(135deg, #ff8a3c, #ff2b2b); }
   .achievement-difficulty{
     display:inline-block;
     font-family:'Poppins', sans-serif;
@@ -1150,6 +1204,42 @@
     font-size:11.5px;
     color:var(--muted);
     margin:0;
+  }
+
+  .achievements-progress{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .achievements-progress-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-family:'Fredoka One', cursive;
+    font-size:12.5px;
+    color:var(--rind);
+  }
+  .achievements-progress-label span:last-child{
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+  }
+  .achievements-progress-track{
+    width:100%;
+    height:10px;
+    border-radius:999px;
+    background:var(--night);
+    border:2px solid var(--ink);
+    overflow:hidden;
+  }
+  .achievements-progress-fill{
+    height:100%;
+    border-radius:999px;
+    background:var(--brand-gradient);
+    transition:width .5s ease;
   }
 
   /* ---------- SHOP ---------- */
@@ -1513,6 +1603,10 @@
     transform:translateX(0);
     opacity:1;
   }
+  .achievement-popup.diff-easy{ border-color:var(--melon-light); box-shadow:0 0 0 1px rgba(87,171,70,0.3), var(--pop); }
+  .achievement-popup.diff-medium{ border-color:var(--zap); box-shadow:0 0 16px -4px rgba(255,203,61,0.65), var(--pop); }
+  .achievement-popup.diff-hard{ border-color:var(--pow); box-shadow:0 0 16px -4px rgba(255,93,160,0.65), var(--pop); }
+  .achievement-popup.diff-extreme{ border-color:#ff5c5c; box-shadow:0 0 20px -2px rgba(255,60,60,0.7), var(--pop); }
   .achievement-popup-icon{
     width:44px;
     height:44px;
@@ -1527,6 +1621,10 @@
     flex-shrink:0;
     border:2px solid var(--ink);
   }
+  .achievement-popup.diff-easy .achievement-popup-icon{ background:linear-gradient(135deg, var(--melon-light), #3f8a30); }
+  .achievement-popup.diff-medium .achievement-popup-icon{ background:linear-gradient(135deg, var(--zap), #ff9a3c); }
+  .achievement-popup.diff-hard .achievement-popup-icon{ background:linear-gradient(135deg, var(--pow), #ff2f78); }
+  .achievement-popup.diff-extreme .achievement-popup-icon{ background:linear-gradient(135deg, #ff8a3c, #ff2b2b); }
   .achievement-popup-text{
     display:flex;
     flex-direction:column;
@@ -1541,6 +1639,9 @@
     color:var(--zap);
     font-weight:600;
   }
+  .achievement-popup.diff-easy .achievement-popup-label{ color:var(--melon-light); }
+  .achievement-popup.diff-hard .achievement-popup-label{ color:var(--pow); }
+  .achievement-popup.diff-extreme .achievement-popup-label{ color:#ff5c5c; }
   .achievement-popup-name{
     font-family:'Fredoka One', cursive;
     font-size:14.5px;
@@ -3868,6 +3969,7 @@
 
   let activeTab = TABS[0].id;
   let shopCategory = 'all';
+  let achievementCategory = 'all';
   let clickBoostExpanded = false;
 
   const tabBar = document.getElementById('tab-list');
@@ -7283,7 +7385,7 @@
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
   // Plain deployment URL only. A /u/N/ part is a browser account number and does not resolve for players. See README, Backend.
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbx8ZVrtoM4G74EbXQVrD8FzWsDyQlqnbWXKVZB6PDGayIowrnmTu8CYNQgCRPo_89NfiQ/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzXytrZBHi32rKeZaedoZ08mOIf05bYZv4zpJohhw2HkNiGfQi8CCAUWkhFoxWzXODI/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -8431,6 +8533,22 @@
     { id: 'first_noob', icon: 'N', label: 'Oof', desc: 'Buy your first Roblox Noob.', difficulty: 'Easy', check: g => g.noobOwned >= 1 },
     { id: 'noob_5', icon: 'N', label: 'Noob Squad', desc: 'Own 5 Roblox Noobs.', difficulty: 'Medium', check: g => g.noobOwned >= 5 },
     { id: 'noob_25', icon: 'N', label: 'Oof Simulator', desc: 'Own 25 Roblox Noobs.', difficulty: 'Hard', check: g => g.noobOwned >= 25 },
+    { id: 'first_goat', icon: '\ud83d\udc10', label: 'Baaaaaby Steps', desc: 'Buy your first Screaming Goat.', difficulty: 'Easy', check: g => g.goatOwned >= 1 },
+    { id: 'goat_5', icon: '\ud83d\udc10', label: 'Goat Herd', desc: 'Own 5 Screaming Goats.', difficulty: 'Medium', check: g => g.goatOwned >= 5 },
+    { id: 'goat_25', icon: '\ud83d\udc10', label: 'Screaming Simulator', desc: 'Own 25 Screaming Goats.', difficulty: 'Hard', check: g => g.goatOwned >= 25 },
+    { id: 'gems_1', icon: '\ud83d\udc8e', label: 'Shiny', desc: 'Earn your first Gem.', difficulty: 'Easy', check: g => (g.gems || 0) >= 1 },
+    { id: 'gems_50', icon: '\ud83d\udc8e', label: 'Gem Collector', desc: 'Earn 50 Gems.', difficulty: 'Medium', check: g => (g.gems || 0) >= 50 },
+    { id: 'gems_250', icon: '\ud83d\udc8e', label: 'Gem Hoarder', desc: 'Earn 250 Gems.', difficulty: 'Hard', check: g => (g.gems || 0) >= 250 },
+    { id: 'gems_1000', icon: '\ud83d\udc8e', label: 'Gem Tycoon', desc: 'Earn 1,000 Gems.', difficulty: 'Extreme', check: g => (g.gems || 0) >= 1000 },
+    { id: 'first_mod', icon: 'MOD', label: 'Modder', desc: 'Install your first mod from the Workshop.', difficulty: 'Easy', check: g => (g.installedMods || []).length >= 1 },
+    { id: 'mods_5', icon: 'MOD', label: 'Mod Enthusiast', desc: 'Install 5 mods.', difficulty: 'Medium', check: g => (g.installedMods || []).length >= 5 },
+    { id: 'font_changed', icon: 'Aa', label: 'New Look', desc: 'Pick a custom UI font in the Font Manager.', difficulty: 'Easy', check: g => !!g.fontManagerOwned && !!g.selectedUiFont },
+    { id: 'effect_confetti', icon: '\ud83c\udf89', label: 'Party Time', desc: 'Turn on the Confetti click effect.', difficulty: 'Easy', check: g => !!g.effectsOwned && g.selectedEffect === 'confetti' },
+    { id: 'effect_shake', icon: '\ud83d\udcf3', label: 'Earthquake', desc: 'Turn on the Screen Shake click effect.', difficulty: 'Easy', check: g => !!g.effectsOwned && g.selectedEffect === 'shake' },
+    { id: 'icon_food', icon: '\ud83c\udf55', label: 'Snack Time', desc: 'Set your icon to the Food category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:food' },
+    { id: 'icon_symbols', icon: '\u2728', label: 'Symbolic', desc: 'Set your icon to the Symbols category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:symbols' },
+    { id: 'icon_items', icon: '\ud83c\udf92', label: 'Loadout', desc: 'Set your icon to the Items category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:items' },
+    { id: 'icon_special', icon: '\ud83d\uddbc', label: 'One of a Kind', desc: 'Set your icon to the Special category.', difficulty: 'Medium', check: g => g.selectedIcon === 'category:special' },
     { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', difficulty: 'Medium', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
     // Not part of the normal auto-scan below (check always returns false) -
     // this one is only ever granted manually, by checkSymbolsHeadsUpOnLoad(),
@@ -8451,7 +8569,13 @@
     { id: 'prestige_25', icon: '\u267b', label: 'Ascended', desc: 'Prestige 25 times.', difficulty: 'Extreme', check: g => (g.totalPrestige || 0) >= 25 },
     { id: 'first_boost_trade', icon: '\ud83d\udd2e', label: 'Worth It', desc: 'Trade Prestige for your first Boost.', difficulty: 'Extreme', check: g => (g.boosts || 0) >= 1 },
     { id: 'boost_5', icon: '\ud83d\udd2e', label: 'Multiplied', desc: 'Own 5 Boosts.', difficulty: 'Extreme', check: g => (g.boosts || 0) >= 5 },
-    { id: 'boost_10', icon: '\ud83d\udd2e', label: 'Exponential', desc: 'Own 10 Boosts.', difficulty: 'Extreme', check: g => (g.boosts || 0) >= 10 }
+    { id: 'boost_10', icon: '\ud83d\udd2e', label: 'Exponential', desc: 'Own 10 Boosts.', difficulty: 'Extreme', check: g => (g.boosts || 0) >= 10 },
+    { id: 'first_mega_boost', icon: '\ud83d\udca5', label: 'Mega Power', desc: 'Buy your first Mega Boost.', difficulty: 'Hard', check: g => (g.megaBoostOwned || 0) >= 1 },
+    { id: 'first_turbo', icon: '\ud83d\ude80', label: 'Turbocharged', desc: 'Buy your first Turbo Clicker.', difficulty: 'Hard', check: g => (g.turboClickerOwned || 0) >= 1 },
+    { id: 'lucky_charm', icon: '\ud83c\udf40', label: 'Lucky Break', desc: 'Buy the Lucky Charm.', difficulty: 'Hard', check: g => !!g.luckyCharmOwned },
+    { id: 'head_start', icon: '\ud83c\udfc1', label: 'Running Start', desc: 'Buy your first Head Start.', difficulty: 'Hard', check: g => (g.headStartOwned || 0) >= 1 },
+    { id: 'prestige_mult', icon: '\u00d72', label: 'Multiplying Gains', desc: 'Buy your first Prestige Multiplier.', difficulty: 'Extreme', check: g => (g.prestigeMultOwned || 0) >= 1 },
+    { id: 'auto_buyer', icon: '\ud83e\udd16', label: 'Set and Forget (Again)', desc: 'Buy the Auto Buyer.', difficulty: 'Hard', check: g => !!g.autoBuyerOwned }
   ];
 
   function checkAchievements(){
@@ -8488,7 +8612,7 @@
   function showAchievementToast(a){
     const bonus = BONUS_HINTS_BY_DIFFICULTY[a.difficulty] || 0;
     const popup = document.createElement('div');
-    popup.className = 'achievement-popup';
+    popup.className = 'achievement-popup diff-' + a.difficulty.toLowerCase();
     popup.innerHTML = `
       <div class="achievement-popup-icon">${a.icon}</div>
       <div class="achievement-popup-text">
@@ -8579,27 +8703,70 @@
     renderAchievements();
   }
 
+  const ACHIEVEMENT_CATEGORIES = [
+    { id: 'all', label: 'All' },
+    { id: 'easy', label: 'Easy' },
+    { id: 'medium', label: 'Medium' },
+    { id: 'hard', label: 'Hard' },
+    { id: 'extreme', label: 'Extreme' }
+  ];
+
   function renderAchievements(){
     const remaining = hintsRemaining();
+    const unlockedList = game.unlockedAchievements || [];
+    const unlockedCount = unlockedList.length;
+    const totalCount = ACHIEVEMENTS.length;
+    const pct = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
+
+    const progressHeader = `
+      <div class="achievements-progress">
+        <div class="achievements-progress-label">
+          <span>Progress</span>
+          <span>${unlockedCount} / ${totalCount} unlocked</span>
+        </div>
+        <div class="achievements-progress-track">
+          <div class="achievements-progress-fill" style="width:${pct}%;"></div>
+        </div>
+      </div>
+    `;
+
+    const categoryBar = ACHIEVEMENT_CATEGORIES.map(cat =>
+      `<button class="shop-category-btn${achievementCategory === cat.id ? ' active' : ''}" data-achievement-category="${cat.id}">${cat.label}</button>`
+    ).join('');
+
     const hintButton = `
       <button class="auth-btn" id="hint-btn" style="margin-bottom:14px;" ${remaining <= 0 ? 'disabled' : ''}>
         ${remaining > 0 ? `Get a Hint (${remaining} left)` : 'Out of Hints'}
       </button>
     `;
 
-    list.innerHTML = hintButton + ACHIEVEMENTS.map(a => {
-      const unlocked = (game.unlockedAchievements || []).includes(a.id);
+    const visibleAchievements = ACHIEVEMENTS.filter(a =>
+      achievementCategory === 'all' || a.difficulty.toLowerCase() === achievementCategory
+    );
+
+    const cardsHtml = visibleAchievements.length ? visibleAchievements.map((a, i) => {
+      const unlocked = unlockedList.includes(a.id);
+      const diffClass = 'diff-' + a.difficulty.toLowerCase();
       return `
-        <div class="achievement-card${unlocked ? ' unlocked' : ''}">
+        <div class="achievement-card ${diffClass}${unlocked ? ' unlocked' : ''}" style="animation-delay:${Math.min(i * 15, 300)}ms;">
           <div class="achievement-icon">${a.icon}</div>
           <div class="achievement-info">
-            <span class="achievement-difficulty diff-${a.difficulty.toLowerCase()}">${a.difficulty}</span>
+            <span class="achievement-difficulty ${diffClass}">${a.difficulty}</span>
             <h3>${unlocked ? a.label : '???'}</h3>
             <p>${unlocked ? a.desc : 'Not yet unlocked.'}</p>
           </div>
         </div>
       `;
-    }).join('');
+    }).join('') : '<div class="empty-state">No achievements in this difficulty yet.</div>';
+
+    list.innerHTML = progressHeader + `<div class="shop-category-bar">${categoryBar}</div>` + hintButton + cardsHtml;
+
+    list.querySelectorAll('[data-achievement-category]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        achievementCategory = btn.dataset.achievementCategory;
+        renderAchievements();
+      });
+    });
 
     const hintBtn = document.getElementById('hint-btn');
     if (hintBtn) hintBtn.addEventListener('click', useHint);
