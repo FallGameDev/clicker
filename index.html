@@ -2079,6 +2079,52 @@
     box-shadow:none;
     transform:none;
   }
+
+  .edit-advanced-panel{
+    display:none;
+    flex-direction:column;
+    gap:0;
+    margin-top:10px;
+    padding-top:2px;
+  }
+  .edit-advanced-panel.open{
+    display:flex;
+  }
+  .edit-toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:10px 12px;
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:10px;
+    margin-bottom:12px;
+  }
+  .edit-toggle-label{
+    font-family:'Poppins', sans-serif;
+    font-size:12.5px;
+    color:var(--rind);
+    text-align:left;
+  }
+  .edit-toggle-btn{
+    flex-shrink:0;
+    font-family:'Fredoka One', cursive;
+    font-size:11.5px;
+    color:var(--muted);
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:999px;
+    padding:6px 16px;
+    cursor:pointer;
+    min-width:52px;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .edit-toggle-btn[data-on="true"]{
+    background:var(--brand-gradient);
+    color:var(--night);
+    border-color:var(--ink);
+  }
   .auth-error{
     color:#ff6b6b;
     font-family:'Poppins', sans-serif;
@@ -2389,6 +2435,39 @@
     gap:8px;
     margin-top:6px;
   }
+  .public-profile-social-row{
+    display:none;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:8px;
+    margin-top:10px;
+  }
+  .public-profile-social-row.visible{
+    display:flex;
+  }
+  .social-link-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:'Fredoka One', cursive;
+    font-size:11.5px;
+    padding:8px 14px;
+    border-radius:999px;
+    border:2px solid var(--ink);
+    cursor:pointer;
+    background:var(--card);
+    color:var(--rind);
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .social-link-btn:hover{
+    transform:translate(-1px,-1px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .social-link-btn.social-youtube{ background:#ff3d3d; color:#fff; }
+  .social-link-btn.social-tiktok{ background:#1c1c22; color:#fff; }
+  .social-link-btn.social-twitch{ background:#9146ff; color:#fff; }
+  .social-link-btn.social-discord{ background:#5865f2; color:#fff; }
   .friend-action-btn{
     font-family:'Fredoka One', cursive;
     font-size:12px;
@@ -3611,6 +3690,17 @@
       <label class="edit-featured-label" for="edit-featured-select">Featured achievement</label>
       <select id="edit-featured-select" class="auth-input edit-featured-select" title="Shown on your public profile. You can only pick achievements you have unlocked."></select>
     </div>
+    <button class="auth-btn secondary" id="edit-advanced-toggle-btn" type="button">Advanced Settings</button>
+    <div class="edit-advanced-panel" id="edit-advanced-panel">
+      <div class="edit-toggle-row">
+        <span class="edit-toggle-label">Hide my birthday on my public profile</span>
+        <button class="edit-toggle-btn" id="edit-hide-birthday-btn" type="button" data-on="false">Off</button>
+      </div>
+      <input type="text" id="edit-youtube-input" class="auth-input" placeholder="YouTube username" autocomplete="off">
+      <input type="text" id="edit-tiktok-input" class="auth-input" placeholder="TikTok username" autocomplete="off">
+      <input type="text" id="edit-twitch-input" class="auth-input" placeholder="Twitch username" autocomplete="off">
+      <input type="text" id="edit-discord-input" class="auth-input" placeholder="Discord username" autocomplete="off">
+    </div>
     <button class="auth-btn" id="edit-profile-save">Save Changes</button>
     <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
   </div>
@@ -3650,6 +3740,7 @@
         <img src="money.png" alt="Moneys">
         <span id="public-profile-clicks"></span>
       </div>
+      <div class="public-profile-social-row" id="public-profile-social-row"></div>
       <div class="public-profile-friend-row" id="public-profile-friend-row"></div>
     </div>
   </div>
@@ -4027,6 +4118,11 @@
   let currentDescription = '';
   let currentBannerImage = '';
   let currentVisits = 0;
+  let currentHideBirthday = false;
+  let currentYoutube = '';
+  let currentTiktok = '';
+  let currentTwitch = '';
+  let currentDiscord = '';
 
   function defaultGame(){
     return {
@@ -7871,6 +7967,13 @@
   const editIconUploadInput = document.getElementById('edit-icon-upload-input');
   const editUsernameInput = document.getElementById('edit-username-input');
   const editDescriptionInput = document.getElementById('edit-description-input');
+  const editAdvancedToggleBtn = document.getElementById('edit-advanced-toggle-btn');
+  const editAdvancedPanel = document.getElementById('edit-advanced-panel');
+  const editHideBirthdayBtn = document.getElementById('edit-hide-birthday-btn');
+  const editYoutubeInput = document.getElementById('edit-youtube-input');
+  const editTiktokInput = document.getElementById('edit-tiktok-input');
+  const editTwitchInput = document.getElementById('edit-twitch-input');
+  const editDiscordInput = document.getElementById('edit-discord-input');
   const editProfileSaveBtn = document.getElementById('edit-profile-save');
   const editProfileError = document.getElementById('edit-profile-error');
   const editProfileClose = document.getElementById('edit-profile-close');
@@ -8022,6 +8125,7 @@
   const publicProfileModActions = document.getElementById('public-profile-mod-actions');
   const publicProfileRestoreRow = document.getElementById('public-profile-restore-row');
   const publicProfileFriendRow = document.getElementById('public-profile-friend-row');
+  const publicProfileSocialRow = document.getElementById('public-profile-social-row');
   const modBtnModerate = document.getElementById('mod-btn-moderate');
   const modBtnWarn = document.getElementById('mod-btn-warn');
   const modBtnBan = document.getElementById('mod-btn-ban');
@@ -8094,6 +8198,8 @@
     publicProfileRestoreRow.style.display = 'none';
     publicProfileFriendRow.style.display = 'none';
     publicProfileFriendRow.innerHTML = '';
+    publicProfileSocialRow.classList.remove('visible');
+    publicProfileSocialRow.innerHTML = '';
     publicProfileOverlay.classList.add('visible');
 
     try {
@@ -8132,10 +8238,12 @@
       });
 
       const monthName = account.birthday && MONTHS[(account.birthday.month || 1) - 1];
-      publicProfileBirthday.textContent = monthName ? `${monthName} ${account.birthday.day}` : '';
+      const showBirthday = monthName && (!account.hideBirthday || isSelf);
+      publicProfileBirthday.textContent = showBirthday ? `${monthName} ${account.birthday.day}` : '';
 
       publicProfileClicks.textContent = Number(account.clicks || 0).toLocaleString();
 
+      renderPublicProfileSocial(account);
       updatePublicProfileFriendRow(account, isSelf);
 
       if (!skipUrlUpdate && account.playerId != null) {
@@ -8146,6 +8254,50 @@
     } catch (e) {
       publicProfileName.textContent = "Couldn't reach the database.";
     }
+  }
+
+  function renderPublicProfileSocial(account){
+    const links = [
+      { key: 'youtube', label: 'YouTube', value: account.youtube, url: u => `https://www.youtube.com/@${u}` },
+      { key: 'tiktok', label: 'TikTok', value: account.tiktok, url: u => `https://www.tiktok.com/@${u}` },
+      { key: 'twitch', label: 'Twitch', value: account.twitch, url: u => `https://www.twitch.tv/${u}` },
+      // Discord has no public profile-by-username page (it needs a numeric
+      // account ID we don't have), so this one copies the username instead
+      // of opening a link - see the click handler below.
+      { key: 'discord', label: 'Discord', value: account.discord, url: null }
+    ].filter(link => link.value);
+
+    if (!links.length) {
+      publicProfileSocialRow.classList.remove('visible');
+      publicProfileSocialRow.innerHTML = '';
+      return;
+    }
+
+    publicProfileSocialRow.innerHTML = links.map(link =>
+      `<button type="button" class="social-link-btn social-${link.key}" data-social="${link.key}" data-value="${link.value.replace(/"/g, '&quot;')}">${link.label}</button>`
+    ).join('');
+    publicProfileSocialRow.classList.add('visible');
+
+    links.forEach(link => {
+      const btn = publicProfileSocialRow.querySelector(`[data-social="${link.key}"]`);
+      if (!btn) return;
+      btn.addEventListener('click', () => {
+        if (link.url) {
+          window.open(link.url(link.value), '_blank', 'noopener');
+          return;
+        }
+        const restore = btn.textContent;
+        const finish = (text) => {
+          btn.textContent = text;
+          setTimeout(() => { btn.textContent = restore; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(link.value).then(() => finish('Copied!')).catch(() => finish('Copy failed'));
+        } else {
+          finish('Copy failed');
+        }
+      });
+    });
   }
 
   /* ---------- FRIEND BUTTON (public profile) ---------- */
@@ -9643,6 +9795,13 @@
     updateEditBannerPreview();
     editUsernameInput.value = currentUsername || '';
     editDescriptionInput.value = currentDescription || '';
+    setEditHideBirthday(!!currentHideBirthday);
+    editYoutubeInput.value = currentYoutube || '';
+    editTiktokInput.value = currentTiktok || '';
+    editTwitchInput.value = currentTwitch || '';
+    editDiscordInput.value = currentDiscord || '';
+    editAdvancedPanel.classList.remove('open');
+    editAdvancedToggleBtn.textContent = 'Advanced Settings';
     editProfileError.style.display = 'none';
     editUsernameInput.style.fontFamily = '';
     editUsernameInput.style.color = authColor(currentAuth);
@@ -9657,6 +9816,20 @@
   function closeEditProfile(){
     editProfileOverlay.classList.remove('visible');
   }
+
+  function setEditHideBirthday(on){
+    editHideBirthdayBtn.dataset.on = on ? 'true' : 'false';
+    editHideBirthdayBtn.textContent = on ? 'On' : 'Off';
+  }
+
+  editAdvancedToggleBtn.addEventListener('click', () => {
+    const isOpen = editAdvancedPanel.classList.toggle('open');
+    editAdvancedToggleBtn.textContent = isOpen ? 'Hide Advanced Settings' : 'Advanced Settings';
+  });
+
+  editHideBirthdayBtn.addEventListener('click', () => {
+    setEditHideBirthday(editHideBirthdayBtn.dataset.on !== 'true');
+  });
 
   editProfileClose.addEventListener('click', closeEditProfile);
   editProfileOverlay.addEventListener('click', (e) => {
@@ -9696,7 +9869,12 @@
         description: editDescriptionInput.value.trim(),
         favColor: editSelectedFavColor !== null ? editSelectedFavColor : getLastTheme(),
         bannerImage: editSelectedBannerImage || '',
-        featuredAchievement: editSelectedFeatured
+        featuredAchievement: editSelectedFeatured,
+        hideBirthday: editHideBirthdayBtn.dataset.on === 'true',
+        youtube: editYoutubeInput.value.trim(),
+        tiktok: editTiktokInput.value.trim(),
+        twitch: editTwitchInput.value.trim(),
+        discord: editDiscordInput.value.trim()
       };
 
       const result = await sheetRequest(payload);
@@ -9716,6 +9894,11 @@
       currentProfileIcon = result.account.profileIcon;
       currentDescription = result.account.description || '';
       currentBannerImage = result.account.bannerImage || '';
+      currentHideBirthday = !!result.account.hideBirthday;
+      currentYoutube = result.account.youtube || '';
+      currentTiktok = result.account.tiktok || '';
+      currentTwitch = result.account.twitch || '';
+      currentDiscord = result.account.discord || '';
       // Use the server's value once the backend returns it, otherwise the choice just made.
       game.featuredAchievement = result.account.featuredAchievement !== undefined
         ? String(result.account.featuredAchievement || '')
@@ -10036,6 +10219,11 @@
       currentDescription = result.account.description || '';
       currentBannerImage = result.account.bannerImage || '';
       currentVisits = result.account.visits || 0;
+      currentHideBirthday = !!result.account.hideBirthday;
+      currentYoutube = result.account.youtube || '';
+      currentTiktok = result.account.tiktok || '';
+      currentTwitch = result.account.twitch || '';
+      currentDiscord = result.account.discord || '';
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
       setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
 
@@ -10151,6 +10339,11 @@
           currentDescription = result.account.description || '';
           currentBannerImage = result.account.bannerImage || '';
           currentVisits = result.account.visits || 0;
+          currentHideBirthday = !!result.account.hideBirthday;
+          currentYoutube = result.account.youtube || '';
+          currentTiktok = result.account.tiktok || '';
+          currentTwitch = result.account.twitch || '';
+          currentDiscord = result.account.discord || '';
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
           setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
           applyServerGameData(result.account);
