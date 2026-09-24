@@ -1124,8 +1124,13 @@
     border-left-color:#ff5c5c;
     box-shadow:0 0 18px -2px rgba(255,60,60,0.65), var(--pop-sm);
   }
-  /* A little legendary shimmer sweep, since Extreme unlocks are the rarest. */
-  .achievement-card.diff-extreme.unlocked::after{
+  .achievement-card.diff-special.unlocked{
+    border-left-color:#b47cff;
+    box-shadow:0 0 18px -2px rgba(180,124,255,0.65), var(--pop-sm);
+  }
+  /* A little legendary shimmer sweep, since Extreme and Special unlocks are the rarest. */
+  .achievement-card.diff-extreme.unlocked::after,
+  .achievement-card.diff-special.unlocked::after{
     content:'';
     position:absolute;
     top:0;
@@ -1143,7 +1148,8 @@
   }
   @media (prefers-reduced-motion: reduce){
     .achievement-card{ animation:none; }
-    .achievement-card.diff-extreme.unlocked::after{ animation:none; display:none; }
+    .achievement-card.diff-extreme.unlocked::after,
+    .achievement-card.diff-special.unlocked::after{ animation:none; display:none; }
   }
   .achievement-icon{
     width:36px;
@@ -1166,6 +1172,7 @@
   .achievement-card.diff-medium.unlocked .achievement-icon{ background:linear-gradient(135deg, var(--zap), #ff9a3c); }
   .achievement-card.diff-hard.unlocked .achievement-icon{ background:linear-gradient(135deg, var(--pow), #ff2f78); }
   .achievement-card.diff-extreme.unlocked .achievement-icon{ background:linear-gradient(135deg, #ff8a3c, #ff2b2b); }
+  .achievement-card.diff-special.unlocked .achievement-icon{ background:linear-gradient(135deg, #b47cff, #6d2fd6); }
   .achievement-difficulty{
     display:inline-block;
     font-family:'Poppins', sans-serif;
@@ -1192,6 +1199,10 @@
   .achievement-difficulty.diff-extreme{
     background:rgba(255,60,60,0.22);
     color:#ff5c5c;
+  }
+  .achievement-difficulty.diff-special{
+    background:rgba(180,124,255,0.22);
+    color:#b47cff;
   }
   .achievement-info h3{
     font-family:'Fredoka One', cursive;
@@ -1607,6 +1618,7 @@
   .achievement-popup.diff-medium{ border-color:var(--zap); box-shadow:0 0 16px -4px rgba(255,203,61,0.65), var(--pop); }
   .achievement-popup.diff-hard{ border-color:var(--pow); box-shadow:0 0 16px -4px rgba(255,93,160,0.65), var(--pop); }
   .achievement-popup.diff-extreme{ border-color:#ff5c5c; box-shadow:0 0 20px -2px rgba(255,60,60,0.7), var(--pop); }
+  .achievement-popup.diff-special{ border-color:#b47cff; box-shadow:0 0 20px -2px rgba(180,124,255,0.7), var(--pop); }
   .achievement-popup-icon{
     width:44px;
     height:44px;
@@ -1625,6 +1637,7 @@
   .achievement-popup.diff-medium .achievement-popup-icon{ background:linear-gradient(135deg, var(--zap), #ff9a3c); }
   .achievement-popup.diff-hard .achievement-popup-icon{ background:linear-gradient(135deg, var(--pow), #ff2f78); }
   .achievement-popup.diff-extreme .achievement-popup-icon{ background:linear-gradient(135deg, #ff8a3c, #ff2b2b); }
+  .achievement-popup.diff-special .achievement-popup-icon{ background:linear-gradient(135deg, #b47cff, #6d2fd6); }
   .achievement-popup-text{
     display:flex;
     flex-direction:column;
@@ -1642,6 +1655,7 @@
   .achievement-popup.diff-easy .achievement-popup-label{ color:var(--melon-light); }
   .achievement-popup.diff-hard .achievement-popup-label{ color:var(--pow); }
   .achievement-popup.diff-extreme .achievement-popup-label{ color:#ff5c5c; }
+  .achievement-popup.diff-special .achievement-popup-label{ color:#b47cff; }
   .achievement-popup-name{
     font-family:'Fredoka One', cursive;
     font-size:14.5px;
@@ -5229,22 +5243,19 @@
   }
 
   /* ---------- ICON MODIFIER ----------
-     "Default" and any single-file entries below use a real image filename
-     (uploaded to the server) for both the clicker avatar and the browser
-     tab icon, same as before. The three theme entries (Food / Symbols /
-     Items) and Special instead use `category:<name>` as their value - on
-     pick, and again on every click, one entry from that category's pool is
-     rolled at random and shown, the same way the plain default avatar
-     rolls a random face emoji. Food/Symbols/Items roll a random emoji;
-     Special rolls a random real image, so it isn't just more emoji.
-     Add more entries to ICON_EMOJI_POOLS / SPECIAL_ICON_FILES any time.
+     "Default" uses a real image filename (uploaded to the server) for both
+     the clicker avatar and the browser tab icon, same as before. The three
+     theme entries (Food / Symbols / Items) instead use `category:<name>` as
+     their value - on pick, and again on every click, one emoji from that
+     category's pool is rolled at random and shown, the same way the plain
+     default avatar rolls a random face emoji.
+     Add more entries to ICON_EMOJI_POOLS any time.
   ------------------------------------------------- */
   const ICONS = [
     { label: "Default", file: "profile.png" },
     { label: "Food", file: "category:food" },
     { label: "Symbols", file: "category:symbols" },
-    { label: "Items", file: "category:items" },
-    { label: "Special", file: "category:special" }
+    { label: "Items", file: "category:items" }
   ];
 
   const ICON_EMOJI_POOLS = {
@@ -5252,10 +5263,6 @@
     symbols: ['\u2728','\u26a0\ufe0f','\u2622\ufe0f','\u2623\ufe0f','\u267b\ufe0f','\u2705','\u274c','\u2764\ufe0f','\ud83d\udcaf','\ud83d\udd25','\u2b50','\u262e\ufe0f','\u267e\ufe0f','\ud83d\udd1e','\ud83d\udeab','\u26a1','\ud83d\udd31','\ud83c\udd97','\u2660\ufe0f','\u2663\ufe0f'],
     items: ['\ud83d\udd11','\ud83d\udc8e','\ud83c\udf81','\ud83d\udd28','\ud83e\ude93','\ud83c\udf92','\ud83e\uddf0','\ud83e\ude84','\ud83e\uddf2','\ud83d\udd26','\ud83e\uddea','\ud83d\udce6','\ud83d\udddd\ufe0f','\ud83d\udee0\ufe0f','\ud83c\udfaf','\ud83e\uddf5','\ud83e\ude99','\ud83e\udea8','\ud83d\udcc0','\u2699\ufe0f']
   };
-
-  // Special pulls from the game's own account profile picture set, so it's
-  // real artwork rather than another wall of unicode glyphs.
-  const SPECIAL_ICON_FILES = ['profiles/cat1.png', 'profiles/cat2.png', 'profiles/cat3.png', 'profiles/cat4.png', 'profiles/basketball.png', 'profiles/bovine.png'];
 
   // Kept as an escaped literal (not typed directly) purely so a plain text
   // search of this file doesn't surface it out of context.
@@ -5269,23 +5276,15 @@
   }
 
   function rollIconPick(category){
-    if (category === 'special') {
-      return SPECIAL_ICON_FILES[Math.floor(Math.random() * SPECIAL_ICON_FILES.length)];
-    }
     const pool = ICON_EMOJI_POOLS[category];
     return pool ? pool[Math.floor(Math.random() * pool.length)] : null;
   }
 
   function applyIconPick(category, pick){
     if (!pick) return;
-    if (category === 'special') {
-      avatarEl.classList.remove('emoji-mode');
-      applyIcon(pick);
-    } else {
-      avatarEl.classList.add('emoji-mode');
-      avatarEmojiEl.textContent = pick;
-      renderEmojiFavicon(pick);
-    }
+    avatarEl.classList.add('emoji-mode');
+    avatarEmojiEl.textContent = pick;
+    renderEmojiFavicon(pick);
   }
 
   function rerollIconPick(category){
@@ -8548,14 +8547,13 @@
     { id: 'icon_food', icon: '\ud83c\udf55', label: 'Snack Time', desc: 'Set your icon to the Food category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:food' },
     { id: 'icon_symbols', icon: '\u2728', label: 'Symbolic', desc: 'Set your icon to the Symbols category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:symbols' },
     { id: 'icon_items', icon: '\ud83c\udf92', label: 'Loadout', desc: 'Set your icon to the Items category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:items' },
-    { id: 'icon_special', icon: '\ud83d\uddbc', label: 'One of a Kind', desc: 'Set your icon to the Special category.', difficulty: 'Medium', check: g => g.selectedIcon === 'category:special' },
     { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', difficulty: 'Medium', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
     // Not part of the normal auto-scan below (check always returns false) -
     // this one is only ever granted manually, by checkSymbolsHeadsUpOnLoad(),
     // and `secret: true` keeps it out of the Get a Hint pool entirely so it
     // never gets spoiled ahead of time, no matter which difficulty tiers are
     // still locked.
-    { id: 'symbols_heads_up', icon: '\ud83d\udc40', label: 'Thanks for the heads up!', desc: 'Reload the page while your Symbols icon had landed on a certain content warning label.', difficulty: 'Extreme', secret: true, check: () => false },
+    { id: 'symbols_heads_up', icon: '\ud83d\udc40', label: 'Thanks for the heads up!', desc: 'Reload the page while your Symbols icon had landed on a certain content warning label.', difficulty: 'Special', secret: true, check: () => false },
     { id: 'auto_kill', icon: '\ud83d\udc80', label: 'No Mercy', desc: 'Buy Auto Kill.', difficulty: 'Medium', check: g => g.autoKillOwned },
     { id: 'offline_earner', icon: '\ud83d\udcb0', label: 'Set for Life', desc: 'Buy Offline Earnings.', difficulty: 'Medium', check: g => g.offlineEarningsOwned },
     { id: 'completionist', icon: '\ud83c\udfc6', label: 'Completionist', desc: 'Own every upgrade in the Plain and Customization shop categories.', difficulty: 'Hard', check: g => g.autoKillOwned && g.offlineEarningsOwned && g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned && g.clickBoostOwned >= 1 && g.autoClickerOwned >= 1 },
@@ -8639,7 +8637,7 @@
   const HINT_LIMIT = 3;
   const HINT_WINDOW_MS = 15 * 60 * 1000;
   const BONUS_HINT_KEY = 'bonusHints';
-  const BONUS_HINTS_BY_DIFFICULTY = { Medium: 1, Hard: 2, Extreme: 3 };
+  const BONUS_HINTS_BY_DIFFICULTY = { Medium: 1, Hard: 2, Extreme: 3, Special: 3 };
 
   function getBonusHints(){
     return parseInt(localStorage.getItem(BONUS_HINT_KEY), 10) || 0;
@@ -8708,7 +8706,8 @@
     { id: 'easy', label: 'Easy' },
     { id: 'medium', label: 'Medium' },
     { id: 'hard', label: 'Hard' },
-    { id: 'extreme', label: 'Extreme' }
+    { id: 'extreme', label: 'Extreme' },
+    { id: 'special', label: 'Special' }
   ];
 
   function renderAchievements(){
