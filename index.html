@@ -8700,6 +8700,7 @@
     { id: 'icon_symbols', icon: '\u2728', label: 'Symbolic', desc: 'Set your icon to the Symbols category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:symbols' },
     { id: 'icon_items', icon: '\ud83c\udf92', label: 'Loadout', desc: 'Set your icon to the Items category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:items' },
     { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', difficulty: 'Medium', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
+    { id: 'god', icon: '\uD83C\uDFC6', label: 'Platinum', desc: 'Have EVERY achivement.', difficulty: 'Special', check: a => a.ACHIEVEMENTS >= 71 },
     // Not part of the normal auto-scan below (check always returns false) -
     // this one is only ever granted manually, by checkSymbolsHeadsUpOnLoad(),
     // and `secret: true` keeps it out of the Get a Hint pool entirely so it
