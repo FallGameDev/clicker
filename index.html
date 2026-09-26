@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.10.4 | Deployment: 192 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.10.4">
+<!-- Game version: 1.12.0 | Deployment: 194 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.12.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="maksy.ico" id="favicon-link">
@@ -1395,28 +1395,6 @@
     z-index:-1;
   }
 
-  /* ---------- SCREAMING GOAT ---------- */
-  .screaming-goat{
-    position:fixed;
-    bottom:0;
-    font-size:34px;
-    line-height:1;
-    pointer-events:none;
-    z-index:997;
-    user-select:none;
-    transition:transform .1s ease;
-  }
-  .screaming-goat.flip{
-    transform:scaleX(-1);
-  }
-  .screaming-goat.screaming{
-    animation:goat-scream .3s ease-in-out 2;
-  }
-  @keyframes goat-scream{
-    0%, 100%{ transform:scale(1) scaleX(var(--flip-x, 1)); }
-    50%{ transform:scale(1.4) scaleX(var(--flip-x, 1)); }
-  }
-
   /* ---------- CONFETTI & SCREEN SHAKE ---------- */
   .confetti-piece{
     position:fixed;
@@ -2468,6 +2446,7 @@
   .social-link-btn.social-tiktok{ background:#1c1c22; color:#fff; }
   .social-link-btn.social-twitch{ background:#9146ff; color:#fff; }
   .social-link-btn.social-discord{ background:#5865f2; color:#fff; }
+  .social-link-btn.social-roblox{ background:#e2231a; color:#fff; }
   .friend-action-btn{
     font-family:'Fredoka One', cursive;
     font-size:12px;
@@ -2546,7 +2525,8 @@
   .confirm-overlay{
     position:fixed;
     inset:0;
-    z-index:4800;
+    /* Above the public profile (5500) so dialogs opened from a profile are visible. */
+    z-index:5550;
     background:rgba(10,8,16,0.85);
     backdrop-filter:blur(4px);
     display:none;
@@ -2556,6 +2536,156 @@
   }
   .confirm-overlay.visible{
     display:flex;
+  }
+
+  /* ---------- COMMISSIONS / WORKSHOP SETTINGS ---------- */
+  .commissions-badge{
+    display:inline-block;
+    font-family:'Fredoka One', cursive;
+    font-size:10px;
+    line-height:1.4;
+    color:var(--night);
+    background:#79cf67;
+    border:2px solid var(--ink);
+    border-radius:999px;
+    padding:1px 8px;
+    margin-left:6px;
+    vertical-align:middle;
+    white-space:nowrap;
+  }
+  .workshop-anon-tag{
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    color:var(--muted);
+    font-style:italic;
+  }
+  .workshop-settings-panel{
+    display:none;
+    flex-direction:column;
+    margin-top:10px;
+  }
+  .workshop-settings-panel.open{
+    display:flex;
+  }
+  .workshop-settings-status{
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    color:var(--muted);
+    margin:0 0 8px;
+    min-height:14px;
+  }
+  .installed-mod-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin:4px 0 10px;
+  }
+  .installed-mod-chip{
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    color:var(--rind);
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:999px;
+    padding:3px 10px;
+  }
+  .public-profile-mods{
+    display:none;
+    width:100%;
+    margin-top:10px;
+  }
+  .public-profile-mods.visible{
+    display:block;
+  }
+  .public-profile-mods-label{
+    display:block;
+    font-family:'Fredoka One', cursive;
+    font-size:11px;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+
+  /* ---------- MESSAGE REPORTS ---------- */
+  .chat-message-meta{
+    display:flex;
+    align-items:center;
+    justify-content:flex-end;
+    gap:8px;
+  }
+  .chat-report-btn{
+    font-family:'Poppins', sans-serif;
+    font-size:9.5px;
+    color:var(--muted);
+    background:none;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    text-decoration:underline;
+  }
+  .chat-report-btn:hover:not(:disabled){
+    color:#ff6b6b;
+  }
+  .chat-report-btn:disabled{
+    cursor:default;
+    text-decoration:none;
+  }
+  .report-quote{
+    font-family:'Poppins', sans-serif;
+    font-size:12px;
+    color:var(--rind);
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:10px;
+    padding:8px 12px;
+    margin:0 0 10px;
+    text-align:left;
+    word-break:break-word;
+  }
+  .report-details{
+    min-height:70px;
+    resize:vertical;
+  }
+  .mod-report-row{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    padding:10px 12px;
+    background:var(--night);
+    border:2px solid var(--line);
+    border-radius:12px;
+    text-align:left;
+  }
+  .mod-report-rule{
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    color:#ff6b6b;
+  }
+  .mod-report-meta, .mod-report-details, .mod-report-context{
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    color:var(--muted);
+    word-break:break-word;
+  }
+  .mod-report-text{
+    font-family:'Poppins', sans-serif;
+    font-size:12.5px;
+    color:var(--rind);
+    word-break:break-word;
+  }
+  .mod-report-btns{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+  .mod-report-btns .friend-action-btn{
+    font-size:10.5px;
+  }
+
+  /* ---------- FRIENDS: GIFT BUTTON ---------- */
+  .friends-row .friend-gift-btn{
+    margin-left:auto;
+    font-size:10.5px;
+    padding:6px 12px;
   }
 
   /* ---------- WORKSHOP ---------- */
@@ -3591,8 +3721,6 @@
 </head>
 <body>
 
-<p class="version-text" id="versionKey">verison wifi</div>
-
 <div id="loading-screen" class="loading-screen">
   <div class="loading-content">
     <div class="loading-title">Loading</div>
@@ -3695,13 +3823,14 @@
     <button class="auth-btn secondary" id="edit-advanced-toggle-btn" type="button">Advanced Settings</button>
     <div class="edit-advanced-panel" id="edit-advanced-panel">
       <div class="edit-toggle-row">
-        <span class="edit-toggle-label">Hide my birthday on my public profile</span>
+        <span class="edit-toggle-label">I HATE BIRTHDAYS</span>
         <button class="edit-toggle-btn" id="edit-hide-birthday-btn" type="button" data-on="false">Off</button>
       </div>
       <input type="text" id="edit-youtube-input" class="auth-input" placeholder="YouTube username" autocomplete="off">
       <input type="text" id="edit-tiktok-input" class="auth-input" placeholder="TikTok username" autocomplete="off">
       <input type="text" id="edit-twitch-input" class="auth-input" placeholder="Twitch username" autocomplete="off">
       <input type="text" id="edit-discord-input" class="auth-input" placeholder="Discord username" autocomplete="off">
+      <input type="text" id="edit-roblox-input" class="auth-input" placeholder="Roblox username or profile link" autocomplete="off">
     </div>
     <button class="auth-btn" id="edit-profile-save">Save Changes</button>
     <p class="auth-error" id="edit-profile-error" style="display:none;"></p>
@@ -3738,6 +3867,7 @@
           </div>
         </div>
       </div>
+      <div class="public-profile-mods" id="public-profile-mods"></div>
       <div class="public-profile-moneys">
         <img src="money.png" alt="Moneys">
         <span id="public-profile-clicks"></span>
@@ -4126,6 +4256,10 @@
   let currentTiktok = '';
   let currentTwitch = '';
   let currentDiscord = '';
+  let currentRoblox = '';
+  let currentHideInstalledMods = false;
+  let currentAnonymousMods = false;
+  let currentCommissionsOpen = false;
 
   function defaultGame(){
     return {
@@ -4133,6 +4267,7 @@
       clickPower: 1,
       clickBoostOwned: 0,
       autoClickerOwned: 0,
+      autoSpeedLevel: 0,
       dvdOwned: 0,
       dvdBehind: false,
       amogusOwned: 0,
@@ -4166,7 +4301,6 @@
       prestige: 0,
       boosts: 0,
       totalPrestige: 0,
-      goatOwned: 0,
       effectsOwned: false,
       selectedEffect: 'none',
       effectChosen: false,
@@ -4261,7 +4395,7 @@
   });
 
   setInterval(() => {
-    const passiveIncome = (game.autoClickerOwned || 0) + (game.turboClickerOwned || 0) * 5;
+    const passiveIncome = (game.autoClickerOwned || 0) * autoSpeedMult() + (game.turboClickerOwned || 0) * 5;
     if (passiveIncome > 0) {
       earnClicks(passiveIncome);
       updateCounter();
@@ -4307,7 +4441,6 @@
   const ICON_COST = 500;
   const AUTO_KILL_COST = 1000;
   const NOOB_COST = 250;
-  const GOAT_COST = 350;
   const EFFECTS_COST = 750;
   const FONT_MANAGER_COST = 900;
   const LUCKY_CHARM_COST = 2500;
@@ -4393,18 +4526,6 @@
     syncToSheet();
     renderShop();
     spawnNoob();
-  }
-
-  function buyGoat(){
-    if (game.clicks < GOAT_COST) return;
-    playSound('money.mp3');
-    game.clicks -= GOAT_COST;
-    game.goatOwned += 1;
-    updateCounter();
-    saveGame();
-    syncToSheet();
-    renderShop();
-    spawnGoat();
   }
 
   function buyEffects(){
@@ -4496,6 +4617,54 @@
 
   function buyClickBoostMax(){
     buyClickBoostBulk(clickBoostMaxAffordable());
+  }
+
+  /* ---------- AUTO CLICKER SPEED ----------
+     Each level makes every Auto Clicker click faster (mult = clicks per second
+     per Auto Clicker). Levels are one-time buys, bought in order. Add new levels
+     to the end of the list. Resets on Prestige like other upgrades. */
+  const AUTO_SPEED_LEVELS = [
+    { label: 'Normal', interval: '1s', mult: 1, cost: 0 },
+    { label: 'Quick', interval: '0.5s', mult: 2, cost: 2500 },
+    { label: 'Rapid', interval: '0.33s', mult: 3, cost: 15000 },
+    { label: 'Blazing', interval: '0.25s', mult: 4, cost: 75000 },
+    { label: 'Lightning', interval: '0.2s', mult: 5, cost: 300000 }
+  ];
+  let autoClickerExpanded = false;
+
+  function autoSpeedLevel(){
+    const lvl = Math.floor(Number(game.autoSpeedLevel) || 0);
+    return Math.min(Math.max(0, lvl), AUTO_SPEED_LEVELS.length - 1);
+  }
+  function autoSpeedMult(){ return AUTO_SPEED_LEVELS[autoSpeedLevel()].mult; }
+  function canBuyAutoSpeed(level){
+    return (game.autoClickerOwned || 0) >= 1
+      && level === autoSpeedLevel() + 1
+      && level < AUTO_SPEED_LEVELS.length
+      && game.clicks >= AUTO_SPEED_LEVELS[level].cost;
+  }
+  function autoSpeedButtonLabel(level){
+    const lvl = AUTO_SPEED_LEVELS[level];
+    if (level <= autoSpeedLevel()) return `${lvl.label} ${lvl.interval} (Owned)`;
+    return `${lvl.label} ${lvl.interval} (${lvl.cost.toLocaleString()})`;
+  }
+  function autoSpeedPanelHTML(){
+    const btns = AUTO_SPEED_LEVELS.slice(1).map((lvl, i) => {
+      const level = i + 1;
+      return `<button class="bulk-buy-btn" id="buy-autospeed-${level}" data-speed-level="${level}" ${canBuyAutoSpeed(level) ? '' : 'disabled'}>${autoSpeedButtonLabel(level)}</button>`;
+    }).join('');
+    const note = (game.autoClickerOwned || 0) < 1 ? '<p class="workshop-settings-status" style="width:100%;margin:0 0 4px;">Buy an Auto Clicker first.</p>' : '';
+    return `<div class="bulk-buy-panel" style="flex-wrap:wrap;">${note}${btns}</div>`;
+  }
+  function buyAutoSpeed(level){
+    if (!canBuyAutoSpeed(level)) return;
+    playSound('money.mp3');
+    game.clicks -= AUTO_SPEED_LEVELS[level].cost;
+    game.autoSpeedLevel = level;
+    updateCounter();
+    saveGame();
+    syncToSheet();
+    renderShop();
   }
 
   function buyAutoClicker(){
@@ -4626,11 +4795,13 @@
       { category: 'plain', html: `
       <div class="shop-card">
         <div class="shop-info">
-          <h3>Clicker</h3>
-          <p>Automatically clicks the main button for you once every second, earning income even when you aren't tapping. <span class="owned">Owned: ${game.autoClickerOwned}</span></p>
+          <h3>Auto Clicker</h3>
+          <p>Automatically clicks the main button for you once every ${AUTO_SPEED_LEVELS[autoSpeedLevel()].interval === '1s' ? 'second' : AUTO_SPEED_LEVELS[autoSpeedLevel()].interval}, earning income even when you aren't tapping. Open the dropdown for speed upgrades. <span class="owned">Owned: ${game.autoClickerOwned} &middot; Speed: ${AUTO_SPEED_LEVELS[autoSpeedLevel()].label}</span></p>
         </div>
         <button class="buy-btn" id="buy-auto" ${game.clicks < autoClickerCost() ? 'disabled' : ''}>Buy (${autoClickerCost()})</button>
-      </div>` },
+        <button class="bulk-expand-btn${autoClickerExpanded ? ' open' : ''}" id="autoclicker-expand-btn" title="Speed upgrades">&#9662;</button>
+      </div>
+      ${autoClickerExpanded ? autoSpeedPanelHTML() : ''}` },
       { category: 'visuals', html: `
       <div class="shop-card">
         <div class="shop-info">
@@ -4662,14 +4833,6 @@
           <p>Spawns a noob who walks, jumps, dances, and chats. Pays out like a DVD logo every time he bounces off a wall. <span class="owned">Owned: ${game.noobOwned}</span></p>
         </div>
         <button class="buy-btn" id="buy-noob" ${game.clicks < NOOB_COST ? 'disabled' : ''}>Buy (${NOOB_COST})</button>
-      </div>` },
-      { category: 'visuals', html: `
-      <div class="shop-card">
-        <div class="shop-info">
-          <h3>Screaming Goat</h3>
-          <p>Spawns a goat that wanders back and forth and occasionally screams. Pays out every time it bounces off a wall. <span class="owned">Owned: ${game.goatOwned}</span></p>
-        </div>
-        <button class="buy-btn" id="buy-goat" ${game.clicks < GOAT_COST ? 'disabled' : ''}>Buy (${GOAT_COST})</button>
       </div>` },
       { category: 'customization', html: `
       <div class="shop-card">
@@ -4731,7 +4894,7 @@
       <div class="shop-card">
         <div class="shop-info">
           <h3>Offline Earnings</h3>
-          <p>One-time buy. Keeps your Clicker upgrades earning clicks while the page is closed (capped at 24 hours away).</p>
+          <p>One-time buy. Keeps your Auto Clicker upgrades earning clicks while the page is closed (capped at 24 hours away).</p>
         </div>
         <button class="buy-btn" id="buy-offline" ${game.offlineEarningsOwned ? 'disabled' : (game.clicks < OFFLINE_COST ? 'disabled' : '')}>${game.offlineEarningsOwned ? 'Owned' : 'Buy (' + OFFLINE_COST + ')'}</button>
       </div>` },
@@ -4838,6 +5001,16 @@
     bind('buy-boost-x25', () => buyClickBoostBulk(25));
     bind('buy-boost-max', buyClickBoostMax);
     bind('buy-auto', buyAutoClicker);
+    const autoClickerExpandBtn = document.getElementById('autoclicker-expand-btn');
+    if (autoClickerExpandBtn) {
+      autoClickerExpandBtn.addEventListener('click', () => {
+        autoClickerExpanded = !autoClickerExpanded;
+        renderShop();
+      });
+    }
+    list.querySelectorAll('[data-speed-level]').forEach(btn => {
+      btn.addEventListener('click', () => buyAutoSpeed(Number(btn.dataset.speedLevel)));
+    });
     bind('buy-dvd', buyDvd);
     bind('toggle-dvd-layer', toggleDvdLayer);
     bind('buy-amogus', buyAmogus);
@@ -4850,7 +5023,6 @@
     bind('buy-font-manager', buyFontManager);
     bind('buy-autokill', buyAutoKill);
     bind('buy-noob', buyNoob);
-    bind('buy-goat', buyGoat);
     bind('buy-megaboost', buyMegaBoost);
     bind('buy-turboclicker', buyTurboClicker);
     bind('buy-luckycharm', buyLuckyCharm);
@@ -5228,7 +5400,7 @@
 
     const elapsedSeconds = Math.floor(elapsedMs / 1000);
     const cappedSeconds = Math.min(elapsedSeconds, OFFLINE_CAP_SECONDS);
-    const earned = cappedSeconds * game.autoClickerOwned;
+    const earned = cappedSeconds * game.autoClickerOwned * autoSpeedMult();
 
     if (earned > 0) {
       const boosted = earnClicks(earned);
@@ -5742,51 +5914,6 @@
   }
 
   /* ---------- BOUNCING EMOJI ---------- */
-  /* ---------- SCREAMING GOAT ---------- */
-  function spawnGoat(){
-    const el = document.createElement('div');
-    el.className = 'screaming-goat';
-    el.textContent = '\ud83d\udc10';
-    document.body.appendChild(el);
-
-    let x = Math.random() * (window.innerWidth - 40);
-    let direction = Math.random() < 0.5 ? -1 : 1;
-    const speed = 0.7 + Math.random() * 0.9;
-    el.style.left = x + 'px';
-    if (direction < 0) el.classList.add('flip');
-
-    let screamTimer = setInterval(() => {
-      if (!document.body.contains(el)) { clearInterval(screamTimer); return; }
-      el.classList.add('screaming');
-      playSound('goat.mp3');
-      setTimeout(() => el.classList.remove('screaming'), 700);
-    }, 6000 + Math.random() * 6000);
-
-    function walk(){
-      if (!document.body.contains(el)) return;
-
-      x += direction * speed;
-      const maxX = window.innerWidth - 40;
-      let bounced = false;
-
-      if (x <= 0) { x = 0; direction = 1; bounced = true; el.classList.remove('flip'); }
-      if (x >= maxX) { x = maxX; direction = -1; bounced = true; el.classList.add('flip'); }
-
-      if (bounced) {
-        earnClicks(game.clickPower);
-        updateCounter();
-        saveGame();
-        refreshShopAffordability();
-        refreshStatsMoneys();
-      }
-
-      el.style.left = x + 'px';
-      requestAnimationFrame(walk);
-    }
-
-    requestAnimationFrame(walk);
-  }
-
   /* ---------- CONFETTI & SCREEN SHAKE ---------- */
   const CONFETTI_COLORS = ['#57ab46', '#79cf67', '#ffcb3d', '#ff5da0', '#c1aef0', '#faf3df'];
 
@@ -6092,6 +6219,9 @@
     if (boostBtn) { boostBtn.disabled = game.clicks < clickBoostCost(); boostBtn.textContent = 'Buy (' + clickBoostCost() + ')'; }
     const autoBtn = document.getElementById('buy-auto');
     if (autoBtn) { autoBtn.disabled = game.clicks < autoClickerCost(); autoBtn.textContent = 'Buy (' + autoClickerCost() + ')'; }
+    document.querySelectorAll('[data-speed-level]').forEach(btn => {
+      btn.disabled = !canBuyAutoSpeed(Number(btn.dataset.speedLevel));
+    });
     const dvdBtn = document.getElementById('buy-dvd');
     if (dvdBtn) { dvdBtn.disabled = game.clicks < dvdCost(); dvdBtn.textContent = 'Buy (' + dvdCost() + ')'; }
     const amogusBtn = document.getElementById('buy-amogus');
@@ -6324,6 +6454,10 @@
           <h3>Friend Requests</h3>
           <div class="friend-requests-list" id="friend-requests-list"></div>
         </div>
+        <div class="friend-requests-card" id="mod-reports-card" style="display:none;">
+          <h3 id="mod-reports-title">Reports to Review</h3>
+          <div class="friend-requests-list" id="mod-reports-list"></div>
+        </div>
       </div>
 
       <div class="stats-subtab-pane" id="stats-pane-friends" style="display:none;">
@@ -6376,6 +6510,7 @@
     });
 
     loadFriendRequests();
+    loadModReports();
   }
 
   function switchStatsSubtab(tab){
@@ -6642,19 +6777,112 @@
       return;
     }
 
-    messagesEl.innerHTML = activeChatMessages.map(msg => `
-      <div class="chat-message-row${msg.sender === currentUsername ? ' mine' : ''}${msg.pending ? ' pending' : ''}${msg.failed ? ' failed' : ''}">
+    messagesEl.innerHTML = activeChatMessages.map(msg => {
+      const mine = String(msg.sender).toLowerCase() === String(currentUsername || '').toLowerCase();
+      const canReport = !mine && !msg.pending && !msg.failed;
+      const reported = reportedMessageIds.has(String(msg.id));
+      const reportBtn = canReport
+        ? `<button class="chat-report-btn" type="button" data-report-id="${escapeChatHtml(String(msg.id))}" ${reported ? 'disabled' : ''}>${reported ? 'Reported' : 'Report'}</button>`
+        : '';
+      return `
+      <div class="chat-message-row${mine ? ' mine' : ''}${msg.pending ? ' pending' : ''}${msg.failed ? ' failed' : ''}">
         <span class="chat-message-sender">${escapeChatHtml(msg.sender)}</span>
         <span class="chat-message-text">${escapeChatHtml(msg.text)}</span>
         ${msg.pending
           ? '<span class="chat-message-status">Sending...</span>'
           : msg.failed
             ? '<span class="chat-message-status">Failed to send</span>'
-            : `<span class="chat-message-time">${escapeChatHtml(formatChatTime(msg.createdAt))}</span>`}
+            : `<div class="chat-message-meta">${reportBtn}<span class="chat-message-time">${escapeChatHtml(formatChatTime(msg.createdAt))}</span></div>`}
       </div>
-    `).join('');
+    `;
+    }).join('');
+
+    messagesEl.querySelectorAll('.chat-report-btn:not(:disabled)').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const msg = activeChatMessages.find(m => String(m.id) === btn.dataset.reportId);
+        if (msg) openReportMessageDialog(msg);
+      });
+    });
 
     messagesEl.scrollTop = (forceBottom || wasAtBottom) ? messagesEl.scrollHeight : previousTop;
+  }
+
+  /* ---------- REPORT A MESSAGE ----------
+     Keep this list in sync with REPORT_RULES in gs.gs (the API falls back to
+     "Other" for anything it doesn't recognize). */
+  const REPORT_RULES = [
+    'Bullying or harassment',
+    'Inappropriate or NSFW content',
+    'Hate speech',
+    'Spam',
+    'Scams or cheating',
+    'Sharing personal info',
+    'Threats',
+    'Other'
+  ];
+  const reportedMessageIds = new Set();
+
+  function openReportMessageDialog(msg){
+    const chatId = activeChatId;
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Report Message</h1>
+      <p class="auth-sub">From ${escapeChatHtml(msg.sender)}. A moderator will review it.</p>
+      <div class="report-quote">${escapeChatHtml(msg.text)}</div>
+      <select id="report-rule" class="auth-input">
+        <option value="">Which rule did they break?</option>
+        ${REPORT_RULES.map(r => `<option value="${escapeChatHtml(r)}">${escapeChatHtml(r)}</option>`).join('')}
+      </select>
+      <textarea id="report-details" class="auth-input report-details" placeholder="Extra details (optional)" maxlength="500" rows="3"></textarea>
+      <button class="auth-btn" id="report-submit">Submit Report</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="report-error" style="display:none;"></p>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('report-submit').addEventListener('click', async () => {
+      const rule = document.getElementById('report-rule').value;
+      const details = document.getElementById('report-details').value.trim();
+      const errorEl = document.getElementById('report-error');
+      const submitBtn = document.getElementById('report-submit');
+      if (!rule) {
+        errorEl.textContent = 'Pick the rule they broke.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      errorEl.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      try {
+        const result = await sheetRequest({
+          action: 'reportMessage',
+          username: currentUsername,
+          chatId: chatId,
+          messageId: msg.id,
+          rule: rule,
+          details: details
+        });
+        if (result.success || result.error === 'duplicate') {
+          reportedMessageIds.add(String(msg.id));
+          renderChatMessages(false);
+          closeConfirm();
+          showBanner(result.success ? 'Report sent. A moderator will review it.' : 'You already reported this message.');
+          return;
+        }
+        const messages = {
+          nomods: 'No moderators are available right now. Try again later.',
+          self: "You can't report your own message.",
+          notfound: 'That message no longer exists.',
+          forbidden: "You're not in this chat."
+        };
+        errorEl.textContent = messages[result.error] || 'Something went wrong. Try again.';
+        errorEl.style.display = 'block';
+      } catch (e) {
+        errorEl.textContent = "Couldn't reach the database.";
+        errorEl.style.display = 'block';
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Report';
+    });
+    confirmOverlay.classList.add('visible');
   }
 
   let chatSendsInFlight = 0;
@@ -6814,6 +7042,192 @@
     }
   }
 
+  /* ---------- MOD REPORT QUEUE ----------
+     Reports are assigned to one random moderator by the API. Each mod sees
+     only the reports assigned to them, on the Stats > Overview tab. */
+  let modReportsCount = null;
+
+  function isStaffAccount(){
+    return MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
+  }
+
+  async function loadModReports(){
+    const card = document.getElementById('mod-reports-card');
+    const listEl = document.getElementById('mod-reports-list');
+    if (!card || !listEl || !currentUsername || !isStaffAccount()) return;
+
+    try {
+      const result = await sheetRequest({ action: 'getAssignedReports', username: currentUsername });
+      const reports = (result.success && Array.isArray(result.reports)) ? result.reports : [];
+      modReportsCount = reports.length;
+      if (!reports.length) {
+        card.style.display = 'none';
+        return;
+      }
+      card.style.display = 'flex';
+      document.getElementById('mod-reports-title').textContent = `Reports to Review (${reports.length})`;
+      listEl.innerHTML = reports.map(r => `
+        <div class="mod-report-row" data-report-id="${escapeChatHtml(r.id)}">
+          <span class="mod-report-rule">${escapeChatHtml(r.rule)}</span>
+          <span class="mod-report-meta">Reported: ${escapeChatHtml(r.reportedUser)} &middot; By: ${escapeChatHtml(r.reporter)} &middot; ${escapeChatHtml(formatChatTime(r.createdAt))}</span>
+          ${r.context && r.context.length ? `<span class="mod-report-context">Before: ${r.context.map(c => `${escapeChatHtml(c.sender)}: ${escapeChatHtml(c.text)}`).join(' | ')}</span>` : ''}
+          <div class="report-quote" style="margin:0;">${escapeChatHtml(r.messageText)}</div>
+          ${r.details ? `<span class="mod-report-details">Details: ${escapeChatHtml(r.details)}</span>` : ''}
+          <div class="mod-report-btns">
+            <button class="friend-action-btn" data-action="profile">View Profile</button>
+            <button class="friend-action-btn accept" data-action="actioned">Resolved</button>
+            <button class="friend-action-btn decline" data-action="dismissed">Dismiss</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('.mod-report-row').forEach(row => {
+        const report = reports.find(r => String(r.id) === row.dataset.reportId);
+        row.querySelector('[data-action="profile"]').addEventListener('click', () => openPublicProfile(report.reportedUser));
+        ['actioned', 'dismissed'].forEach(resolution => {
+          row.querySelector(`[data-action="${resolution}"]`).addEventListener('click', async (e) => {
+            e.target.disabled = true;
+            try {
+              const res = await sheetRequest({ action: 'resolveReport', username: currentUsername, reportId: report.id, resolution });
+              if (res.success) loadModReports();
+              else e.target.disabled = false;
+            } catch (err) {
+              e.target.disabled = false;
+            }
+          });
+        });
+      });
+    } catch (e) {
+      card.style.display = 'none';
+    }
+  }
+
+  async function checkModReportsCount(){
+    if (!currentUsername || !isStaffAccount()) return;
+    const result = await sheetRequest({ action: 'getAssignedReports', username: currentUsername });
+    if (!result || !result.success) return;
+    const count = Array.isArray(result.reports) ? result.reports.length : 0;
+    if (count > 0 && (modReportsCount === null || count > modReportsCount)) {
+      showBanner(`You have ${count} report${count === 1 ? '' : 's'} to review. Open Stats to see ${count === 1 ? 'it' : 'them'}.`);
+    }
+    modReportsCount = count;
+  }
+
+  /* ---------- GIFTS ----------
+     The sender's balance is checked and taken on the API. The receiver picks
+     gifts up with claimGifts (polled below) and adds them locally, so a gift
+     never gets overwritten by the receiver's own auto-save. */
+  function openGiftDialog(toUsername){
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">Send a Gift</h1>
+      <p class="auth-sub">To ${escapeChatHtml(toUsername)}. You have ${game.clicks.toLocaleString()} Moneys and ${(game.gems || 0).toLocaleString()} Gems.</p>
+      <select id="gift-type" class="auth-input">
+        <option value="clicks">Moneys</option>
+        <option value="gems">Gems</option>
+      </select>
+      <input type="number" id="gift-amount" class="auth-input" placeholder="Amount" min="1" step="1">
+      <input type="text" id="gift-note" class="auth-input" placeholder="Note (optional)" maxlength="100" autocomplete="off">
+      <button class="auth-btn" id="gift-send">Send Gift</button>
+      <button class="auth-btn secondary" id="confirm-cancel">Cancel</button>
+      <p class="auth-error" id="gift-error" style="display:none;"></p>
+    `;
+    document.getElementById('confirm-cancel').addEventListener('click', closeConfirm);
+    document.getElementById('gift-send').addEventListener('click', async () => {
+      const type = document.getElementById('gift-type').value;
+      const amount = Math.floor(Number(document.getElementById('gift-amount').value) || 0);
+      const note = document.getElementById('gift-note').value.trim();
+      const errorEl = document.getElementById('gift-error');
+      const sendBtn = document.getElementById('gift-send');
+      const balance = type === 'gems' ? (game.gems || 0) : game.clicks;
+      const typeLabel = type === 'gems' ? 'Gems' : 'Moneys';
+
+      if (amount <= 0) {
+        errorEl.textContent = 'Enter a valid amount.';
+        errorEl.style.display = 'block';
+        return;
+      }
+      if (amount > balance) {
+        errorEl.textContent = `You don't have enough ${typeLabel}.`;
+        errorEl.style.display = 'block';
+        return;
+      }
+      errorEl.style.display = 'none';
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
+
+      try {
+        // Make sure the API has the latest balance before it checks it.
+        saveGame();
+        await syncToSheet();
+        const result = await sheetRequest({ action: 'sendGift', username: currentUsername, toUsername, type, amount, note });
+        if (result.success) {
+          if (type === 'gems') game.gems = (game.gems || 0) - amount;
+          else game.clicks -= amount;
+          updateCounter();
+          updateWorkshopGemsDisplay();
+          saveGame();
+          syncToSheet();
+          closeConfirm();
+          showBanner(`Sent ${amount.toLocaleString()} ${typeLabel} to ${toUsername}!`);
+          if (activeTab === 'stats') renderActiveTab();
+          return;
+        }
+        const messages = {
+          notfriends: 'You can only send gifts to friends.',
+          insufficient: `You don't have enough ${typeLabel}.`,
+          notfound: 'That player no longer exists.',
+          self: "You can't gift yourself."
+        };
+        errorEl.textContent = messages[result.error] || 'Something went wrong. Try again.';
+        errorEl.style.display = 'block';
+      } catch (e) {
+        errorEl.textContent = "Couldn't reach the database.";
+        errorEl.style.display = 'block';
+      }
+      sendBtn.disabled = false;
+      sendBtn.textContent = 'Send Gift';
+    });
+    confirmOverlay.classList.add('visible');
+  }
+
+  let giftClaimBusy = false;
+  async function claimIncomingGifts(){
+    if (giftClaimBusy || !currentUsername) return;
+    giftClaimBusy = true;
+    try {
+      const result = await sheetRequest({ action: 'claimGifts', username: currentUsername });
+      const gifts = (result && result.success && Array.isArray(result.gifts)) ? result.gifts : [];
+      if (!gifts.length) return;
+      gifts.forEach(g => {
+        const amount = Math.max(0, Math.floor(Number(g.amount) || 0));
+        if (g.type === 'gems') game.gems = (game.gems || 0) + amount;
+        else game.clicks += amount;
+        const typeLabel = g.type === 'gems' ? 'Gems' : 'Moneys';
+        showBanner(`Gift from ${g.from}: ${amount.toLocaleString()} ${typeLabel}${g.note ? ' "' + g.note + '"' : ''}`);
+      });
+      updateCounter();
+      updateWorkshopGemsDisplay();
+      saveGame();
+      syncToSheet();
+      refreshShopAffordability();
+      refreshStatsMoneys();
+    } catch (e) {
+    } finally {
+      giftClaimBusy = false;
+    }
+  }
+
+  const INBOX_POLL_MS = 30000;
+  function startInboxPolling(){
+    const run = () => {
+      if (document.hidden || !currentUsername) return;
+      claimIncomingGifts();
+      checkModReportsCount().catch(() => {});
+    };
+    setTimeout(run, 3000);
+    setInterval(run, INBOX_POLL_MS);
+  }
+
   function openGemsConvertDialog(){
     confirmBox.innerHTML = `
       <h1 class="auth-heading">Convert Moneys to Gems</h1>
@@ -6929,7 +7343,7 @@
           <h3>${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h3>
         </div>
         <p>${item.description || 'No description.'}</p>
-        <span class="workshop-item-meta">${item.category || 'Other'} &middot; ${shortRepo(item.repoUrl)} &middot; by ${item.author}</span>
+        <span class="workshop-item-meta">${item.category || 'Other'} &middot; ${shortRepo(item.repoUrl)} &middot; by ${workshopAuthorLabel(item)}</span>
         <div class="workshop-item-stats">
           <span>\u2b06 ${item.upvotes || 0}</span>
           <span>\u2b07 ${item.downvotes || 0}</span>
@@ -6973,7 +7387,7 @@
     if (!item.comments) item.comments = [];
 
     const isSiteMod = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
-    const isModAuthor = String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase();
+    const isModAuthor = isMyWorkshopItem(item);
     const canModerateComments = isSiteMod || isModAuthor;
     const installed = !!findInstalledMod(item.id);
 
@@ -6986,7 +7400,7 @@
           ${item.iconUrl ? `<img class="workshop-detail-icon" src="${item.iconUrl}" alt="">` : ''}
           <div>
             <h2>${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h2>
-            <span class="workshop-item-meta">${shortRepo(item.repoUrl)} &middot; by ${item.author}</span>
+            <span class="workshop-item-meta">${shortRepo(item.repoUrl)} &middot; by ${workshopAuthorLabel(item)}</span>
           </div>
         </div>
         <p class="workshop-detail-desc">${item.description || 'No description.'}</p>
@@ -7181,7 +7595,7 @@
         if (!item.comments) item.comments = [];
         item.comments.unshift(result.comment);
         const isSiteMod = MOD_CAPABLE_AUTHS.indexOf(String(currentAuth || 'none').trim().toLowerCase()) !== -1;
-        const isModAuthor = String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase();
+        const isModAuthor = isMyWorkshopItem(item);
         renderWorkshopComments(item, isSiteMod || isModAuthor);
       }
     } catch (e) {}
@@ -7198,10 +7612,38 @@
     } catch (e) {}
   }
 
+  function commissionsBadgeHTML(){
+    return '<span class="commissions-badge" title="This creator is taking mod commissions">Commissions Open</span>';
+  }
+
+  // Anonymous mods come back from the API with the author replaced, and
+  // anonymizedForViewer set, so they can never be treated as someone's own mod.
+  function isMyWorkshopItem(item){
+    if (!item || item.anonymizedForViewer || !currentUsername) return false;
+    return String(item.author).toLowerCase() === String(currentUsername).toLowerCase();
+  }
+
+  function workshopAuthorLabel(item){
+    let label = escapeChatHtml(item.author || 'Unknown');
+    if (item.authorAnonymous) label += ' <span class="workshop-anon-tag">(anonymous to players)</span>';
+    if (item.authorCommissionsOpen) label += commissionsBadgeHTML();
+    return label;
+  }
+
+  let workshopSettingsOpen = false;
+  let workshopSettingsSaving = false;
+
+  function workshopToggleRow(id, label, on){
+    return `
+      <div class="edit-toggle-row">
+        <span class="edit-toggle-label">${label}</span>
+        <button class="edit-toggle-btn" id="${id}" type="button" data-on="${on ? 'true' : 'false'}">${on ? 'On' : 'Off'}</button>
+      </div>`;
+  }
+
   function renderWorkshopProfile(){
-    const created = workshopItemsCache.filter(item =>
-      String(item.author).toLowerCase() === String(currentUsername || '').toLowerCase()
-    );
+    const created = workshopItemsCache.filter(isMyWorkshopItem);
+    const installed = game.installedMods || [];
 
     const bannerStyle = currentBannerImage
       ? `center / cover no-repeat url('${currentBannerImage}')`
@@ -7216,11 +7658,28 @@
           <img src="${currentProfileIcon || 'profile.png'}" alt="">
         </div>
       </div>
-      <h2 class="workshop-profile-name" style="color:${authColor(currentAuth)}">${currentUsername || 'Guest'}${authBadge(currentAuth)}</h2>
-      <h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:20px 0 4px;">Installed Mods</h3>
-      <div class="empty-state">Mod installation isn't available yet.</div>
-      <h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:12px 0 4px;">Created Mods</h3>
+      <h2 class="workshop-profile-name" style="color:${authColor(currentAuth)}">${currentUsername || 'Guest'}${authBadge(currentAuth)}${currentCommissionsOpen ? commissionsBadgeHTML() : ''}</h2>
     `;
+
+    if (currentUsername) {
+      html += `
+      <button class="auth-btn secondary" id="workshop-settings-toggle" type="button">${workshopSettingsOpen ? 'Hide Advanced Settings' : 'Advanced Settings'}</button>
+      <div class="workshop-settings-panel${workshopSettingsOpen ? ' open' : ''}" id="workshop-settings-panel">
+        ${workshopToggleRow('ws-hide-installed-btn', 'Hide installed mods', currentHideInstalledMods)}
+        ${workshopToggleRow('ws-anonymous-btn', 'Keep my mods anonymous', currentAnonymousMods)}
+        ${workshopToggleRow('ws-commissions-btn', 'Commissions open', currentCommissionsOpen)}
+        <p class="workshop-settings-status" id="workshop-settings-status"></p>
+      </div>`;
+    }
+
+    html += `<h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:20px 0 4px;">Installed Mods${currentHideInstalledMods ? ' <span class="workshop-anon-tag">(hidden from others)</span>' : ''}</h3>`;
+    if (!installed.length) {
+      html += '<div class="empty-state">You haven\'t installed any mods yet.</div>';
+    } else {
+      html += `<div class="installed-mod-chips">${installed.map(m => `<span class="installed-mod-chip">${escapeChatHtml(m.name || 'Mod')}</span>`).join('')}</div>`;
+    }
+
+    html += `<h3 style="font-family:'Fredoka One', cursive; font-size:13px; color:var(--rind); margin:12px 0 4px;">Created Mods${currentAnonymousMods ? ' <span class="workshop-anon-tag">(shown as Anonymous)</span>' : ''}</h3>`;
 
     if (!created.length) {
       html += '<div class="empty-state">You haven\'t uploaded any mods yet.</div>';
@@ -7237,6 +7696,60 @@
     workshopBody.innerHTML = html;
     const backBtn = document.getElementById('workshop-tab-back');
     if (backBtn) backBtn.addEventListener('click', () => { workshopView = 'browse'; renderWorkshopBody(); });
+
+    const toggleBtn = document.getElementById('workshop-settings-toggle');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        workshopSettingsOpen = !workshopSettingsOpen;
+        document.getElementById('workshop-settings-panel').classList.toggle('open', workshopSettingsOpen);
+        toggleBtn.textContent = workshopSettingsOpen ? 'Hide Advanced Settings' : 'Advanced Settings';
+      });
+      const bindToggle = (id, key) => {
+        document.getElementById(id).addEventListener('click', () => saveWorkshopSetting(key));
+      };
+      bindToggle('ws-hide-installed-btn', 'hideInstalledMods');
+      bindToggle('ws-anonymous-btn', 'anonymousMods');
+      bindToggle('ws-commissions-btn', 'commissionsOpen');
+    }
+  }
+
+  async function saveWorkshopSetting(key){
+    if (workshopSettingsSaving || !currentUsername) return;
+    const previous = {
+      hideInstalledMods: currentHideInstalledMods,
+      anonymousMods: currentAnonymousMods,
+      commissionsOpen: currentCommissionsOpen
+    };
+    const next = Object.assign({}, previous);
+    next[key] = !previous[key];
+
+    currentHideInstalledMods = next.hideInstalledMods;
+    currentAnonymousMods = next.anonymousMods;
+    currentCommissionsOpen = next.commissionsOpen;
+    workshopSettingsSaving = true;
+    renderWorkshopProfile();
+    const status = document.getElementById('workshop-settings-status');
+    if (status) status.textContent = 'Saving...';
+
+    try {
+      const result = await sheetRequest(Object.assign({ action: 'updateWorkshopSettings', username: currentUsername }, next));
+      if (!result.success) throw new Error('failed');
+      currentHideInstalledMods = !!result.settings.hideInstalledMods;
+      currentAnonymousMods = !!result.settings.anonymousMods;
+      currentCommissionsOpen = !!result.settings.commissionsOpen;
+      workshopSettingsSaving = false;
+      if (workshopView === 'profile') renderWorkshopProfile();
+      const s2 = document.getElementById('workshop-settings-status');
+      if (s2) s2.textContent = 'Saved.';
+    } catch (e) {
+      currentHideInstalledMods = previous.hideInstalledMods;
+      currentAnonymousMods = previous.anonymousMods;
+      currentCommissionsOpen = previous.commissionsOpen;
+      workshopSettingsSaving = false;
+      if (workshopView === 'profile') renderWorkshopProfile();
+      const s3 = document.getElementById('workshop-settings-status');
+      if (s3) s3.textContent = "Couldn't save. Try again.";
+    }
   }
 
   function openWorkshopUploadDialog(){
@@ -7483,7 +7996,7 @@
   const AUTH_KEY = 'fgd_last_auth';
   const FONT_KEY = 'fgd_last_font';
   // Plain deployment URL only. A /u/N/ part is a browser account number and does not resolve for players. See README, Backend.
-  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzXytrZBHi32rKeZaedoZ08mOIf05bYZv4zpJohhw2HkNiGfQi8CCAUWkhFoxWzXODI/exec';
+  const SHEET_API_URL = 'https://script.google.com/macros/s/AKfycbzd2uiW9SaZCQuLXhQ6OHYtwVHaIjfFM6tGD8M-6x8XWgUiYhJu-GHC3xTjfMdmWG-R1g/exec';
 
   function getSiteOpens(){
     return parseInt(localStorage.getItem(SITE_OPENS_KEY) || '0', 10);
@@ -7544,6 +8057,7 @@
       clicks: game.clicks,
       clickBoostOwned: game.clickBoostOwned,
       autoClickerOwned: game.autoClickerOwned,
+      autoSpeedLevel: game.autoSpeedLevel || 0,
       dvdOwned: game.dvdOwned,
       amogusOwned: game.amogusOwned,
       amogusAlive: game.amogusAlive,
@@ -7558,7 +8072,6 @@
       boosts: game.boosts || 0,
       achievements: game.unlockedAchievements || [],
       featuredAchievement: game.featuredAchievement || '',
-      goatOwned: game.goatOwned || 0,
       effectsOwned: game.effectsOwned || false,
       selectedEffect: game.selectedEffect || 'none',
       fontManagerOwned: game.fontManagerOwned || false,
@@ -7647,6 +8160,8 @@
       clickBoostOwned: source.clickBoostOwned || 0,
       clickPower: 1 + (source.clickBoostOwned || 0) + 5 * (source.megaBoostOwned || 0),
       autoClickerOwned: source.autoClickerOwned || 0,
+      // Falls back to the local save until the backend returns the column.
+      autoSpeedLevel: source.autoSpeedLevel !== undefined ? (Number(source.autoSpeedLevel) || 0) : (Number(savedRaw && savedRaw.autoSpeedLevel) || 0),
       dvdOwned: source.dvdOwned || 0,
       amogusOwned: source.amogusOwned || 0,
       amogusAlive: source.amogusAlive || 0,
@@ -7665,7 +8180,6 @@
         ? String(account.featuredAchievement || '')
         : String((savedRaw && savedRaw.featuredAchievement) || ''),
       totalPrestige: previousTotalPrestige,
-      goatOwned: source.goatOwned || 0,
       effectsOwned: !!source.effectsOwned,
       selectedEffect: source.selectedEffect || 'none',
       effectChosen: !!previousPickerPrefs.effectChosen,
@@ -7977,6 +8491,7 @@
   const editTiktokInput = document.getElementById('edit-tiktok-input');
   const editTwitchInput = document.getElementById('edit-twitch-input');
   const editDiscordInput = document.getElementById('edit-discord-input');
+  const editRobloxInput = document.getElementById('edit-roblox-input');
   const editProfileSaveBtn = document.getElementById('edit-profile-save');
   const editProfileError = document.getElementById('edit-profile-error');
   const editProfileClose = document.getElementById('edit-profile-close');
@@ -8024,12 +8539,17 @@
       <div class="friends-row" data-username="${f.username}">
         <div class="leaderboard-avatar"><img src="${f.profileIcon || 'profile.png'}" alt=""></div>
         <span class="leaderboard-name" style="color:${authColor(f.auth)}">${f.username}${authBadge(f.auth)}</span>
+        <button class="friend-action-btn accept friend-gift-btn" type="button" title="Send a gift">Gift</button>
       </div>
     `).join('');
 
     friendsListEl.querySelectorAll('.friends-row').forEach(row => {
       row.addEventListener('click', () => {
         openPublicProfile(row.dataset.username);
+      });
+      row.querySelector('.friend-gift-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openGiftDialog(row.dataset.username);
       });
     });
   }
@@ -8179,10 +8699,31 @@
     }
     document.getElementById('public-profile-featured-icon').textContent = a.icon;
     document.getElementById('public-profile-featured-name').textContent = a.label;
-    document.getElementById('versionKey').textContent = a.updateKey;
     const diff = document.getElementById('public-profile-featured-diff');
     diff.textContent = a.difficulty;
     diff.className = 'achievement-difficulty diff-' + a.difficulty.toLowerCase();
+    box.classList.add('visible');
+  }
+
+  // Installed mods on a public profile. The API leaves them out when the owner
+  // turned on "Hide installed mods"; your own profile always shows them.
+  function renderPublicProfileMods(account, isSelf){
+    const box = document.getElementById('public-profile-mods');
+    const mods = isSelf ? (game.installedMods || []) : (Array.isArray(account.installedMods) ? account.installedMods : []);
+    const hidden = isSelf ? currentHideInstalledMods : !!account.hideInstalledMods;
+    if ((!isSelf && hidden) || !mods.length) {
+      box.classList.remove('visible');
+      box.innerHTML = '';
+      return;
+    }
+    const shown = mods.slice(0, 12);
+    const extra = mods.length - shown.length;
+    box.innerHTML = `
+      <span class="public-profile-mods-label">Installed Mods${isSelf && hidden ? ' (hidden from others)' : ''}</span>
+      <div class="installed-mod-chips">
+        ${shown.map(m => `<span class="installed-mod-chip">${escapeChatHtml(m.name || 'Mod')}</span>`).join('')}
+        ${extra > 0 ? `<span class="installed-mod-chip">+${extra} more</span>` : ''}
+      </div>`;
     box.classList.add('visible');
   }
 
@@ -8197,6 +8738,9 @@
     publicProfileClicks.textContent = '';
     publicProfileDescription.textContent = '';
     document.getElementById('public-profile-featured').classList.remove('visible');
+    const publicProfileMods = document.getElementById('public-profile-mods');
+    publicProfileMods.classList.remove('visible');
+    publicProfileMods.innerHTML = '';
     publicProfileBanner.style.background = 'var(--melon)';
     publicProfileModActions.style.display = 'none';
     publicProfileRestoreRow.style.display = 'none';
@@ -8210,8 +8754,8 @@
       const isId = /^\d+$/.test(String(identifier));
       const result = await sheetRequest(
         isId
-          ? { action: 'getAccountById', playerId: identifier }
-          : { action: 'getAccount', username: identifier }
+          ? { action: 'getAccountById', playerId: identifier, viewer: currentUsername || '' }
+          : { action: 'getAccount', username: identifier, viewer: currentUsername || '' }
       );
 
       if (!result.success || !result.account) {
@@ -8222,7 +8766,7 @@
       const account = result.account;
       currentViewedProfile = account;
       publicProfileImg.src = account.profileIcon || 'profile.png';
-      publicProfileName.innerHTML = account.username + authBadge(account.auth);
+      publicProfileName.innerHTML = account.username + authBadge(account.auth) + (account.commissionsOpen ? commissionsBadgeHTML() : '');
       publicProfileName.style.color = authColor(account.auth);
       publicProfileBanner.style.background = account.bannerImage
         ? `center / cover no-repeat url('${account.bannerImage}')`
@@ -8233,6 +8777,7 @@
       const targetAuth = String(account.auth || 'none').trim().toLowerCase();
       const isSelf = String(account.username || '').toLowerCase() === String(currentUsername || '').toLowerCase();
       renderPublicProfileFeatured(account, isSelf);
+      renderPublicProfileMods(account, isSelf);
       const canModerate = STAFF_AUTHS.indexOf(viewerAuth) !== -1 && PROTECTED_AUTHS.indexOf(targetAuth) === -1 && !isSelf;
       publicProfileModActions.style.display = canModerate ? 'flex' : 'none';
       publicProfileRestoreRow.style.display = (viewerAuth === 'owner' && !isSelf) ? 'flex' : 'none';
@@ -8268,7 +8813,10 @@
       // Discord has no public profile-by-username page (it needs a numeric
       // account ID we don't have), so this one copies the username instead
       // of opening a link - see the click handler below.
-      { key: 'discord', label: 'Discord', value: account.discord, url: null }
+      { key: 'discord', label: 'Discord', value: account.discord, url: null },
+      // Roblox profile pages use a numeric user ID. A full roblox.com link opens as is,
+      // a plain username goes through Roblox's username lookup redirect.
+      { key: 'roblox', label: 'Roblox', value: account.roblox, url: u => /^https?:\/\/(www\.)?roblox\.com\//i.test(u) ? u : `https://www.roblox.com/user.aspx?username=${encodeURIComponent(u)}` }
     ].filter(link => link.value);
 
     if (!links.length) {
@@ -8324,7 +8872,11 @@
 
   function friendButtonHTML(status){
     if (status === 'friends') {
-      return '<button class="friend-action-btn unfriend" id="friend-action-btn">Unfriend</button>';
+      return `
+        <div class="friend-request-actions">
+          <button class="friend-action-btn accept" id="friend-gift-btn">Send Gift</button>
+          <button class="friend-action-btn unfriend" id="friend-action-btn">Unfriend</button>
+        </div>`;
     }
     if (status === 'requestSent') {
       return '<button class="friend-action-btn pending" id="friend-action-btn">Cancel Request</button>';
@@ -8354,6 +8906,8 @@
       });
     } else {
       document.getElementById('friend-action-btn').addEventListener('click', () => handleFriendActionClick(status, targetUsername));
+      const giftBtn = document.getElementById('friend-gift-btn');
+      if (giftBtn) giftBtn.addEventListener('click', () => openGiftDialog(targetUsername));
     }
   }
 
@@ -8672,10 +9226,10 @@
     { id: 'power_25', icon: '\ud83d\udcaa', label: 'Overpowered', desc: 'Reach 25 click power.', difficulty: 'Hard', check: g => g.clickPower >= 25 },
     { id: 'power_50', icon: '\ud83d\udcaa', label: 'Absurd Power', desc: 'Reach 50 click power.', difficulty: 'Hard', check: g => g.clickPower >= 50 },
     { id: 'power_100', icon: '\ud83d\udcaa', label: 'Broken', desc: 'Reach 100 click power.', difficulty: 'Extreme', check: g => g.clickPower >= 100 },
-    { id: 'first_auto', icon: '\u23f1', label: 'Set It and Forget It', desc: 'Buy your first Clicker.', difficulty: 'Easy', check: g => g.autoClickerOwned >= 1 },
-    { id: 'auto_5', icon: '\u23f1', label: 'Automated', desc: 'Own 5 Clickers.', difficulty: 'Medium', check: g => g.autoClickerOwned >= 5 },
-    { id: 'auto_25', icon: '\u23f1', label: 'Assembly Line', desc: 'Own 25 Clickers.', difficulty: 'Hard', check: g => g.autoClickerOwned >= 25 },
-    { id: 'auto_50', icon: '\u23f1', label: 'Factory Floor', desc: 'Own 50 Clickers.', difficulty: 'Extreme', check: g => g.autoClickerOwned >= 50 },
+    { id: 'first_auto', icon: '\u23f1', label: 'Set It and Forget It', desc: 'Buy your first Auto Clicker.', difficulty: 'Easy', check: g => g.autoClickerOwned >= 1 },
+    { id: 'auto_5', icon: '\u23f1', label: 'Automated', desc: 'Own 5 Auto Clickers.', difficulty: 'Medium', check: g => g.autoClickerOwned >= 5 },
+    { id: 'auto_25', icon: '\u23f1', label: 'Assembly Line', desc: 'Own 25 Auto Clickers.', difficulty: 'Hard', check: g => g.autoClickerOwned >= 25 },
+    { id: 'auto_50', icon: '\u23f1', label: 'Factory Floor', desc: 'Own 50 Auto Clickers.', difficulty: 'Extreme', check: g => g.autoClickerOwned >= 50 },
     { id: 'first_dvd', icon: 'DVD', label: 'Bouncing Around', desc: 'Buy your first DVD Logo.', difficulty: 'Easy', check: g => g.dvdOwned >= 1 },
     { id: 'dvd_5', icon: 'DVD', label: 'DVD Party', desc: 'Own 5 DVD Logos.', difficulty: 'Medium', check: g => g.dvdOwned >= 5 },
     { id: 'dvd_25', icon: 'DVD', label: 'Screensaver Simulator', desc: 'Own 25 DVD Logos.', difficulty: 'Hard', check: g => g.dvdOwned >= 25 },
@@ -8688,9 +9242,6 @@
     { id: 'first_noob', icon: 'N', label: 'Oof', desc: 'Buy your first Roblox Noob.', difficulty: 'Easy', check: g => g.noobOwned >= 1 },
     { id: 'noob_5', icon: 'N', label: 'Noob Squad', desc: 'Own 5 Roblox Noobs.', difficulty: 'Medium', check: g => g.noobOwned >= 5 },
     { id: 'noob_25', icon: 'N', label: 'Oof Simulator', desc: 'Own 25 Roblox Noobs.', difficulty: 'Hard', check: g => g.noobOwned >= 25 },
-    { id: 'first_goat', icon: '\ud83d\udc10', label: 'Baaaaaby Steps', desc: 'Buy your first Screaming Goat.', difficulty: 'Easy', check: g => g.goatOwned >= 1 },
-    { id: 'goat_5', icon: '\ud83d\udc10', label: 'Goat Herd', desc: 'Own 5 Screaming Goats.', difficulty: 'Medium', check: g => g.goatOwned >= 5 },
-    { id: 'goat_25', icon: '\ud83d\udc10', label: 'Screaming Simulator', desc: 'Own 25 Screaming Goats.', difficulty: 'Hard', check: g => g.goatOwned >= 25 },
     { id: 'gems_1', icon: '\ud83d\udc8e', label: 'Shiny', desc: 'Earn your first Gem.', difficulty: 'Easy', check: g => (g.gems || 0) >= 1 },
     { id: 'gems_50', icon: '\ud83d\udc8e', label: 'Gem Collector', desc: 'Earn 50 Gems.', difficulty: 'Medium', check: g => (g.gems || 0) >= 50 },
     { id: 'gems_250', icon: '\ud83d\udc8e', label: 'Gem Hoarder', desc: 'Earn 250 Gems.', difficulty: 'Hard', check: g => (g.gems || 0) >= 250 },
@@ -8704,7 +9255,7 @@
     { id: 'icon_symbols', icon: '\u2728', label: 'Symbolic', desc: 'Set your icon to the Symbols category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:symbols' },
     { id: 'icon_items', icon: '\ud83c\udf92', label: 'Loadout', desc: 'Set your icon to the Items category.', difficulty: 'Easy', check: g => g.selectedIcon === 'category:items' },
     { id: 'all_customization', icon: '\u2728', label: 'Fully Customized', desc: 'Own the Music Player, Custom Cursors, Background Switcher, and Icon Modifier.', difficulty: 'Medium', check: g => g.musicPlayerOwned && g.cursorsOwned && g.bgOwned && g.iconModifierOwned },
-    { id: 'god', icon: '\uD83C\uDFC6', label: 'Platinum', desc: 'Have EVERY achivement.', difficulty: 'Special', check: a => a.ACHIEVEMENTS >= 56 },
+    { id: 'god', icon: '\uD83C\uDFC6', label: 'Platinum', desc: 'Have EVERY achivement.', difficulty: 'Special', check: g => ACHIEVEMENTS.every(x => x.id === 'god' || x.secret || (g.unlockedAchievements || []).includes(x.id)) },
     // Not part of the normal auto-scan below (check always returns false) -
     // this one is only ever granted manually, by checkSymbolsHeadsUpOnLoad(),
     // and `secret: true` keeps it out of the Get a Hint pool entirely so it
@@ -8735,14 +9286,25 @@
 
   function checkAchievements(){
     if (!game.unlockedAchievements) game.unlockedAchievements = [];
+    // Drop ids of achievements that no longer exist (e.g. the removed goat ones)
+    // so counts and Platinum stay correct.
+    const validIds = ACHIEVEMENTS.map(a => a.id);
+    game.unlockedAchievements = game.unlockedAchievements.filter(id => validIds.includes(id));
     const newlyUnlocked = [];
 
-    ACHIEVEMENTS.forEach(a => {
-      if (!game.unlockedAchievements.includes(a.id) && a.check(game)) {
-        game.unlockedAchievements.push(a.id);
-        newlyUnlocked.push(a);
-      }
-    });
+    // Loop until nothing new unlocks, so Platinum is granted in the same pass
+    // as the last achievement it depends on.
+    let foundNew = true;
+    while (foundNew) {
+      foundNew = false;
+      ACHIEVEMENTS.forEach(a => {
+        if (!game.unlockedAchievements.includes(a.id) && a.check(game)) {
+          game.unlockedAchievements.push(a.id);
+          newlyUnlocked.push(a);
+          foundNew = true;
+        }
+      });
+    }
 
     if (newlyUnlocked.length > 0) {
       saveGame();
@@ -8870,7 +9432,7 @@
   function renderAchievements(){
     const remaining = hintsRemaining();
     const unlockedList = game.unlockedAchievements || [];
-    const unlockedCount = unlockedList.length;
+    const unlockedCount = ACHIEVEMENTS.filter(a => unlockedList.includes(a.id)).length;
     const totalCount = ACHIEVEMENTS.length;
     const pct = totalCount > 0 ? Math.round((unlockedCount / totalCount) * 100) : 0;
 
@@ -9260,7 +9822,7 @@
   }
 
   function doResetData(){
-    document.querySelectorAll('.dvd-logo, .crewmate, .noob, .screaming-goat').forEach(el => el.remove());
+    document.querySelectorAll('.dvd-logo, .crewmate, .noob').forEach(el => el.remove());
     const keepAchievements = game.unlockedAchievements || [];
     const keepFeatured = game.featuredAchievement || '';
     game = defaultGame();
@@ -9290,7 +9852,7 @@
 
   function doPrestige(){
     if (game.clicks < PRESTIGE_COST) { closeConfirm(); return; }
-    document.querySelectorAll('.dvd-logo, .crewmate, .noob, .screaming-goat').forEach(el => el.remove());
+    document.querySelectorAll('.dvd-logo, .crewmate, .noob').forEach(el => el.remove());
     const prestigeGain = 1 + (game.prestigeMultOwned || 0);
     const keepPrestige = (game.prestige || 0) + prestigeGain;
     const keepBoosts = game.boosts || 0;
@@ -9805,6 +10367,7 @@
     editTiktokInput.value = currentTiktok || '';
     editTwitchInput.value = currentTwitch || '';
     editDiscordInput.value = currentDiscord || '';
+    editRobloxInput.value = currentRoblox || '';
     editAdvancedPanel.classList.remove('open');
     editAdvancedToggleBtn.textContent = 'Advanced Settings';
     editProfileError.style.display = 'none';
@@ -9879,7 +10442,8 @@
         youtube: editYoutubeInput.value.trim(),
         tiktok: editTiktokInput.value.trim(),
         twitch: editTwitchInput.value.trim(),
-        discord: editDiscordInput.value.trim()
+        discord: editDiscordInput.value.trim(),
+        roblox: editRobloxInput.value.trim()
       };
 
       const result = await sheetRequest(payload);
@@ -9904,6 +10468,10 @@
       currentTiktok = result.account.tiktok || '';
       currentTwitch = result.account.twitch || '';
       currentDiscord = result.account.discord || '';
+      currentRoblox = result.account.roblox || '';
+      currentHideInstalledMods = !!result.account.hideInstalledMods;
+      currentAnonymousMods = !!result.account.anonymousMods;
+      currentCommissionsOpen = !!result.account.commissionsOpen;
       // Use the server's value once the backend returns it, otherwise the choice just made.
       game.featuredAchievement = result.account.featuredAchievement !== undefined
         ? String(result.account.featuredAchievement || '')
@@ -10229,6 +10797,10 @@
       currentTiktok = result.account.tiktok || '';
       currentTwitch = result.account.twitch || '';
       currentDiscord = result.account.discord || '';
+      currentRoblox = result.account.roblox || '';
+      currentHideInstalledMods = !!result.account.hideInstalledMods;
+      currentAnonymousMods = !!result.account.anonymousMods;
+      currentCommissionsOpen = !!result.account.commissionsOpen;
       SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
       setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
 
@@ -10284,6 +10856,7 @@
     });
 
     setInterval(syncToSheet, 1000);
+    startInboxPolling();
   }
 
   /* ---------- HOVER SOUND ---------- */
@@ -10348,6 +10921,10 @@
           currentTiktok = result.account.tiktok || '';
           currentTwitch = result.account.twitch || '';
           currentDiscord = result.account.discord || '';
+          currentRoblox = result.account.roblox || '';
+          currentHideInstalledMods = !!result.account.hideInstalledMods;
+          currentAnonymousMods = !!result.account.anonymousMods;
+          currentCommissionsOpen = !!result.account.commissionsOpen;
           SAVE_KEY = 'fallgamedev-clicker-save-' + currentUsername;
           setSession(currentUsername, result.account.favColor, result.account.profileIcon, currentAuth, currentFont);
           applyServerGameData(result.account);
