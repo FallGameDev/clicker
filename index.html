@@ -2724,7 +2724,7 @@
     margin:0 auto 16px;
     padding-right:26px;
     width:100%;
-    max-width:520px;
+    max-width:1100px;
   }
   .workshop-header .auth-heading{
     margin:0;
@@ -2756,7 +2756,7 @@
     justify-content:space-between;
     gap:10px;
     width:100%;
-    max-width:520px;
+    max-width:1100px;
     margin:0 auto 12px;
     padding:10px 14px;
     background:linear-gradient(135deg, #ffcb3d, #ff9f43);
@@ -2870,8 +2870,51 @@
     flex-direction:column;
     gap:10px;
     width:100%;
-    max-width:520px;
+    max-width:1100px;
     margin:0 auto;
+  }
+  /* mod.io-style search + category bar sitting above the mod grid */
+  .workshop-toolbar{
+    width:100%;
+    margin-bottom:2px;
+  }
+  .workshop-search-input{
+    width:100%;
+    margin:0;
+  }
+  .workshop-category-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:6px;
+  }
+  .workshop-chip{
+    font-family:'Fredoka One', cursive;
+    font-size:11px;
+    color:var(--rind);
+    background:var(--night);
+    border:2px solid var(--ink);
+    border-radius:999px;
+    padding:6px 14px;
+    cursor:pointer;
+    box-shadow:var(--pop-sm);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .workshop-chip:hover{
+    transform:translate(-1px,-1px);
+    box-shadow:4px 4px 0 var(--ink);
+  }
+  .workshop-chip.active{
+    background:var(--brand-gradient);
+    color:var(--night);
+  }
+  /* Grid of mod tiles, mod.io-portal style: a wide responsive grid of
+     chunky pop cards instead of one long stacked list. */
+  .workshop-grid{
+    width:100%;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+    gap:16px;
   }
 
   /* ---------- CHATS ---------- */
@@ -3081,14 +3124,22 @@
   }
 
   .workshop-item-card{
+    position:relative;
     width:100%;
     display:flex;
     flex-direction:column;
     gap:4px;
-    background:var(--night);
-    border:2px solid var(--line);
-    border-radius:12px;
-    padding:12px 14px;
+    background:var(--card);
+    border:3px solid var(--ink);
+    border-radius:16px;
+    padding:14px 16px;
+    box-shadow:var(--pop);
+    cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .workshop-item-card:not(.nsfw-card):hover{
+    transform:translate(-2px,-2px);
+    box-shadow:6px 6px 0 var(--ink);
   }
   .workshop-item-card h3{
     font-family:'Fredoka One', cursive;
@@ -3102,12 +3153,76 @@
     gap:8px;
   }
   .workshop-item-icon{
-    width:28px;
-    height:28px;
-    border-radius:7px;
+    width:40px;
+    height:40px;
+    border-radius:10px;
     object-fit:cover;
     flex-shrink:0;
-    border:1px solid var(--line);
+    border:2px solid var(--ink);
+  }
+  /* ---------- NSFW AUTO-BLUR (WORKSHOP) ---------- */
+  /* Any name/description/category/icon that our keyword check flags gets
+     blurred right on the card. Blurred mods are also left out of the
+     default browse grid entirely and only reappear when someone searches
+     for them (see getVisibleWorkshopItems), matching how mature content
+     works on sites like mod.io. */
+  .nsfw-blur{
+    filter:blur(6px);
+    user-select:none;
+  }
+  img.nsfw-blur{
+    filter:blur(9px);
+  }
+  .workshop-item-card.nsfw-card,
+  .workshop-detail.nsfw-card{
+    overflow:hidden;
+  }
+  .nsfw-reveal-btn{
+    position:absolute;
+    inset:0;
+    z-index:5;
+    width:100%;
+    height:100%;
+    background:rgba(16,12,31,0.78);
+    border:none;
+    border-radius:14px;
+    color:var(--rind);
+    font-family:'Fredoka One', cursive;
+    font-size:13px;
+    line-height:1.5;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:2px;
+    text-align:center;
+    padding:12px;
+  }
+  .nsfw-reveal-btn span{
+    font-family:'Poppins', sans-serif;
+    font-size:10.5px;
+    font-weight:500;
+    color:var(--muted);
+  }
+  /* Mod-only panel for manually overriding the automatic NSFW check. */
+  .nsfw-mod-panel{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+    background:rgba(255,93,160,0.08);
+    border:2px dashed var(--pow);
+    border-radius:12px;
+    padding:10px 12px;
+  }
+  .nsfw-mod-panel .workshop-icon-btn.active{
+    background:var(--pow);
+    color:#fff;
+  }
+  .nsfw-mod-panel .workshop-icon-btn:disabled{
+    cursor:default;
+    opacity:0.85;
   }
   .workshop-item-version{
     font-family:'Poppins', sans-serif;
@@ -3170,6 +3285,7 @@
     margin-top:6px;
   }
   .workshop-detail{
+    position:relative;
     display:flex;
     flex-direction:column;
     gap:10px;
@@ -3177,7 +3293,18 @@
     border:2px solid var(--line);
     border-radius:12px;
     padding:16px;
-    margin-bottom:14px;
+    margin:0 auto 14px;
+    width:100%;
+    max-width:640px;
+  }
+  .workshop-tabs,
+  #workshop-comment-input,
+  #workshop-comment-submit,
+  #workshop-comments-list,
+  .workshop-comments-heading{
+    max-width:640px;
+    margin-left:auto;
+    margin-right:auto;
   }
   .workshop-detail-top{
     display:flex;
@@ -7283,6 +7410,103 @@
   let workshopView = 'browse';
   let workshopDetailModId = null;
   let workshopCommentsCache = [];
+  let workshopSearchQuery = '';
+  let workshopCategoryFilter = 'All';
+  // Mod ids the current viewer has chosen to reveal after clicking through
+  // an NSFW warning. Saved to localStorage so a reveal sticks around across
+  // page reloads instead of resetting every time the Workshop is reopened.
+  const NSFW_REVEALED_STORAGE_KEY = 'fallgamedev-clicker-nsfw-revealed';
+  function loadNsfwRevealedIds(){
+    try {
+      const raw = localStorage.getItem(NSFW_REVEALED_STORAGE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return new Set(Array.isArray(arr) ? arr : []);
+    } catch (e) {
+      return new Set();
+    }
+  }
+  function saveNsfwRevealedIds(){
+    try {
+      localStorage.setItem(NSFW_REVEALED_STORAGE_KEY, JSON.stringify(Array.from(nsfwRevealedIds)));
+    } catch (e) {}
+  }
+  const nsfwRevealedIds = loadNsfwRevealedIds();
+
+  /* ---------- NSFW AUTO-DETECTION ---------- */
+  // Simple keyword list used to automatically catch obvious NSFW content in
+  // a mod's name, description, or category. This is a basic text filter,
+  // not real moderation - it will not catch everything and can occasionally
+  // flag something harmless. Site moderators can still override a mod's
+  // flag by hand (see modOverrideNsfw below) if the filter gets it wrong.
+  const NSFW_KEYWORDS = [
+    'nsfw', 'porn', 'pornographic', 'hentai', 'xxx', 'fetish',
+    'nude', 'nudity', 'naked', 'sex', 'sexual', 'erotic', 'gore'
+  ];
+
+  function textHasNsfwKeyword(text){
+    const lower = String(text || '').toLowerCase();
+    return NSFW_KEYWORDS.some(word => lower.includes(word));
+  }
+
+  // Checks each field separately so only the flagged part gets blurred,
+  // instead of hiding the whole card when just one field trips the filter.
+  // Note: we can't actually scan pixels of an uploaded image for NSFW
+  // content client-side, so "image" flagging is based on the icon's file
+  // name/URL text only (e.g. an icon file literally named "nsfw-icon.png").
+  function getModNsfwFlags(mod){
+    if (!mod) return { name:false, description:false, category:false, image:false };
+    if (mod.nsfwOverride === false) {
+      return { name:false, description:false, category:false, image:false };
+    }
+    const forced = mod.nsfwOverride === true;
+    return {
+      name: forced || textHasNsfwKeyword(mod.name),
+      description: forced || textHasNsfwKeyword(mod.description),
+      category: forced || textHasNsfwKeyword(mod.category),
+      image: forced || textHasNsfwKeyword(mod.iconUrl)
+    };
+  }
+
+  function modIsNsfw(mod){
+    const flags = getModNsfwFlags(mod);
+    return flags.name || flags.description || flags.category || flags.image;
+  }
+
+  // Default browse grid leaves flagged mods out entirely. They only show
+  // up once someone actually searches for them by name/description/category.
+  function getVisibleWorkshopItems(query){
+    const q = String(query || '').trim().toLowerCase();
+    return workshopItemsCache.filter(item => {
+      if (!q) return !modIsNsfw(item);
+      const haystack = `${item.name || ''} ${item.description || ''} ${item.category || ''}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }
+
+  // Small panel shown only to site mods/admins on a mod's page, letting them
+  // override the automatic NSFW keyword check by hand if it got something
+  // wrong (or missed something it should have caught).
+  function renderNsfwModPanel(item){
+    const state = item.nsfwOverride === true ? 'flag' : (item.nsfwOverride === false ? 'clear' : 'auto');
+    return `
+      <div class="nsfw-mod-panel">
+        <p class="workshop-settings-status" style="width:100%;margin:0 0 6px;">Mod tools: sensitive content flag (currently ${state === 'flag' ? 'forced ON' : state === 'clear' ? 'forced OFF' : 'automatic'})</p>
+        <button class="workshop-icon-btn${state === 'flag' ? ' active' : ''}" id="nsfw-force-flag-btn" ${state === 'flag' ? 'disabled' : ''}>Force Flag</button>
+        <button class="workshop-icon-btn${state === 'clear' ? ' active' : ''}" id="nsfw-force-clear-btn" ${state === 'clear' ? 'disabled' : ''}>Force Clear</button>
+        <button class="workshop-icon-btn${state === 'auto' ? ' active' : ''}" id="nsfw-force-auto-btn" ${state === 'auto' ? 'disabled' : ''}>Use Automatic</button>
+      </div>
+    `;
+  }
+
+  async function setWorkshopNsfwOverride(item, override){
+    try {
+      const result = await sheetRequest({ action: 'setWorkshopNsfwOverride', username: currentUsername, modId: item.id, override: override });
+      if (result.success) {
+        item.nsfwOverride = result.nsfwOverride === true ? true : (result.nsfwOverride === false ? false : undefined);
+        renderWorkshopDetail();
+      }
+    } catch (e) {}
+  }
 
   workshopClose.addEventListener('click', () => workshopOverlay.classList.remove('visible'));
   document.getElementById('workshop-refresh-btn').addEventListener('click', () => location.reload());
@@ -7329,21 +7553,24 @@
     return match ? `${match[1]}/${match[2]}` : (repoUrl || '');
   }
 
-  function renderWorkshopBrowse(){
-    if (!workshopItemsCache.length) {
-      workshopBody.innerHTML = '<div class="empty-state">No mods uploaded yet.</div>';
-      return;
-    }
-    workshopBody.innerHTML = workshopItemsCache.map(item => {
-      const installed = !!findInstalledMod(item.id);
-      return `
-      <div class="workshop-item-card" data-mod-id="${item.id}">
+  // Builds one mod.io-style tile. If the mod trips the NSFW keyword check
+  // and hasn't been revealed yet, the flagged fields are blurred and a
+  // "click to reveal" button covers the card instead of the normal click
+  // through to the mod's page.
+  function renderWorkshopCard(item){
+    const installed = !!findInstalledMod(item.id);
+    const flags = getModNsfwFlags(item);
+    const revealed = nsfwRevealedIds.has(item.id);
+    const showBlur = (flags.name || flags.description || flags.category || flags.image) && !revealed;
+    return `
+      <div class="workshop-item-card${showBlur ? ' nsfw-card' : ''}" data-mod-id="${item.id}">
+        ${showBlur ? `<button class="nsfw-reveal-btn" data-mod-id="${item.id}">\ud83d\udd1e Sensitive Content<br><span>Click to reveal</span></button>` : ''}
         <div class="workshop-item-top">
-          ${item.iconUrl ? `<img class="workshop-item-icon" src="${item.iconUrl}" alt="">` : ''}
-          <h3>${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h3>
+          ${item.iconUrl ? `<img class="workshop-item-icon${flags.image && showBlur ? ' nsfw-blur' : ''}" src="${item.iconUrl}" alt="">` : ''}
+          <h3 class="${flags.name && showBlur ? 'nsfw-blur' : ''}">${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h3>
         </div>
-        <p>${item.description || 'No description.'}</p>
-        <span class="workshop-item-meta">${item.category || 'Other'} &middot; ${shortRepo(item.repoUrl)} &middot; by ${workshopAuthorLabel(item)}</span>
+        <p class="${flags.description && showBlur ? 'nsfw-blur' : ''}">${item.description || 'No description.'}</p>
+        <span class="workshop-item-meta${flags.category && showBlur ? ' nsfw-blur' : ''}">${item.category || 'Other'} &middot; ${shortRepo(item.repoUrl)} &middot; by ${workshopAuthorLabel(item)}</span>
         <div class="workshop-item-stats">
           <span>\u2b06 ${item.upvotes || 0}</span>
           <span>\u2b07 ${item.downvotes || 0}</span>
@@ -7353,10 +7580,74 @@
         <button class="buy-btn workshop-download-btn${installed ? ' workshop-update-btn' : ''}" data-mod-id="${item.id}">${installed ? 'Update' : 'Download'}</button>
       </div>
     `;
-    }).join('');
+  }
 
-    workshopBody.querySelectorAll('.workshop-item-card').forEach(card => {
+  function renderWorkshopBrowse(){
+    const query = workshopSearchQuery || '';
+    let visible = getVisibleWorkshopItems(query);
+    if (workshopCategoryFilter !== 'All') {
+      visible = visible.filter(item => (item.category || 'Other') === workshopCategoryFilter);
+    }
+
+    // Category chips are built from every mod that could ever show up
+    // (not just the currently visible ones) so the filter bar stays stable.
+    const categories = ['All'];
+    workshopItemsCache.forEach(item => {
+      const cat = item.category || 'Other';
+      if (categories.indexOf(cat) === -1) categories.push(cat);
+    });
+
+    const toolbarHtml = `
+      <div class="workshop-toolbar">
+        <input type="text" id="workshop-search-input" class="auth-input workshop-search-input" placeholder="Search all mods (including sensitive results)..." value="${String(query).replace(/"/g, '&quot;')}">
+      </div>
+      <div class="workshop-category-bar">
+        ${categories.map(c => `<button class="workshop-chip${c === workshopCategoryFilter ? ' active' : ''}" data-category="${c}">${c}</button>`).join('')}
+      </div>
+    `;
+
+    if (!workshopItemsCache.length) {
+      workshopBody.innerHTML = '<div class="empty-state">No mods uploaded yet.</div>';
+    } else if (!visible.length) {
+      workshopBody.innerHTML = toolbarHtml + `<div class="empty-state">${query ? 'No mods match your search.' : 'No mods in this category yet.'}</div>`;
+    } else {
+      workshopBody.innerHTML = toolbarHtml + `<div class="workshop-grid">${visible.map(renderWorkshopCard).join('')}</div>`;
+    }
+
+    const searchInput = document.getElementById('workshop-search-input');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        workshopSearchQuery = e.target.value;
+        const caret = e.target.selectionStart;
+        renderWorkshopBrowse();
+        // Re-render steals focus, so put it right back where the user was typing.
+        const freshInput = document.getElementById('workshop-search-input');
+        if (freshInput) {
+          freshInput.focus();
+          freshInput.setSelectionRange(caret, caret);
+        }
+      });
+    }
+
+    workshopBody.querySelectorAll('.workshop-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        workshopCategoryFilter = btn.dataset.category;
+        renderWorkshopBrowse();
+      });
+    });
+
+    // Cards still hidden behind an NSFW warning only get the reveal button
+    // wired up - clicking through to the mod page happens after reveal.
+    workshopBody.querySelectorAll('.workshop-item-card:not(.nsfw-card)').forEach(card => {
       card.addEventListener('click', () => openWorkshopModPage(card.dataset.modId));
+    });
+    workshopBody.querySelectorAll('.nsfw-reveal-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        nsfwRevealedIds.add(btn.dataset.modId);
+        saveNsfwRevealedIds();
+        renderWorkshopBrowse();
+      });
     });
     workshopBody.querySelectorAll('.workshop-download-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -7390,20 +7681,25 @@
     const isModAuthor = isMyWorkshopItem(item);
     const canModerateComments = isSiteMod || isModAuthor;
     const installed = !!findInstalledMod(item.id);
+    const nsfwFlags = getModNsfwFlags(item);
+    const nsfwRevealed = nsfwRevealedIds.has(item.id);
+    const nsfwShowBlur = (nsfwFlags.name || nsfwFlags.description || nsfwFlags.category || nsfwFlags.image) && !nsfwRevealed;
 
     workshopBody.innerHTML = `
       <div class="workshop-tabs">
         <button id="workshop-tab-back">&larr; Back to Browse</button>
       </div>
-      <div class="workshop-detail">
+      <div class="workshop-detail${nsfwShowBlur ? ' nsfw-card' : ''}">
+        ${nsfwShowBlur ? `<button class="nsfw-reveal-btn" id="workshop-detail-reveal-btn">\ud83d\udd1e Sensitive Content<br><span>Click to reveal</span></button>` : ''}
         <div class="workshop-detail-top">
-          ${item.iconUrl ? `<img class="workshop-detail-icon" src="${item.iconUrl}" alt="">` : ''}
+          ${item.iconUrl ? `<img class="workshop-detail-icon${nsfwFlags.image && nsfwShowBlur ? ' nsfw-blur' : ''}" src="${item.iconUrl}" alt="">` : ''}
           <div>
-            <h2>${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h2>
-            <span class="workshop-item-meta">${shortRepo(item.repoUrl)} &middot; by ${workshopAuthorLabel(item)}</span>
+            <h2 class="${nsfwFlags.name && nsfwShowBlur ? 'nsfw-blur' : ''}">${item.name}${item.version ? ` <span class="workshop-item-version">v${item.version}</span>` : ''}</h2>
+            <span class="workshop-item-meta${nsfwFlags.category && nsfwShowBlur ? ' nsfw-blur' : ''}">${shortRepo(item.repoUrl)} &middot; by ${workshopAuthorLabel(item)}</span>
           </div>
         </div>
-        <p class="workshop-detail-desc">${item.description || 'No description.'}</p>
+        <p class="workshop-detail-desc${nsfwFlags.description && nsfwShowBlur ? ' nsfw-blur' : ''}">${item.description || 'No description.'}</p>
+        ${isSiteMod ? renderNsfwModPanel(item) : ''}
         <div class="workshop-detail-actions">
           <button class="vote-btn${item.myVote === 'up' ? ' active' : ''}" id="workshop-upvote-btn">&#11014; <span id="workshop-upvote-count">${item.upvotes || 0}</span></button>
           <button class="vote-btn${item.myVote === 'down' ? ' active' : ''}" id="workshop-downvote-btn">&#11015; <span id="workshop-downvote-count">${item.downvotes || 0}</span></button>
@@ -7423,6 +7719,20 @@
       workshopView = 'browse';
       renderWorkshopBody();
     });
+    const detailRevealBtn = document.getElementById('workshop-detail-reveal-btn');
+    if (detailRevealBtn) {
+      detailRevealBtn.addEventListener('click', () => {
+        nsfwRevealedIds.add(item.id);
+        saveNsfwRevealedIds();
+        renderWorkshopDetail();
+      });
+    }
+    const forceFlagBtn = document.getElementById('nsfw-force-flag-btn');
+    if (forceFlagBtn) forceFlagBtn.addEventListener('click', () => setWorkshopNsfwOverride(item, 'flag'));
+    const forceClearBtn = document.getElementById('nsfw-force-clear-btn');
+    if (forceClearBtn) forceClearBtn.addEventListener('click', () => setWorkshopNsfwOverride(item, 'clear'));
+    const forceAutoBtn = document.getElementById('nsfw-force-auto-btn');
+    if (forceAutoBtn) forceAutoBtn.addEventListener('click', () => setWorkshopNsfwOverride(item, 'auto'));
     document.getElementById('workshop-upvote-btn').addEventListener('click', () => voteOnMod(item, 'up'));
     document.getElementById('workshop-downvote-btn').addEventListener('click', () => voteOnMod(item, 'down'));
     document.getElementById('workshop-real-download-btn').addEventListener('click', (e) => {
@@ -7686,7 +7996,7 @@
     } else {
       html += created.map(item => `
         <div class="workshop-item-card">
-          <h3>${item.name}</h3>
+          <h3>${item.name}${modIsNsfw(item) ? ' <span class="workshop-anon-tag">\ud83d\udd1e Flagged sensitive - only shows up in search for others</span>' : ''}</h3>
           <p>${item.description || 'No description.'}</p>
           <span class="workshop-item-meta">${item.category || 'Other'}</span>
         </div>
