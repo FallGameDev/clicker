@@ -314,7 +314,7 @@ How it is built:
 ## Mod fonts, SVG Easy Navigation icons and mod page views (1.55.0)
 
 - **Fonts in mods:** the mod editor has a **Fonts** section. Upload a `.ttf`, `.otf`, `.woff` or `.woff2` file (up to `MOD_FONT_MAX_BYTES`, 300KB) or add an https link to one. They are saved in `customFiles.fonts`, the same shape as icons and music (`{ name, file, url }`). Fonts from installed mods show up in the Font Manager picker (`refreshModFonts()` in the `MOD FONTS` section). `.cga` archives carry them in a `fonts/` folder.
-  - **API:** the `api` function has to keep the `fonts` list inside `customFiles` when a mod is uploaded and when installed mods are packed and unpacked, the same way it keeps `music` or `icons`.
+  - **API:** no change was needed. The `api` function already keeps every list inside `customFiles` (upload, `compactInstalledMods` and `rehydrateInstalledMods` loop over whatever keys are there), so `fonts` is saved and loaded like `music` or `icons`. A mod can be up to `MAX_JSON_CHARS` (2,000,000 characters).
 - **Easy Navigation icons are SVG now:** no emojis. Every icon is drawn in `EZ_ICONS` (a fill color plus shapes in a 24 by 24 box, all with the same dark outline). `EZ_WORDS` maps words to icon names. The icons sit in a `<span class="ez-ico">` that `ezApplyTo()` adds to the start of a label. Numbers are drawn with CSS (`data-n`), so `textContent` of a button is the same as before.
 - **Mod page views:** the banner on a mod's page has buttons for Banner, Icons, Cursors, Backgrounds, Music, Fonts, Themes and Code (`MOD PAGE VIEWS` section, `modViewHTML()`). Only the parts a mod has get a button. On a paid mod you have not downloaded, Music and Code are locked.
 
