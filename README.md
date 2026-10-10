@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.53.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.53.0">
+<!-- Game version: 1.54.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.54.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,14 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## No right click menu and YouTube as audio (1.54.0)
+
+- **No right click menu:** the browser's menu never opens anywhere in the game. A right click with a mouse counts as a normal click on whatever is under it. A long press on a phone only gets the menu blocked. It is in the `NO RIGHT CLICK MENU` section of `index.html`.
+- **YouTube as audio:** in the mod editor, a YouTube link can be used where a sound goes: under **Music** (a song for the Music Player) and as a **Payload** link (a sound for CGC code, named `song.mp3`). The video loads in a hidden YouTube player off screen, so only the sound plays.
+  - Code: the `YOUTUBE AS AUDIO` section. `youtubeIdFromUrl()` spots the link and `YtAudio` works like a small `<audio>` (`play()`, `pause()`, `stop()`, `.volume`, `.loop`, `.playbackRate`).
+  - The Music Player uses `songYt` with `songPlay()`, `songPause()` and `songIsPlaying()`, so the play button, loop button and Now Playing banner work the same for both kinds of song.
+  - Limits that come from YouTube: it only plays after the player has clicked something, speed stays between 0.25 and 2, it can't play backwards, and a video whose owner turned off embedding will not play. YouTube's rules also say its player should be visible, so a hidden one is at your own risk.
 
 ## Easy Navigation: everything is icons (1.53.0)
 

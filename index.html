@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.53.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.53.0">
+<!-- Game version: 1.54.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.54.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -9450,6 +9450,18 @@
   body.easy-nav #link-list .limited-section-sub[data-ez]{ --ez-fs:13px; }
   body.easy-nav #page-sidebar .preferences-toggle [data-ez]{ --ez-fs:20px; }
 
+  /* YOUTUBE AS AUDIO (1.54.0): the YouTube player sits far off screen, so you only hear it. */
+  .yt-audio-box{
+    position:fixed;
+    left:-9999px;
+    top:0;
+    width:200px;
+    height:200px;
+    opacity:0;
+    pointer-events:none;
+  }
+  .yt-preview-btn{ align-self:flex-start; margin-top:4px; }
+
   /* Z KEY (1.52.0): pressing Z clicks the clicker, so it gets the same press look as a mouse click. */
   .avatar.key-press{ transform:scale(0.92); }
 </style>
@@ -12260,6 +12272,195 @@
     { label: "your verity", file: "extras/verity.mp3", artist: "CG5 x Horror Skunx", thumb: "images/songs/verity.jpg" }
   ];
 
+  /* ======================================================
+     NO RIGHT CLICK MENU (1.54.0)
+     The browser's right click menu never opens, and a right click with a mouse
+     counts as a normal click on whatever is under it.
+     A long press on a phone also asks for the menu. That one is only blocked,
+     it is not turned into a click (the finger already clicks on its own).
+     ====================================================== */
+  let lastPointerWasMouse = true; // true until a finger or pen is used
+  document.addEventListener('pointerdown', (e) => { lastPointerWasMouse = e.pointerType === 'mouse'; }, true);
+  document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const isMouse = e.pointerType ? e.pointerType === 'mouse' : lastPointerWasMouse;
+    if (e.button !== 2 || !isMouse || !e.target) return; // menu key or long press: block only
+    if (typeof e.target.focus === 'function') { try { e.target.focus({ preventScroll: true }); } catch (err) {} }
+    e.target.dispatchEvent(new MouseEvent('click', {
+      bubbles: true, cancelable: true, view: window, button: 0,
+      clientX: e.clientX, clientY: e.clientY, screenX: e.screenX, screenY: e.screenY
+    }));
+  }, true);
+
+  /* ======================================================
+     YOUTUBE AS AUDIO (1.54.0)
+     A mod can use a YouTube link where a sound goes (Music in the mod editor, or a
+     Payload link used by CGC code). The video is loaded in a hidden YouTube player
+     that sits off screen, so the player only hears it.
+       youtubeIdFromUrl(url)  the video id, or '' if the link is not YouTube
+       new YtAudio(url)       works like a small <audio>: play(), pause(), stop(),
+                              .volume (0 to 1), .loop, .playbackRate, .paused
+     YouTube limits: it only plays after the player has clicked something on the page,
+     speed is kept between 0.25 and 2, it can't play backwards, and a video whose
+     owner turned off embedding will not play (onError runs).
+     ====================================================== */
+  function youtubeIdFromUrl(url){
+    let u;
+    try { u = new URL(String(url || '').trim()); } catch (e) { return ''; }
+    const host = u.hostname.replace(/^(www\.|m\.|music\.)/, '').toLowerCase();
+    let id = '';
+    if (host === 'youtu.be') id = u.pathname.slice(1).split('/')[0];
+    else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+      if (u.pathname === '/watch') id = u.searchParams.get('v') || '';
+      else { const m = u.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?#]+)/); if (m) id = m[1]; }
+    }
+    return /^[A-Za-z0-9_-]{6,20}$/.test(id) ? id : '';
+  }
+  // The "t=90", "t=1m30s" or "start=90" part of a YouTube link, in seconds.
+  function youtubeStartFromUrl(url){
+    try {
+      const u = new URL(String(url || '').trim());
+      const t = u.searchParams.get('t') || u.searchParams.get('start') || '';
+      if (/^\d+s?$/.test(t)) return parseInt(t, 10);
+      const m = t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+      return m ? (Number(m[1] || 0) * 3600 + Number(m[2] || 0) * 60 + Number(m[3] || 0)) : 0;
+    } catch (e) { return 0; }
+  }
+
+  // Loads YouTube's player script once. Every YtAudio waits on the same promise.
+  let youtubeApiPromise = null;
+  function loadYoutubeApi(){
+    if (youtubeApiPromise) return youtubeApiPromise;
+    youtubeApiPromise = new Promise((resolve, reject) => {
+      if (window.YT && window.YT.Player) { resolve(window.YT); return; }
+      const before = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (typeof before === 'function') { try { before(); } catch (e) {} }
+        resolve(window.YT);
+      };
+      const script = document.createElement('script');
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.onerror = () => { youtubeApiPromise = null; reject(new Error('YouTube did not load')); };
+      document.head.appendChild(script);
+    });
+    return youtubeApiPromise;
+  }
+
+  class YtAudio {
+    constructor(url, handlers){
+      this.url = url;
+      this.id = youtubeIdFromUrl(url);
+      this.startAt = youtubeStartFromUrl(url);
+      this.handlers = handlers || {}; // onPlay, onPause, onError
+      this.volume = 1;
+      this.loop = false;
+      this.playbackRate = 1;
+      this.playing = false;   // true while sound is really coming out
+      this.wantPlay = false;  // the last thing asked for: play or pause
+      this.dead = false;      // stop() was called, this object is finished
+      this.ready = false;
+      this.player = null;
+      this.box = null;
+    }
+    get paused(){ return !this.playing; }
+    // Pushes volume and speed to the YouTube player.
+    apply(){
+      if (!this.ready) return;
+      try {
+        this.player.setVolume(Math.round(Math.max(0, Math.min(1, Number(this.volume) || 0)) * 100));
+        this.player.setPlaybackRate(Math.max(0.25, Math.min(2, Number(this.playbackRate) || 1)));
+      } catch (e) {}
+    }
+    play(){
+      if (this.dead || !this.id) return Promise.resolve();
+      this.wantPlay = true;
+      if (this.ready) { this.apply(); try { this.player.playVideo(); } catch (e) {} }
+      else if (!this.box) this.build();
+      return Promise.resolve();
+    }
+    pause(){
+      this.wantPlay = false;
+      if (this.ready) { try { this.player.pauseVideo(); } catch (e) {} }
+    }
+    // Ends it for good and removes the hidden player.
+    stop(){
+      this.dead = true;
+      this.wantPlay = false;
+      if (this.player) { try { this.player.destroy(); } catch (e) {} this.player = null; }
+      if (this.box) { this.box.remove(); this.box = null; }
+      this.ready = false;
+      this.setPlaying(false);
+    }
+    setPlaying(on){
+      if (this.playing === on) return;
+      this.playing = on;
+      const fn = on ? this.handlers.onPlay : this.handlers.onPause;
+      if (typeof fn === 'function') { try { fn(); } catch (e) {} }
+    }
+    fail(){
+      const fn = this.handlers.onError;
+      this.stop();
+      if (typeof fn === 'function') { try { fn(); } catch (e) {} }
+    }
+    build(){
+      this.box = document.createElement('div');
+      this.box.className = 'yt-audio-box';
+      this.box.setAttribute('aria-hidden', 'true');
+      const slot = document.createElement('div');
+      this.box.appendChild(slot);
+      document.body.appendChild(this.box);
+      loadYoutubeApi().then(YT => {
+        if (this.dead) return;
+        this.player = new YT.Player(slot, {
+          width: 200, height: 200, videoId: this.id,
+          playerVars: { autoplay: 1, controls: 0, disablekb: 1, fs: 0, playsinline: 1, rel: 0, start: this.startAt || undefined },
+          events: {
+            onReady: () => {
+              if (this.dead) return;
+              this.ready = true;
+              this.apply();
+              try { if (this.wantPlay) this.player.playVideo(); else this.player.pauseVideo(); } catch (e) {}
+            },
+            onStateChange: (ev) => {
+              if (this.dead) return;
+              if (ev.data === 1) { this.apply(); this.setPlaying(true); }       // 1 = playing
+              else if (ev.data === 0) {                                        // 0 = ended
+                if (this.loop && this.wantPlay) { try { this.player.seekTo(this.startAt || 0, true); this.player.playVideo(); } catch (e) {} }
+                else { this.wantPlay = false; this.setPlaying(false); }
+              }
+              else if (ev.data === 2) this.setPlaying(false);                  // 2 = paused
+            },
+            onError: () => this.fail()
+          }
+        });
+      }).catch(() => this.fail());
+    }
+  }
+
+  // The Play / Stop button on a YouTube row in the mod editor. One preview at a time.
+  let ytPreview = null;
+  function ytPreviewStop(){
+    if (ytPreview) { ytPreview.stop(); ytPreview = null; }
+    document.querySelectorAll('.yt-preview-btn.playing').forEach(b => { b.classList.remove('playing'); b.textContent = 'Play sound'; });
+  }
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest ? e.target.closest('.yt-preview-btn') : null;
+    if (!btn) return;
+    const wasPlaying = btn.classList.contains('playing');
+    ytPreviewStop();
+    if (wasPlaying) return;
+    btn.classList.add('playing');
+    btn.textContent = 'Stop';
+    ytPreview = new YtAudio(btn.dataset.url, {
+      onError: () => { ytPreviewStop(); modEditorStatus("That YouTube video can't be played here. Its owner may have turned off playing on other sites.", true); }
+    });
+    ytPreview.play();
+  });
+  // The HTML of that button, used by the Music and Payload rows.
+  function ytPreviewButtonHTML(url){
+    return `<button type="button" class="workshop-icon-btn yt-preview-btn" data-url="${escapeChatHtml(url)}">Play sound</button>`;
+  }
+
   const musicPlayerEl = document.getElementById('music-player');
   const songSelect = document.getElementById('song-select');
   const songAudio = document.getElementById('song-audio');
@@ -12404,7 +12605,7 @@
 
   // The song you can hear right now: the Music Player's if it is playing, else the background song.
   function announceCurrentSong(){
-    if (songAudio && !songAudio.paused) { announceSong(songAudio.getAttribute('src')); return; }
+    if (songIsPlaying()) { announceSong(songYt ? songYt.url : songAudio.getAttribute('src')); return; }
     if (defaultBgAudio && !defaultBgAudio.paused && defaultBgAudio.volume > 0) announceSong(defaultBgAudio.getAttribute('src'));
   }
   // "playing" fires when sound really starts (not when a blocked autoplay is only asked for).
@@ -12413,7 +12614,7 @@
 
   function updateDefaultBgVolume(){
     if (!defaultBgAudio) return;
-    const songPlaying = songAudio && !songAudio.paused;
+    const songPlaying = songIsPlaying();
     defaultBgAudio.volume = (game.sfxMuted || songPlaying) ? 0 : 0.3;
   }
 
@@ -12488,9 +12689,37 @@
     renderSongOption(entry, index);
   }
 
+  // YOUTUBE AS AUDIO (1.54.0): when the picked song is a YouTube link, songYt plays it
+  // and the normal <audio> (songAudio) stays empty. These three helpers hide the difference.
+  let songYt = null;
+  function songIsPlaying(){
+    return songYt ? songYt.playing : !!(songAudio && !songAudio.paused);
+  }
+  function songPlay(){
+    if (songYt) return songYt.play();
+    return songAudio.play();
+  }
+  function songPause(){
+    if (songYt) songYt.pause();
+    else songAudio.pause();
+  }
+
   function loadSong(index){
     if (!SONGS[index]) return;
-    songAudio.src = SONGS[index].file;
+    const file = SONGS[index].file;
+    if (songYt) { songYt.stop(); songYt = null; }
+    if (youtubeIdFromUrl(file)) {
+      songAudio.pause();
+      songAudio.removeAttribute('src');
+      songYt = new YtAudio(file, {
+        onPlay: () => { onSongPlay(); announceCurrentSong(); },
+        onPause: onSongPause,
+        onError: () => showBanner("That YouTube song can't be played here.")
+      });
+      songYt.loop = songAudio.loop;
+      return;
+    }
+    songAudio.src = file;
   }
 
   // The picked song is found by file name first, so adding or reordering songs in
@@ -12510,20 +12739,23 @@
     game.songChosen = true;
     loadSong(songSelect.value);
     saveGame();
-    songAudio.play().catch(() => {});
+    songPlay().catch(() => {});
   });
 
   playBtn.addEventListener('click', () => {
-    if (!songAudio.src) loadSong(songSelect.value);
-    if (songAudio.paused) {
-      songAudio.play();
+    if (!songAudio.src && !songYt) loadSong(songSelect.value);
+    if (songYt ? !songYt.wantPlay : songAudio.paused) {
+      songPlay();
     } else {
-      songAudio.pause();
+      songPause();
     }
   });
 
-  songAudio.addEventListener('play', () => { playBtn.innerHTML = '&#10074;&#10074;'; updateDefaultBgVolume(); });
-  songAudio.addEventListener('pause', () => { playBtn.innerHTML = '&#9658;'; updateDefaultBgVolume(); announceCurrentSong(); }); // NOW PLAYING: the background song is back
+  // Shared by the normal <audio> and by a YouTube song.
+  function onSongPlay(){ playBtn.innerHTML = '&#10074;&#10074;'; updateDefaultBgVolume(); }
+  function onSongPause(){ playBtn.innerHTML = '&#9658;'; updateDefaultBgVolume(); announceCurrentSong(); } // NOW PLAYING: the background song is back
+  songAudio.addEventListener('play', onSongPlay);
+  songAudio.addEventListener('pause', onSongPause);
 
   function updateLoopBtn(){
     loopBtn.classList.toggle('active', songAudio.loop);
@@ -12531,6 +12763,7 @@
 
   loopBtn.addEventListener('click', () => {
     songAudio.loop = !songAudio.loop;
+    if (songYt) songYt.loop = songAudio.loop;
     game.musicLoop = songAudio.loop;
     saveGame();
     updateLoopBtn();
@@ -12546,9 +12779,10 @@
       songSelect.value = '';
     }
     songAudio.loop = game.musicLoop;
+    if (songYt) songYt.loop = songAudio.loop;
     updateLoopBtn();
     if (game.songChosen && game.musicLoop) {
-      songAudio.play().catch(() => {});
+      songPlay().catch(() => {});
     }
   }
 
@@ -16437,6 +16671,7 @@
     cgcStopTest(); // CGC: a running test stops when the workshop closes
     closeCgcGuide();
     workshopOverlay.classList.remove('visible');
+    ytPreviewStop(); // YOUTUBE AS AUDIO (1.54.0): closing the Workshop stops a sound preview
   });
   document.getElementById('workshop-refresh-btn').addEventListener('click', () => location.reload());
   workshopProfileBtn.addEventListener('click', () => {
@@ -19490,9 +19725,14 @@
         const volume = Number(o.attrs.volume);
         this.stopAudio(o);
         if (!speed) return;
+        // YOUTUBE AS AUDIO (1.54.0): a YouTube link in the payload plays through a hidden player.
+        const isYoutube = !!youtubeIdFromUrl(url);
+        if (speed < 0 && isYoutube) { this.warnOnce('ytreverse', "A YouTube sound can't play backwards. Use an uploaded file for that."); return; }
         if (speed < 0) { this.playReversed(o, url, Math.abs(speed), volume); return; }
         try {
-          const audio = new Audio(url);
+          const audio = isYoutube
+            ? new YtAudio(url, { onError: () => this.warnOnce('yt', "That YouTube video can't be played here. Its owner may have turned off playing on other sites.") })
+            : new Audio(url);
           audio.volume = volume;
           audio.loop = !!o.attrs.loop;
           audio.preservesPitch = false;
@@ -19530,7 +19770,7 @@
         }
       }
       stopAudio(o){
-        if (o.audio) { try { o.audio.pause(); } catch (e) {} o.audio = null; }
+        if (o.audio) { try { if (o.audio.stop) o.audio.stop(); else o.audio.pause(); } catch (e) {} o.audio = null; }
         if (o.audioNode) { try { o.audioNode.stop(); } catch (e) {} o.audioNode = null; }
       }
     }
@@ -19913,7 +20153,8 @@
   function cgcEditorSectionsHtml(d){
     const esc = escapeChatHtml;
     const payloadRows = (d.payload || []).map((f, i) => {
-      const isAudio = /\.(mp3|wav|ogg|m4a|aac|opus|webm)$/i.test(f.name) || String(f.url).indexOf('data:audio') === 0;
+      const isYoutube = !!youtubeIdFromUrl(f.url); // YOUTUBE AS AUDIO (1.54.0)
+      const isAudio = isYoutube || /\.(mp3|wav|ogg|m4a|aac|opus|webm)$/i.test(f.name) || String(f.url).indexOf('data:audio') === 0;
       return `
         <div class="mod-editor-file">
           <div class="mod-editor-file-preview${isAudio ? ' is-music' : ''}">
@@ -19924,7 +20165,7 @@
           <div class="mod-editor-file-main">
             <input type="text" class="auth-input cgc-payload-name" data-index="${i}" value="${esc(f.name)}" maxlength="60" spellcheck="false" aria-label="File name">
             <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : esc(f.url)}</span>
-            ${isAudio ? `<audio controls preload="none" src="${esc(f.url)}"></audio>` : ''}
+            ${isYoutube ? ytPreviewButtonHTML(f.url) : (isAudio ? `<audio controls preload="none" src="${esc(f.url)}"></audio>` : '')}
           </div>
           <button class="mod-editor-remove cgc-payload-remove" data-index="${i}" title="Remove" aria-label="Remove ${esc(f.name)}">&times;</button>
         </div>`;
@@ -19983,7 +20224,7 @@
             <input type="file" id="cgc-payload-input" accept="image/*,audio/*" multiple>
           </label>
         </div>
-        <p class="mio-side-note">Your mod's folder. Use a file in code by its name, like <code>canvas.cookie.png</code> or <code>att x.file = "pop.mp3"</code>. Images are shrunk to ${CGC_PAYLOAD_IMAGE_MAX}px. Sounds up to ${Math.round(CGC_PAYLOAD_AUDIO_MAX_BYTES / 1000)}KB can be uploaded, bigger ones need a link.</p>
+        <p class="mio-side-note">Your mod's folder. Use a file in code by its name, like <code>canvas.cookie.png</code> or <code>att x.file = "pop.mp3"</code>. Images are shrunk to ${CGC_PAYLOAD_IMAGE_MAX}px. Sounds up to ${Math.round(CGC_PAYLOAD_AUDIO_MAX_BYTES / 1000)}KB can be uploaded, bigger ones need a link. A YouTube link works as a sound too (only the sound plays).</p>
         <div class="mod-editor-files">${payloadRows || '<div class="mod-editor-empty">The payload folder is empty.</div>'}</div>
         <div class="mod-editor-link-row">
           <input type="url" class="auth-input" id="cgc-payload-link" placeholder="https://example.com/sound.mp3">
@@ -20106,6 +20347,7 @@
       if (!/^https?:\/\/\S+$/i.test(url)) { modEditorStatus('Enter a full link starting with https://', true); linkInput.focus(); return; }
       let guess = '';
       try { guess = decodeURIComponent(url.split('?')[0].split('/').pop() || ''); } catch (e) {}
+      if (youtubeIdFromUrl(url)) guess = 'song.mp3'; // YOUTUBE AS AUDIO: a sound name, so canvas.song.mp3 works in code
       d.payload.push({ name: cgcUniqueFileName(guess || 'file', d.payload, -1), url });
       saveModEditorDraft();
       renderModEditor();
@@ -21853,6 +22095,7 @@ ${hasCode
   function cgcHelperTestLink(url, isAudio){
     return new Promise((resolve, reject) => {
       if (!/^https:\/\/\S+$/i.test(url)) return reject(new Error('the link has to start with https://'));
+      if (isAudio && youtubeIdFromUrl(url)) return resolve(url); // YOUTUBE AS AUDIO: can't be tested with <audio>
       const timer = setTimeout(() => reject(new Error('the link did not load')), CGC_HELPER_LINK_WAIT_MS);
       const good = () => { clearTimeout(timer); resolve(url); };
       const bad = () => { clearTimeout(timer); reject(new Error('the link did not load')); };
@@ -22841,7 +23084,7 @@ ${hasCode
     { id: 'icons', label: 'Icons', hint: 'Clicker avatar images. Shrunk to 128px.', accept: 'image/*', max: 128, format: 'png', linkHint: 'https://example.com/icon.png' },
     { id: 'cursors', label: 'Cursors', hint: 'Mouse cursors. Shrunk to 32px, transparent PNG works best.', accept: 'image/*', max: 32, format: 'png', linkHint: 'https://example.com/cursor.png' },
     { id: 'bg', label: 'Backgrounds', hint: 'Full page backgrounds. Uploads are shrunk to 640px, so use a link for sharp ones.', accept: 'image/*', max: 640, format: 'jpeg', linkHint: 'https://example.com/background.jpg' },
-    { id: 'music', label: 'Music', hint: 'Songs are too big to store, so add a direct link to an .mp3 file.', accept: '', linkOnly: true, linkHint: 'https://example.com/song.mp3' }
+    { id: 'music', label: 'Music', hint: 'Songs are too big to store, so add a direct link to an .mp3 file, or a YouTube link (only the sound plays).', accept: '', linkOnly: true, linkHint: 'https://example.com/song.mp3' }
   ];
 
   // MOD THEMES (1.37.0): every theme in a mod counts as this share of the storage budget,
@@ -23164,6 +23407,7 @@ ${hasCode
 
   function renderModEditor(){
     cgcStopTest(); // the test preview lives inside the editor, which is about to be redrawn
+    ytPreviewStop(); // YOUTUBE AS AUDIO: a row that is playing is about to be redrawn too
     if (!modEditorDraft) modEditorDraft = loadModEditorDraft() || newModEditorDraft();
     const d = modEditorDraft;
     const esc = escapeChatHtml;
@@ -23186,7 +23430,7 @@ ${hasCode
           <div class="mod-editor-file-main">
             <input type="text" class="auth-input mod-editor-file-name" data-type="${t.id}" data-index="${i}" value="${esc(f.name)}" placeholder="Name shown in the picker" maxlength="40">
             <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : esc(f.url)}</span>
-            ${t.id === 'music' ? `<audio controls preload="none" src="${esc(f.url)}"></audio>` : ''}
+            ${t.id === 'music' ? (youtubeIdFromUrl(f.url) ? ytPreviewButtonHTML(f.url) : `<audio controls preload="none" src="${esc(f.url)}"></audio>`) : ''}
           </div>
           <button class="mod-editor-remove" data-type="${t.id}" data-index="${i}" title="Remove" aria-label="Remove ${esc(f.name)}">&times;</button>
         </div>
@@ -23466,7 +23710,12 @@ ${hasCode
           input.focus();
           return;
         }
-        const guess = decodeURIComponent(url.split('?')[0].split('/').pop() || '').replace(/\.[^.]+$/, '').slice(0, 40);
+        let guess = decodeURIComponent(url.split('?')[0].split('/').pop() || '').replace(/\.[^.]+$/, '').slice(0, 40);
+        // YOUTUBE AS AUDIO (1.54.0): only sounds can be YouTube links, and "watch" is not a good name.
+        if (youtubeIdFromUrl(url)) {
+          if (type !== 'music') { modEditorStatus('A YouTube link only works as a sound. Add it under Music.', true); input.focus(); return; }
+          guess = `YouTube song ${d.files[type].length + 1}`;
+        }
         d.files[type].push({ name: guess || `${type} ${d.files[type].length + 1}`, url });
         saveModEditorDraft();
         renderModEditor();
@@ -29379,7 +29628,7 @@ ${hasCode
   function roomRefreshPickers(){
     updatePickerVisibility();
     if (game.musicPlayerOwned) showMusicPlayer();
-    else { try { songAudio.pause(); } catch (e) {} }
+    else { try { songPause(); } catch (e) {} }
     if (game.cursorsOwned) showCursorPicker(); else applyCursor('default');
     if (game.bgOwned) showBgPicker(); else applyBackground('default');
     if (game.iconModifierOwned) showIconPicker(); else updateAvatarIconDisplay();
