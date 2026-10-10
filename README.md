@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.55.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.55.0">
+<!-- Game version: 1.56.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.56.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -311,12 +311,22 @@ How it is built:
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
 
+## Paid song preview (1.56.0)
+
+On a paid mod the player has not downloaded, the Music view on the mod page no longer says "download to hear". Each song has a **Preview (15s)** button that plays `MOD_PREVIEW_SECONDS` (15) seconds and stops.
+
+- **The maker picks the start:** every song in the mod editor's Music section has a "Paid preview starts at ... seconds" box and a Test preview button. The start is saved on the song as `preview` (whole seconds, 0 to `MOD_PREVIEW_MAX_START`) inside `customFiles.music`. A song with no `preview` starts at 0. `.cga` archives keep it too.
+- **Code:** the `PAID SONG PREVIEW` section. Any element with the class `mod-preview-btn` plays a preview (`data-src`, `data-start`). It works for normal sound links and for YouTube links.
+- **Code on a paid mod stays locked** until the mod is downloaded.
+- **API:** no change. The `api` function saves each song entry as it is, so `preview` rides along.
+- The limit is drawn by the game, not the server: the song's link is still inside the mod's data, so it stops casual listening, not someone digging through the page.
+
 ## Mod fonts, SVG Easy Navigation icons and mod page views (1.55.0)
 
 - **Fonts in mods:** the mod editor has a **Fonts** section. Upload a `.ttf`, `.otf`, `.woff` or `.woff2` file (up to `MOD_FONT_MAX_BYTES`, 300KB) or add an https link to one. They are saved in `customFiles.fonts`, the same shape as icons and music (`{ name, file, url }`). Fonts from installed mods show up in the Font Manager picker (`refreshModFonts()` in the `MOD FONTS` section). `.cga` archives carry them in a `fonts/` folder.
   - **API:** no change was needed. The `api` function already keeps every list inside `customFiles` (upload, `compactInstalledMods` and `rehydrateInstalledMods` loop over whatever keys are there), so `fonts` is saved and loaded like `music` or `icons`. A mod can be up to `MAX_JSON_CHARS` (2,000,000 characters).
 - **Easy Navigation icons are SVG now:** no emojis. Every icon is drawn in `EZ_ICONS` (a fill color plus shapes in a 24 by 24 box, all with the same dark outline). `EZ_WORDS` maps words to icon names. The icons sit in a `<span class="ez-ico">` that `ezApplyTo()` adds to the start of a label. Numbers are drawn with CSS (`data-n`), so `textContent` of a button is the same as before.
-- **Mod page views:** the banner on a mod's page has buttons for Banner, Icons, Cursors, Backgrounds, Music, Fonts, Themes and Code (`MOD PAGE VIEWS` section, `modViewHTML()`). Only the parts a mod has get a button. On a paid mod you have not downloaded, Music and Code are locked.
+- **Mod page views:** the banner on a mod's page has buttons for Banner, Icons, Cursors, Backgrounds, Music, Fonts, Themes and Code (`MOD PAGE VIEWS` section, `modViewHTML()`). Only the parts a mod has get a button. On a paid mod you have not downloaded, Code is locked and Music plays a 15 second preview (1.56.0).
 
 ## No right click menu and YouTube as audio (1.54.0)
 
