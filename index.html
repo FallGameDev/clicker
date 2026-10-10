@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.56.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.56.0">
+<!-- Game version: 1.57.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.57.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -8430,6 +8430,18 @@
   .cgcb-in:focus{ box-shadow:0 0 0 3px rgba(255,255,255,0.75); }
   .cgcb-in.is-wide{ flex:1 1 150px; min-width:110px; border-radius:8px; }
   .cgcb-pick{ font-family:'Fredoka One', cursive; cursor:pointer; padding-right:4px; }
+  /* SIMPLE BLOCKS (1.57.0): typing boxes use the game font too, and colors get a real color picker. */
+  .cgcb-in{ font-family:'Poppins', sans-serif; font-weight:600; }
+  .cgcb-in[data-k="raw"].is-wide{ font-family:ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-weight:400; }
+  .cgcb-color{
+    width:38px;
+    height:26px;
+    padding:0;
+    border:2px solid #100c1f;
+    border-radius:8px;
+    background:#fffdf5;
+    cursor:pointer;
+  }
   /* Up, down, copy and delete */
   .cgcb-acts{ display:inline-flex; gap:3px; margin-left:auto; padding-left:8px; }
   .cgcb-act{
@@ -9599,6 +9611,10 @@
     opacity:0.8;
   }
   .mio-hero-view .cgc-doc-code{ margin:0; max-height:none; }
+  /* MOD PREVIEW (1.57.0): the test box inside the banner. The box is tall enough to play in. */
+  .mio-hero-view:has(#cgc-test){ max-height:none; }
+  .mio-hero-view .cgc-console{ max-height:120px; }
+  .mio-hero-view .cgc-console-head, .mio-hero-view .cgc-console-head .mod-editor-text-btn{ color:#fff; }
   .mio-view-note{
     font-family:'Poppins', sans-serif;
     font-size:12.5px;
@@ -17112,6 +17128,8 @@
   }
 
   function renderWorkshopBody(){
+    // MOD PREVIEW (1.57.0): leaving a mod's page ends its test run.
+    if (workshopView !== 'detail' && cgcTestSource) { cgcStopTest(); cgcTestSource = null; }
     if (workshopView === 'profile') {
       renderWorkshopProfile();
     } else if (workshopView === 'detail') {
@@ -17890,7 +17908,7 @@
     { id: 'music', label: 'Music' },
     { id: 'fonts', label: 'Fonts' },
     { id: 'themes', label: 'Themes' },
-    { id: 'code', label: 'Code' }
+    { id: 'code', label: 'Preview' } // 1.57.0: runs the mod's code in a test box, it does not show the code
   ];
   // A picture source that is safe to put in <img src>: uploaded picture data or a web link.
   function modViewImageSrc(f){
@@ -17966,8 +17984,26 @@
       ).join('')}</div>`;
     }
     if (tab === 'code') {
-      if (locked) return '<p class="mio-view-note">Download this mod to see its code.</p>';
-      return cgcCode(cgcScriptCode(item)); // colored and safe: cgcHighlight escapes everything
+      // MOD PREVIEW (1.57.0): the same test box the mod editor has under its code, running this mod.
+      // The code itself is never shown here. Paid mods can be previewed too, it is only a test run.
+      return `
+        <p class="mio-view-note" style="margin-bottom:10px;">This is a test run of the mod. Nothing here changes your real moneys or saved data.</p>
+        <div class="cgc-test-bar">
+          <button class="auth-btn cgc-run-btn" id="cgc-run-btn">Run test</button>
+          <button class="workshop-icon-btn cgc-secondary-btn" id="cgc-sim-click" disabled>Game click</button>
+          <button class="workshop-icon-btn cgc-secondary-btn" id="cgc-sim-buy" disabled>Shop buy</button>
+          <button class="workshop-icon-btn cgc-secondary-btn" id="cgc-sim-prestige" disabled>Prestige</button>
+        </div>
+        <div class="cgc-test" id="cgc-test" style="display:none;">
+          <div class="cgc-test-stage" id="cgc-test-stage"><span class="cgc-test-label">Screen preview</span></div>
+          <div class="cgc-test-ui">
+            <div class="cgc-test-row"><span class="cgc-test-head">Test moneys</span><strong id="cgc-test-moneys">0</strong></div>
+            <div class="cgc-test-row" id="cgc-test-curs"></div>
+            <div class="cgc-test-actions" id="cgc-test-actions"></div>
+          </div>
+        </div>
+        <div class="cgc-console-head"><span>Console</span><button class="mod-editor-text-btn" id="cgc-console-clear">Clear</button></div>
+        <pre class="cgc-console" id="cgc-console"></pre>`;
     }
     return '';
   }
@@ -17978,11 +18014,19 @@
     const view = document.getElementById('mio-hero-view');
     if (!banner || !view) return;
     ytPreviewStop(); // a song preview from the last view stops
+    cgcStopTest();   // MOD PREVIEW: and so does a test run
+    cgcTestSource = null;
     const onBanner = workshopDetailTab === 'banner';
     banner.hidden = !onBanner;
     view.hidden = onBanner;
     view.innerHTML = onBanner ? '' : modViewHTML(item, workshopDetailTab);
     view.scrollTop = 0;
+    if (workshopDetailTab === 'code') {
+      // MOD PREVIEW (1.57.0): point the test box at this mod and start it right away.
+      cgcTestSource = { name: item.name, code: cgcScriptCode(item), payload: (item.customFiles && item.customFiles.payload) || [] };
+      cgcBindTestBar();
+      cgcStartTest();
+    }
     document.querySelectorAll('#mio-hero-tabs .mio-hero-tab').forEach(b => b.classList.toggle('active', b.dataset.modView === workshopDetailTab));
   }
 
@@ -20809,25 +20853,7 @@
 
     cgcBindTemplateMenu();
     document.getElementById('cgc-book-btn-2').addEventListener('click', () => openCgcGuide());
-    document.getElementById('cgc-run-btn').addEventListener('click', () => {
-      if (cgcTestRuntime) cgcStopTest(); else cgcStartTest();
-    });
-    document.getElementById('cgc-sim-click').addEventListener('click', () => {
-      if (!cgcTestRuntime) return;
-      cgcTestGame.clicks += cgcTestGame.clickPower;
-      cgcTestRuntime.fire('c.click', { click: cgcTestRuntime.cv.click + 1, earned: cgcTestGame.clickPower });
-      cgcRenderTestUi();
-    });
-    document.getElementById('cgc-sim-buy').addEventListener('click', () => {
-      if (cgcTestRuntime) cgcTestRuntime.fire('c.buy', { buy: 'Click Boost' });
-    });
-    document.getElementById('cgc-sim-prestige').addEventListener('click', () => {
-      if (!cgcTestRuntime) return;
-      cgcTestGame.prestige += 1;
-      cgcTestRuntime.fire('c.prestige', { prestige: cgcTestGame.prestige });
-      cgcRenderTestUi();
-    });
-    document.getElementById('cgc-console-clear').addEventListener('click', () => { cgcTestLogs = []; cgcRenderTestConsole(); });
+    cgcBindTestBar(); // Run test, Game click, Shop buy, Prestige and the console's Clear button
 
     document.getElementById('cgc-payload-input').addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
@@ -20922,41 +20948,164 @@
   const CGCB_CMDS = ['play', 'stop', 'show', 'hide', 'remove'];
   // Which color group each block type belongs to.
   const CGCB_CATS = { when: 'events', event: 'events', do: 'events', if: 'control', repeat: 'control', create: 'vars', math: 'vars', assign: 'vars', local: 'objects', att: 'objects', cmd: 'objects', print: 'output', note: 'note', raw: 'raw' };
+  /* ----- SIMPLE BLOCKS (1.57.0) -----
+     The blocks read like Scratch now: plain words and drop-downs instead of CGC names.
+     Nothing about the code changed. Each list below is [what goes in the code, words on the block].
+     A drop-down always ends with "type it in...", which swaps it for a box where any CGC can be typed. */
+  const CGCB_TYPE_IT = '__type__'; // the value of the "type it in..." choice
+  const CGCB_EVENT_WORDS = [
+    ['c.click', 'the clicker is clicked'], ['c.load', 'the mod starts'], ['c.second', 'every second'],
+    ['c.tick', 'every tick (10 a second)'], ['c.buy', 'something is bought in the Shop'], ['c.prestige', 'the player prestiges']
+  ];
+  const CGCB_OBJECT_EVENT_WORDS = { click: ' is clicked', hover: ': the mouse touches it', leave: ': the mouse leaves it', drop: ' is dropped' };
+  const CGCB_DO_WORDS = [['c.click', 'click the clicker'], ['c.prestige', 'open the prestige window']];
+  const CGCB_MAKE_WORDS = [
+    ['canvas.circle', 'circle'], ['canvas.rect', 'square'], ['canvas.tri', 'triangle'], ['canvas("Hello")', 'text'],
+    ['game.cur', 'currency (your own money)'], ['game.action', 'button in Stats > Mods']
+  ];
+  const CGCB_ATTR_WORDS = {
+    'pos.x': 'x position (0 to 100)', 'pos.y': 'y position (0 to 100)', 'size': 'size', 'size.x': 'width', 'size.y': 'height',
+    'color': 'color', 'text': 'words', 'fontsize': 'text size', 'clickable': 'can be clicked', 'dragable': 'can be dragged',
+    'visible': 'showing', 'scale': 'zoom (1 is normal)', 'rotate': 'turn (degrees)', 'opacity': 'see-through (0 to 1)',
+    'layer': 'layer (higher is on top)', 'round': 'round corners', 'image': 'picture', 'event': 'event to run when clicked',
+    'file': 'sound file', 'volume': 'volume (0 to 1)', 'speed': 'speed (1 is normal)', 'loop': 'repeat forever',
+    'action': 'button words', 'cur': 'currency name', 'icon': 'icon picture'
+  };
+  const CGCB_YES_NO_ATTRS = ['clickable', 'dragable', 'visible', 'loop']; // these get a yes / no drop-down
+  const CGCB_WORD_ATTRS = ['text', 'image', 'event', 'file', 'action', 'cur', 'icon'];  // these hold words, not numbers
+  // The number a block starts with when you switch it to one of these.
+  const CGCB_NUMBER_STARTS = { 'pos.x': '50', 'pos.y': '50', 'size': '100', 'size.x': '100', 'size.y': '100', 'fontsize': '24', 'rotate': '0', 'round': '10' };
+  const CGCB_MATH_WORDS = [['add', '+ add'], ['subtract', '\u2212 take away'], ['multiply', '\u00d7 multiply by'], ['divide', '\u00f7 divide by'], ['set', '= set to']];
+  const CGCB_CMD_WORDS = [['play', 'play sound'], ['stop', 'stop sound'], ['show', 'show'], ['hide', 'hide'], ['remove', 'delete']];
+  const CGCB_COMPARE_WORDS = [['==', '='], ['~=', '\u2260 (is not)'], ['>', '>'], ['<', '<'], ['>=', '\u2265 (at least)'], ['<=', '\u2264 (at most)']];
+
   // The block list on the left. "make" builds a fresh block each time.
   const CGCB_PALETTE = [
     { cat: 'events', title: 'Events', items: [
       { label: 'when the clicker is clicked', make: () => ({ type: 'when', ev: 'c.click', body: [] }) },
-      { label: 'when the mod loads', make: () => ({ type: 'when', ev: 'c.load', body: [] }) },
+      { label: 'when the mod starts', make: () => ({ type: 'when', ev: 'c.load', body: [] }) },
       { label: 'every second', make: () => ({ type: 'when', ev: 'c.second', body: [] }) },
-      { label: 'when an object is clicked', make: () => ({ type: 'when', ev: 'button.click', body: [] }) },
+      { label: 'when my shape is clicked', make: () => ({ type: 'when', ev: 'button.click', body: [] }) },
       { label: 'make my own event', make: () => ({ type: 'event', name: 'levelUp' }) },
-      { label: 'run an event', make: () => ({ type: 'do', ev: 'ev.levelUp' }) }
+      { label: 'run my event', make: () => ({ type: 'do', ev: 'ev.levelUp' }) },
+      { label: 'click the clicker', make: () => ({ type: 'do', ev: 'c.click' }) }
     ] },
     { cat: 'control', title: 'Control', items: [
-      { label: 'if ... then', make: () => ({ type: 'if', cond: 'var.score >= 10', body: [], elifs: [], other: null }) },
-      { label: 'if ... then ... else', make: () => ({ type: 'if', cond: 'var.score >= 10', body: [], elifs: [], other: [] }) },
+      { label: 'if', make: () => ({ type: 'if', cond: 'var.score >= 10', body: [], elifs: [], other: null }) },
+      { label: 'if / else', make: () => ({ type: 'if', cond: 'var.score >= 10', body: [], elifs: [], other: [] }) },
       { label: 'repeat', make: () => ({ type: 'repeat', count: '5', body: [] }) }
     ] },
     { cat: 'vars', title: 'Variables', items: [
       { label: 'make a variable', make: () => ({ type: 'create', kind: 'var', name: 'score', value: '0' }) },
       { label: 'make a saved variable', make: () => ({ type: 'create', kind: 'storage', name: 'best', value: '0' }) },
-      { label: 'change a variable', make: () => ({ type: 'math', target: 'var.score', method: 'add', value: '1' }) },
+      { label: 'change a variable by 1', make: () => ({ type: 'math', target: 'var.score', method: 'add', value: '1' }) },
+      { label: 'set a variable', make: () => ({ type: 'math', target: 'var.score', method: 'set', value: '0' }) },
       { label: 'give 1 moneys', make: () => ({ type: 'math', target: 'v.moneys', method: 'add', value: '1' }) },
-      { label: 'make a currency', make: () => ({ type: 'local', name: 'gold', value: 'game.cur' }) }
+      { label: 'make my own money', make: () => ({ type: 'local', name: 'gold', value: 'game.cur' }) }
     ] },
-    { cat: 'objects', title: 'Objects', items: [
-      { label: 'make a shape', make: () => ({ type: 'local', name: 'button', value: 'canvas.circle' }) },
-      { label: 'make some text', make: () => ({ type: 'local', name: 'label', value: 'canvas("Hello")' }) },
+    { cat: 'objects', title: 'Looks and sound', items: [
+      { label: 'make a circle', make: () => ({ type: 'local', name: 'button', value: 'canvas.circle' }) },
+      { label: 'make a square', make: () => ({ type: 'local', name: 'box', value: 'canvas.rect' }) },
+      { label: 'make text', make: () => ({ type: 'local', name: 'label', value: 'canvas("Hello")' }) },
       { label: 'make a Mods button', make: () => ({ type: 'local', name: 'btn', value: 'game.action' }) },
-      { label: 'set an attribute', make: () => ({ type: 'att', obj: 'button', attr: 'color', value: '"#ff5da0"' }) },
-      { label: 'play / show / hide', make: () => ({ type: 'cmd', cmd: 'show', obj: 'button' }) }
+      { label: 'set color', make: () => ({ type: 'att', obj: 'button', attr: 'color', value: '"#ff5da0"' }) },
+      { label: 'set x position', make: () => ({ type: 'att', obj: 'button', attr: 'pos.x', value: '50' }) },
+      { label: 'set y position', make: () => ({ type: 'att', obj: 'button', attr: 'pos.y', value: '50' }) },
+      { label: 'set size', make: () => ({ type: 'att', obj: 'button', attr: 'size', value: '100' }) },
+      { label: 'set words', make: () => ({ type: 'att', obj: 'button', attr: 'text', value: '"Click me"' }) },
+      { label: 'let it be clicked', make: () => ({ type: 'att', obj: 'button', attr: 'clickable', value: 'true' }) },
+      { label: 'show', make: () => ({ type: 'cmd', cmd: 'show', obj: 'button' }) },
+      { label: 'hide', make: () => ({ type: 'cmd', cmd: 'hide', obj: 'button' }) },
+      { label: 'play sound', make: () => ({ type: 'cmd', cmd: 'play', obj: 'sound' }) }
     ] },
     { cat: 'output', title: 'More', items: [
-      { label: 'print', make: () => ({ type: 'print', value: '"Hello World!"' }) },
+      { label: 'say', make: () => ({ type: 'print', value: '"Hello World!"' }) },
       { label: 'note', cat: 'note', make: () => ({ type: 'note', text: 'What this part does' }) },
       { label: 'code line', cat: 'raw', make: () => ({ type: 'raw', text: '' }) }
     ] }
   ];
+
+  /* ----- SIMPLE BLOCKS: values without quotes -----
+     In a block, words can be typed without "quotes". The block adds them for you.
+     cgcbReadValue() decides what a typed value is: a number, a name the code knows,
+     or a little sum stays as it is. Anything else is plain words and gets quotes.
+     cgcbShowValue() does the opposite when the block is drawn. */
+  const CGCB_VALUE_PREFIXES = /^(c|v|cv|var|ev|storage|canvas|game)$/;
+  function cgcbQuote(text){
+    return '"' + String(text).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+  }
+  // True when the typed text is real CGC (a number, a known name, a sum), not plain words.
+  function cgcbLooksLikeCode(text){
+    const t = String(text).trim();
+    if (!t) return false;
+    if (/^-?\d+(\.\d+)?$/.test(t) || /^(true|false|nil)$/.test(t)) return true;
+    let toks;
+    try { toks = CGC.tokenize(t); CGC.parse('local __value = ' + t); } catch (e) { return false; }
+    if (!toks.length) return false;
+    const names = cgcBlocks.names || cgcbNames();
+    // Every name in it has to be one the code knows, or it is just a word like "Hello".
+    for (let i = 0; i < toks.length; i++) {
+      const tok = toks[i];
+      if (tok.type !== 'id') continue;
+      const prev = toks[i - 1];
+      const afterDot = prev && prev.type === 'op' && prev.value === '.';
+      if (afterDot || CGCB_VALUE_PREFIXES.test(tok.value) || CGC_HL_FUNCS.test(tok.value) || names.locals.includes(tok.value)) continue;
+      return false;
+    }
+    return true;
+  }
+  // What a box shows for a value: plain words lose their quotes.
+  function cgcbShowValue(raw){
+    const v = String(raw == null ? '' : raw);
+    const m = /^"([^"\\]*)"$/.exec(v);
+    return m && m[1] && !cgcbLooksLikeCode(m[1]) ? m[1] : v;
+  }
+  // What goes in the code for what was typed in a value box.
+  function cgcbReadValue(typed){
+    const t = String(typed).trim();
+    if (!t) return '';
+    return cgcbLooksLikeCode(t) ? t : cgcbQuote(t);
+  }
+  // Splits "var.score >= 10" into its two sides and the sign between them.
+  // Returns null when the condition is anything more than one simple compare.
+  function cgcbSplitCond(cond){
+    const c = String(cond || '');
+    let quote = null, depth = 0, found = null;
+    for (let i = 0; i < c.length; i++) {
+      const ch = c[i];
+      if (quote) { if (ch === '\\') i++; else if (ch === quote) quote = null; continue; }
+      if (ch === '"' || ch === "'") { quote = ch; continue; }
+      if (ch === '(') depth++;
+      else if (ch === ')') depth--;
+      if (depth !== 0) continue;
+      const two = c.substr(i, 2);
+      const op = ['==', '~=', '>=', '<='].includes(two) ? two : (ch === '<' || ch === '>' ? ch : '');
+      if (op) {
+        if (found) return null; // two compares: too much for the simple block
+        found = { i, op };
+        i += op.length - 1;
+      }
+    }
+    if (!found) return null;
+    const left = c.slice(0, found.i).trim();
+    const right = c.slice(found.i + found.op.length).trim();
+    const plain = (left + ' ' + right).replace(/"[^"]*"|'[^']*'/g, '');
+    if (!left || !right || /\b(and|or|not)\b/.test(plain)) return null;
+    return { left, op: found.op, right };
+  }
+  // The names the code has made so far: objects, variables and events. Also the Payload files.
+  function cgcbNames(){
+    const locals = [], vars = [], events = [], kinds = {};
+    const scan = (list) => list.forEach((b) => {
+      if (b.type === 'local' && b.name && !locals.includes(b.name)) { locals.push(b.name); kinds[b.name] = b.value; }
+      if (b.type === 'create' && b.name && !vars.includes(b.kind + '.' + b.name)) vars.push(b.kind + '.' + b.name);
+      if (b.type === 'event' && b.name && !events.includes('ev.' + b.name)) events.push('ev.' + b.name);
+      cgcbChildLists(b).forEach(scan);
+    });
+    scan(cgcBlocks.model || []);
+    const files = ((cgcBlocks.draft && cgcBlocks.draft.payload) || []).map(f => f.name);
+    return { locals, vars, events, kinds, files };
+  }
 
   // Everything the block editor remembers while it is open.
   let cgcBlocks = {
@@ -21184,9 +21333,15 @@
   // Loads the draft's code into the block tree. Returns '' when it worked, or the reason it didn't.
   function cgcbOpen(d){
     if (cgcBlocks.draft === d && cgcBlocks.code === d.code && cgcBlocks.model) return ''; // already loaded
-    const res = cgcbFromCode(d.code);
-    if (res.error) return res.error;
-    if (!cgcbSameMeaning(d.code, cgcbToCode(res.model).code)) return 'this code is written in a way blocks can\'t show yet';
+    let res = cgcbFromCode(d.code);
+    // SIMPLE BLOCKS (1.57.0): switching to Blocks always works now. Code that can't be read
+    // as real blocks (a missing "end", or something blocks don't know) opens as plain
+    // "code" blocks, one per line, so nothing is lost and it can still be fixed here.
+    cgcBlocks.fallback = '';
+    if (res.error || !cgcbSameMeaning(d.code, cgcbToCode(res.model).code)) {
+      cgcBlocks.fallback = res.error || 'part of it is written in a way blocks don\'t know';
+      res = { model: cgcbLinesAsBlocks(d.code) };
+    }
     if (cgcBlocks.draft !== d) cgcBlocks.undo = [];
     cgcBlocks.draft = d;
     cgcBlocks.model = res.model;
@@ -21194,6 +21349,24 @@
     cgcBlocks.cursor = null;
     cgcBlocks.owner = [];
     return '';
+  }
+
+  // Every line of the code as its own "code" block (notes become note blocks). Used when
+  // the code can't be turned into real blocks. Turning it back gives the same lines.
+  function cgcbLinesAsBlocks(src){
+    const out = [];
+    let gap = false;
+    String(src || '').replace(/\r\n?/g, '\n').split('\n').forEach((line) => {
+      const t = line.trim();
+      if (!t) { gap = true; return; }
+      const note = /^(--|\/\/)\s?(.*)$/.exec(t);
+      const b = note ? { type: 'note', text: note[2] } : { type: 'raw', text: t };
+      b.id = cgcBlocks.nextId++;
+      b.gap = gap && out.length > 0;
+      gap = false;
+      out.push(b);
+    });
+    return out;
   }
 
   // Call BEFORE changing the tree: remembers the code so Undo can bring it back.
@@ -21237,7 +21410,7 @@
       // Check the same tidy text the blocks make, so line numbers match the blocks.
       CGC.parse(cgcbToCode(cgcBlocks.model).code);
       el.className = 'cgc-check ok';
-      el.textContent = 'No problems found.';
+      el.textContent = cgcBlocks.fallback ? `No problems found. This code is shown as plain "code" blocks because ${cgcBlocks.fallback}.` : 'No problems found.';
     } catch (e) {
       const id = cgcBlocks.owner[e.line];
       found = id ? canvas.querySelector(`.cgcb-block[data-id="${id}"]`) : null;
@@ -21252,15 +21425,8 @@
   function cgcbFillLists(){
     const holder = document.getElementById('cgcb-lists');
     if (!holder || !cgcBlocks.model) return;
-    const locals = new Set(), vars = new Set(), events = new Set();
-    const scan = (list) => list.forEach((b) => {
-      if (b.type === 'local' && b.name) locals.add(b.name);
-      if (b.type === 'create' && b.name) vars.add(b.kind + '.' + b.name);
-      if (b.type === 'event' && b.name) events.add('ev.' + b.name);
-      cgcbChildLists(b).forEach(scan);
-    });
-    scan(cgcBlocks.model);
-    const files = ((cgcBlocks.draft && cgcBlocks.draft.payload) || []).map(f => f.name);
+    const names = cgcbNames();
+    const locals = names.locals, vars = names.vars, events = names.events, files = names.files;
     const pictures = files.filter(n => !/\.(mp3|wav|ogg|m4a|aac|opus|webm)$/i.test(n));
     const lists = {
       event: CGC.GAME_EVENTS.map(e => 'c.' + e).concat([...events], [...locals].flatMap(n => CGC.OBJECT_EVENTS.map(e => n + '.' + e))),
@@ -21293,7 +21459,7 @@
         <div class="cgcb-palette" id="cgcb-palette">${cgcbPaletteHtml()}</div>
         <div class="cgcb-main">
           <div class="cgcb-bar">
-            <span class="cgcb-tip">Tap a block in the list to add it at the pink line. Tap a gap to move the pink line. Drag the dots to move a block.</span>
+            <span class="cgcb-tip">Tap a block in the list to add it at the pink line. Tap a gap to move the pink line. Drag the dots to move a block. Words don't need "quotes" here.</span>
             <button type="button" class="mod-editor-text-btn" id="cgcb-undo" disabled>Undo</button>
           </div>
           <div class="cgcb-canvas" id="cgcb-canvas"></div>
@@ -21317,19 +21483,36 @@
     return `<div class="cgcb-list${isTop ? ' is-top' : ''}">${html}</div>`;
   }
 
-  // One block. Boxes are plain CGC: text needs "quotes", numbers and names don't.
+  // One block, drawn with plain words and drop-downs (SIMPLE BLOCKS, 1.57.0).
+  // Every box and drop-down carries data-f (which part of the block it changes) and
+  // data-k (how what you type becomes code): raw = as typed, val = words get quotes,
+  // pick = a drop-down, color = a color picker, ctext = the words of a text object,
+  // cmp = one of the three parts of an "if" compare.
   function cgcbBlockHtml(b){
     const esc = escapeChatHtml;
     const id = b.id;
-    // A typing box. o: { list: pick list name, wide: long box, ph: grey hint text, label: for screen readers }
+    const names = cgcBlocks.names || cgcbNames();
+    const free = b.free || {}; // parts where "type it in..." was picked
+    // A typing box. o: { k: kind, list: pick list name, wide: long box, ph: grey hint text, label: for screen readers, extra: more attributes }
     const box = (field, value, o) => {
       o = o || {};
       const v = String(value == null ? '' : value);
-      return `<input type="text" class="cgcb-in${o.wide ? ' is-wide' : ''}" data-id="${id}" data-f="${field}" value="${esc(v)}" size="${Math.max(o.wide ? 14 : 3, Math.min(48, v.length + 1))}"${o.list ? ` list="cgcb-dl-${o.list}"` : ''} placeholder="${esc(o.ph || '')}" aria-label="${esc(o.label || field)}" spellcheck="false" autocomplete="off" autocapitalize="off">`;
+      return `<input type="text" class="cgcb-in${o.wide ? ' is-wide' : ''}" data-id="${id}" data-f="${field}" data-k="${o.k || 'raw'}"${o.extra || ''} value="${esc(v)}" size="${Math.max(o.wide ? 14 : 3, Math.min(48, v.length + 1))}"${o.list ? ` list="cgcb-dl-${o.list}"` : ''} placeholder="${esc(o.ph || '')}" aria-label="${esc(o.label || field)}" spellcheck="false" autocomplete="off" autocapitalize="off">`;
     };
-    // A drop-down. options: [[value, words shown], ...]
-    const pick = (field, value, options, label) =>
-      `<select class="cgcb-in cgcb-pick" data-id="${id}" data-f="${field}" aria-label="${esc(label)}">${options.map(([v, t]) => `<option value="${v}"${v === value ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
+    // A value box: plain words show without their quotes.
+    const val = (field, value, o) => box(field, cgcbShowValue(value), Object.assign({ k: 'val', list: 'value' }, o || {}));
+    // A drop-down. options: [[value, words shown], ...]. o: { typeIt: add "type it in...", extra: more attributes, k: kind }
+    // A value that is not in the list is added to it, so nothing ever changes by itself.
+    const pick = (field, value, options, label, o) => {
+      o = o || {};
+      const opts = options.slice();
+      if (!opts.some(([v]) => v === value)) opts.unshift([value, value || '(pick one)']);
+      if (o.typeIt) opts.push([CGCB_TYPE_IT, 'type it in...']);
+      return `<select class="cgcb-in cgcb-pick" data-id="${id}" data-f="${field}" data-k="${o.k || 'pick'}"${o.extra || ''} aria-label="${esc(label)}">${opts.map(([v, t]) => `<option value="${esc(v)}"${v === value ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select>`;
+    };
+    // A drop-down that turns into a typing box once "type it in..." is picked.
+    const pickOrBox = (field, value, options, label, o) =>
+      free[field] ? box(field, value, o) : pick(field, value, options, label, { typeIt: true });
     const word = (t) => `<span class="cgcb-word">${t}</span>`;
     const act = (name, title, glyph, extra) =>
       `<button type="button" class="cgcb-act" data-act="${name}" data-id="${id}"${extra || ''} title="${title}" aria-label="${title}">${glyph}</button>`;
@@ -21338,28 +21521,83 @@
     const row = (parts) => `<div class="cgcb-row">${grip}${parts}${tools}</div>`;
     const body = (list) => `<div class="cgcb-body">${cgcbListHtml(list, false)}</div>`;
 
+    // The names the code made, as drop-down choices.
+    const objectChoices = names.locals.map(n => [n, n]);
+    const eventChoices = CGCB_EVENT_WORDS
+      .concat(names.events.map(e => [e, e.slice(3) + ' happens']))
+      .concat(names.locals.flatMap(n => CGC.OBJECT_EVENTS.map(e => [n + '.' + e, n + CGCB_OBJECT_EVENT_WORDS[e]])));
+    const doChoices = CGCB_DO_WORDS.concat(names.events.map(e => [e, 'run ' + e.slice(3)]));
+    const targetChoices = names.vars.map(v => [v, v.indexOf('storage.') === 0 ? v.slice(8) + ' (saved)' : v.slice(4)])
+      .concat([['v.moneys', 'moneys']], names.locals.filter(n => names.kinds[n] === 'game.cur').map(n => [n, n]));
+    const makeChoices = CGCB_MAKE_WORDS.concat(names.files.map(n => ['canvas.' + n, (/\.(mp3|wav|ogg|m4a|aac|opus|webm)$/i.test(n) ? 'sound ' : 'picture ') + n]));
+    // The compare part of an "if": [left] [sign] [right] when it is simple, one long box when it is not.
+    const condHtml = (field, cond) => {
+      const parts = free[field] ? null : cgcbSplitCond(cond);
+      if (!parts) return box(field, cond, { list: 'value', wide: true, ph: 'var.score >= 10', label: 'Condition' });
+      const tag = (part) => ` data-cmp="${part}"`;
+      return val(field, parts.left, { k: 'cmp', extra: tag('l'), ph: 'var.score', label: 'Left side' })
+        + pick(field, parts.op, CGCB_COMPARE_WORDS, 'How to compare', { k: 'cmp', extra: tag('op') })
+        + val(field, parts.right, { k: 'cmp', extra: tag('r'), ph: '10', label: 'Right side' });
+    };
+
     let inner = '';
     switch (b.type) {
       case 'note': inner = row(word('note') + box('text', b.text, { wide: true, ph: 'What this part does', label: 'Note' })); break;
-      case 'when': inner = row(word('when') + box('ev', b.ev, { list: 'event', ph: 'c.click', label: 'Event' }) + word('happens')) + body(b.body); break;
-      case 'repeat': inner = row(word('repeat') + box('count', b.count, { ph: '5', label: 'How many times' }) + word('times')) + body(b.body); break;
+      case 'when': inner = row(word('when') + pickOrBox('ev', b.ev, eventChoices, 'What happens', { list: 'event', ph: 'c.click', label: 'Event' })) + body(b.body); break;
+      case 'repeat': inner = row(word('repeat') + box('count', b.count, { list: 'value', ph: '5', label: 'How many times' }) + word('times')) + body(b.body); break;
       case 'if':
-        inner = row(word('if') + box('cond', b.cond, { list: 'value', ph: 'var.score >= 10', label: 'Condition' }) + word('then')) + body(b.body);
+        inner = row(word('if') + condHtml('cond', b.cond) + word('then')) + body(b.body);
         b.elifs.forEach((e, i) => {
-          inner += `<div class="cgcb-row cgcb-mid">${word('else if')}${box('elif:' + i, e.cond, { list: 'value', ph: 'var.score >= 5', label: 'Condition' })}${word('then')}<span class="cgcb-acts">${act('delelif', 'Remove this else if', '&times;', ` data-n="${i}"`)}</span></div>` + body(e.body);
+          inner += `<div class="cgcb-row cgcb-mid">${word('or else if')}${condHtml('elif:' + i, e.cond)}${word('then')}<span class="cgcb-acts">${act('delelif', 'Remove this part', '&times;', ` data-n="${i}"`)}</span></div>` + body(e.body);
         });
         if (b.other) inner += `<div class="cgcb-row cgcb-mid">${word('else')}<span class="cgcb-acts">${act('delelse', 'Remove the else', '&times;')}</span></div>` + body(b.other);
-        inner += `<div class="cgcb-row cgcb-foot"><button type="button" class="cgcb-more" data-act="addelif" data-id="${id}">+ else if</button>${b.other ? '' : `<button type="button" class="cgcb-more" data-act="addelse" data-id="${id}">+ else</button>`}</div>`;
+        inner += `<div class="cgcb-row cgcb-foot"><button type="button" class="cgcb-more" data-act="addelif" data-id="${id}">+ or else if</button>${b.other ? '' : `<button type="button" class="cgcb-more" data-act="addelse" data-id="${id}">+ else</button>`}</div>`;
         break;
-      case 'print': inner = row(word('print') + box('value', b.value, { list: 'value', wide: true, ph: '"Hello"', label: 'What to print' })); break;
-      case 'create': inner = row(word('make') + pick('kind', b.kind, [['var', 'variable'], ['storage', 'saved variable']], 'Kind of variable') + box('name', b.name, { ph: 'score', label: 'Name' }) + word('starting at') + box('value', b.value, { ph: '0', label: 'Starting value' })); break;
-      case 'event': inner = row(word('make event') + box('name', b.name, { ph: 'levelUp', label: 'Event name' })); break;
-      case 'local': inner = row(word('make') + box('name', b.name, { ph: 'button', label: 'Name' }) + word('=') + box('value', b.value, { list: 'make', ph: 'canvas.circle', label: 'What it is' })); break;
-      case 'assign': inner = row(word('change') + box('name', b.name, { list: 'obj', ph: 'name', label: 'Name' }) + word('to') + box('value', b.value, { list: 'value', ph: '5', label: 'New value' })); break;
-      case 'att': inner = row(word('set') + box('obj', b.obj, { list: 'obj', ph: 'button', label: 'Object' }) + word('.') + box('attr', b.attr, { list: 'attr', ph: 'color', label: 'Attribute' }) + word('to') + box('value', b.value, { list: 'value', ph: '"red"', label: 'Value' })); break;
-      case 'math': inner = row(box('target', b.target, { list: 'target', ph: 'var.score', label: 'What to change' }) + pick('method', b.method, CGCB_MATH, 'How to change it') + box('value', b.value, { list: 'value', ph: '1', label: 'Number' })); break;
-      case 'do': inner = row(word('run event') + box('ev', b.ev, { list: 'do', ph: 'ev.levelUp', label: 'Event' })); break;
-      case 'cmd': inner = row(pick('cmd', b.cmd, CGCB_CMDS.map(c => [c, c]), 'What to do') + box('obj', b.obj, { list: 'obj', ph: 'button', label: 'Object' })); break;
+      case 'print': inner = row(word('say') + val('value', b.value, { wide: true, ph: 'Hello', label: 'What to say' })); break;
+      case 'create': inner = row(word('make a') + pick('kind', b.kind, [['var', 'variable'], ['storage', 'saved variable']], 'Kind of variable') + word('named') + box('name', b.name, { ph: 'score', label: 'Name' }) + word('that starts at') + val('value', b.value, { ph: '0', label: 'Starting value' })); break;
+      case 'event': inner = row(word('make an event named') + box('name', b.name, { ph: 'levelUp', label: 'Event name' })); break;
+      case 'local': {
+        const textOf = /^canvas\(\s*"((?:[^"\\]|\\.)*)"\s*\)$/.exec(String(b.value || ''));
+        const known = !free.value && (textOf || makeChoices.some(([v]) => v === b.value));
+        if (!known) {
+          // Not one of the ready-made things: name = any CGC.
+          inner = row(word('make') + box('name', b.name, { ph: 'name', label: 'Name' }) + word('=') + box('value', b.value, { list: 'make', ph: 'canvas.circle', label: 'What it is' }));
+        } else if (textOf) {
+          inner = row(word('make') + pick('value', 'canvas("Hello")', makeChoices, 'What to make', { typeIt: true }) + word('saying')
+            + box('value', textOf[1].replace(/\\(.)/g, '$1'), { k: 'ctext', ph: 'Hello', label: 'The words' }) + word('named') + box('name', b.name, { ph: 'label', label: 'Name' }));
+        } else {
+          inner = row(word('make a') + pick('value', b.value, makeChoices, 'What to make', { typeIt: true }) + word('named') + box('name', b.name, { ph: 'button', label: 'Name' }));
+        }
+        break;
+      }
+      case 'assign': inner = row(word('set') + box('name', b.name, { list: 'obj', ph: 'name', label: 'Name' }) + word('to') + val('value', b.value, { ph: '5', label: 'New value' })); break;
+      case 'att': {
+        const attrChoices = Object.keys(CGCB_ATTR_WORDS).map(a => [a, CGCB_ATTR_WORDS[a]]);
+        const hex = /^"(#[0-9a-fA-F]{6})"$/.exec(String(b.value || ''));
+        let valueHtml;
+        if (CGCB_YES_NO_ATTRS.includes(b.attr) && (b.value === 'true' || b.value === 'false') && !free.value) {
+          valueHtml = pick('value', b.value, [['true', 'yes'], ['false', 'no']], 'Yes or no', { typeIt: true });
+        } else if (b.attr === 'color' && hex && !free.value) {
+          valueHtml = `<input type="color" class="cgcb-color" data-id="${id}" data-f="value" data-k="color" value="${hex[1].toLowerCase()}" aria-label="Color">`
+            + `<button type="button" class="cgcb-more" data-act="freevalue" data-id="${id}" title="Type a color name or code">abc</button>`;
+        } else {
+          valueHtml = val('value', b.value, { ph: 'red', label: 'Value' });
+        }
+        const objHtml = objectChoices.length
+          ? pickOrBox('obj', b.obj, objectChoices, 'Which thing', { list: 'obj', ph: 'button', label: 'Object' })
+          : box('obj', b.obj, { list: 'obj', ph: 'button', label: 'Object' });
+        inner = row(word('set') + objHtml + word('\u2019s') + pickOrBox('attr', b.attr, attrChoices, 'What to change', { list: 'attr', ph: 'color', label: 'Attribute' }) + word('to') + valueHtml);
+        break;
+      }
+      case 'math': inner = row(word('change') + pickOrBox('target', b.target, targetChoices, 'What to change', { list: 'target', ph: 'var.score', label: 'What to change' }) + pick('method', b.method, CGCB_MATH_WORDS, 'How to change it') + val('value', b.value, { ph: '1', label: 'Number' })); break;
+      case 'do': inner = row(pickOrBox('ev', b.ev, doChoices, 'What to do', { list: 'do', ph: 'ev.levelUp', label: 'Event' })); break;
+      case 'cmd': {
+        const objHtml = objectChoices.length
+          ? pickOrBox('obj', b.obj, objectChoices, 'Which thing', { list: 'obj', ph: 'button', label: 'Object' })
+          : box('obj', b.obj, { list: 'obj', ph: 'button', label: 'Object' });
+        inner = row(pick('cmd', b.cmd, CGCB_CMD_WORDS, 'What to do') + objHtml);
+        break;
+      }
       default: inner = row(word('code') + box('text', b.text, { wide: true, ph: 'type any line of CGC', label: 'Code line' }));
     }
     return `<div class="cgcb-block cgcb-c-${CGCB_CATS[b.type] || 'raw'}${cgcbChildLists(b).length ? ' is-holder' : ''}" data-id="${id}">${inner}</div>`;
@@ -21375,6 +21613,7 @@
     cgcBlocks.cursor.index = Math.max(0, Math.min(cgcBlocks.cursor.index, cgcBlocks.cursor.list.length));
     const keep = canvas.scrollTop;
     cgcBlocks.lists = [];
+    cgcBlocks.names = cgcbNames(); // the drop-downs on every block read this
     canvas.innerHTML = cgcbListHtml(cgcBlocks.model, true);
     canvas.scrollTop = keep;
     const undo = document.getElementById('cgcb-undo');
@@ -21429,6 +21668,7 @@
     else if (name === 'addelse') block.other = [];
     else if (name === 'delelif') block.elifs.splice(n, 1);
     else if (name === 'delelse') block.other = null;
+    else if (name === 'freevalue') (block.free = block.free || {}).value = true; // the "abc" button next to a color
     cgcbCommit();
     cgcbRender(name === 'del' ? 0 : id);
   }
@@ -21532,11 +21772,56 @@
       const hit = cgcbFind(Number(el.dataset.id));
       if (!hit) return;
       const field = el.dataset.f;
-      const value = el.value.replace(/[\r\n]+/g, ' ');
-      if (field.indexOf('elif:') === 0) hit.block.elifs[Number(field.slice(5))].cond = value;
-      else hit.block[field] = value;
-      if (el.tagName === 'INPUT') el.size = Math.max(el.classList.contains('is-wide') ? 14 : 3, Math.min(48, value.length + 1)); // the box grows as you type
+      const kind = el.dataset.k || 'raw';
+      const block = hit.block;
+      const typed = el.value.replace(/[\r\n]+/g, ' ');
+      // SIMPLE BLOCKS (1.57.0): "type it in..." swaps the drop-down for a typing box.
+      if (kind === 'pick' && typed === CGCB_TYPE_IT) {
+        (block.free = block.free || {})[field] = true;
+        cgcbRender(block.id);
+        const boxEl = canvas.querySelector(`.cgcb-block[data-id="${block.id}"] input[data-f="${field}"]`);
+        if (boxEl) boxEl.focus();
+        return;
+      }
+      // Turn what was typed or picked into code, depending on the kind of box.
+      let value = typed;
+      if (kind === 'val') value = cgcbReadValue(typed);
+      else if (kind === 'color') value = '"' + typed + '"';
+      else if (kind === 'ctext') value = 'canvas(' + cgcbQuote(typed) + ')';
+      else if (kind === 'cmp') {
+        // The three parts of a compare sit in one row: put them back together.
+        const rowEl = el.closest('.cgcb-row');
+        const part = (p) => { const x = rowEl.querySelector(`[data-f="${field}"][data-cmp="${p}"]`); return x ? x.value : ''; };
+        value = `${cgcbReadValue(part('l'))} ${part('op')} ${cgcbReadValue(part('r'))}`;
+      }
+      if (field.indexOf('elif:') === 0) block.elifs[Number(field.slice(5))].cond = value;
+      else block[field] = value;
+      // Picking a new thing to change gives it a value that fits: yes for yes / no, a color for color.
+      if (block.type === 'att' && field === 'attr') {
+        const isWords = /^"[^"]*"$/.test(block.value);                 // plain words like "Click me"
+        const isYesNo = block.value === 'true' || block.value === 'false';
+        const isNumber = /^-?\d+(\.\d+)?$/.test(block.value);
+        if (CGCB_YES_NO_ATTRS.includes(value)) { if (!isYesNo) block.value = 'true'; }
+        else if (value === 'color') { if (!/^"#[0-9a-fA-F]{6}"$/.test(block.value)) block.value = '"#ff5da0"'; }
+        else if (CGCB_WORD_ATTRS.includes(value)) { if (isYesNo || isNumber) block.value = value === 'text' || value === 'action' ? '"Hello"' : '""'; }
+        else if (isWords || isYesNo) block.value = CGCB_NUMBER_STARTS[value] || '1'; // a number is needed here
+      }
+      if (el.tagName === 'INPUT' && el.type === 'text') el.size = Math.max(el.classList.contains('is-wide') ? 14 : 3, Math.min(48, typed.length + 1)); // the box grows as you type
       cgcbCommit();
+      // A drop-down can change what the rest of the block looks like, so draw it again.
+      if (el.tagName === 'SELECT') cgcbRender(block.id);
+    });
+    // After a box was changed, the blocks are drawn again so new names show up in the other
+    // drop-downs. It waits until no box is being typed in, so a click on the next box never misses.
+    let namesChanged = false;
+    canvas.addEventListener('change', (e) => { if (e.target.matches('input.cgcb-in')) namesChanged = true; });
+    canvas.addEventListener('focusout', () => {
+      if (!namesChanged) return;
+      setTimeout(() => {
+        if (!namesChanged || canvas.contains(document.activeElement)) return;
+        namesChanged = false;
+        cgcbRender();
+      }, 0);
     });
     // Enter means "done with this box".
     canvas.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target.matches('input.cgcb-in')) e.target.blur(); });
@@ -21650,8 +21935,33 @@
     };
   }
 
+  // MOD PREVIEW (1.57.0): what "Run test" runs. null means the mod being made in the editor.
+  // A mod's page sets it to { name, code, payload } so the same test box can show that mod.
+  let cgcTestSource = null;
+
+  // Wires up the test buttons. They have the same ids in the editor and on a mod's page
+  // (only one of the two is ever on screen), so both call this after drawing them.
+  function cgcBindTestBar(){
+    const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+    on('cgc-run-btn', () => { if (cgcTestRuntime) cgcStopTest(); else cgcStartTest(); });
+    on('cgc-sim-click', () => {
+      if (!cgcTestRuntime) return;
+      cgcTestGame.clicks += cgcTestGame.clickPower;
+      cgcTestRuntime.fire('c.click', { click: cgcTestRuntime.cv.click + 1, earned: cgcTestGame.clickPower });
+      cgcRenderTestUi();
+    });
+    on('cgc-sim-buy', () => { if (cgcTestRuntime) cgcTestRuntime.fire('c.buy', { buy: 'Click Boost' }); });
+    on('cgc-sim-prestige', () => {
+      if (!cgcTestRuntime) return;
+      cgcTestGame.prestige += 1;
+      cgcTestRuntime.fire('c.prestige', { prestige: cgcTestGame.prestige });
+      cgcRenderTestUi();
+    });
+    on('cgc-console-clear', () => { cgcTestLogs = []; cgcRenderTestConsole(); });
+  }
+
   function cgcStartTest(){
-    const d = modEditorDraft;
+    const d = cgcTestSource || modEditorDraft;
     const stage = document.getElementById('cgc-test-stage');
     const box = document.getElementById('cgc-test');
     if (!d || !stage) return;
@@ -23957,6 +24267,7 @@ ${hasCode
 
   function renderModEditor(){
     cgcStopTest(); // the test preview lives inside the editor, which is about to be redrawn
+    cgcTestSource = null; // MOD PREVIEW (1.57.0): the editor tests its own draft again
     ytPreviewStop(); // YOUTUBE AS AUDIO: a row that is playing is about to be redrawn too
     if (!modEditorDraft) modEditorDraft = loadModEditorDraft() || newModEditorDraft();
     const d = modEditorDraft;

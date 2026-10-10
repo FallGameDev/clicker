@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.56.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.56.0">
+<!-- Game version: 1.57.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.57.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -311,13 +311,24 @@ How it is built:
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
 
+## Mod preview and simple blocks (1.57.0)
+
+- **Mod page preview:** the Code button on a mod's banner is now **Preview**. It does not show the code. It runs the mod in the same test box the mod editor has under its code (Run test, Game click, Shop buy, Prestige, the screen preview, currencies, Mods buttons and the console). It starts by itself and never touches real moneys or saved data. Paid mods can be previewed too.
+  - Code: `cgcTestSource` says what the test box runs (`null` = the editor's draft, or `{ name, code, payload }` for a mod's page). `cgcBindTestBar()` wires the buttons in both places.
+- **Simple blocks:** the block editor reads like Scratch now. Blocks use plain words and drop-downs ("when [the clicker is clicked]", "make a [circle] named [button]", "set [button]'s [color] to [color picker]", "change [score] [+ add] [1]", "say [Hello]").
+  - Words don't need quotes. `cgcbReadValue()` keeps numbers, known names and sums as they are and puts quotes around everything else. `cgcbShowValue()` hides the quotes again.
+  - A simple `if` shows as left side, sign, right side (`cgcbSplitCond()`).
+  - Every drop-down ends with "type it in...", which swaps it for a box where any CGC can be typed.
+  - The word lists are the `CGCB_*_WORDS` constants. The code the blocks make did not change at all.
+- **Switching always converts:** Text to Blocks used to refuse code it could not read. Now that code opens as plain "code" blocks, one per line (`cgcbLinesAsBlocks()`), so the switch always works. Blocks to Text shows the code the blocks made, as before.
+
 ## Paid song preview (1.56.0)
 
 On a paid mod the player has not downloaded, the Music view on the mod page no longer says "download to hear". Each song has a **Preview (15s)** button that plays `MOD_PREVIEW_SECONDS` (15) seconds and stops.
 
 - **The maker picks the start:** every song in the mod editor's Music section has a "Paid preview starts at ... seconds" box and a Test preview button. The start is saved on the song as `preview` (whole seconds, 0 to `MOD_PREVIEW_MAX_START`) inside `customFiles.music`. A song with no `preview` starts at 0. `.cga` archives keep it too.
 - **Code:** the `PAID SONG PREVIEW` section. Any element with the class `mod-preview-btn` plays a preview (`data-src`, `data-start`). It works for normal sound links and for YouTube links.
-- **Code on a paid mod stays locked** until the mod is downloaded.
+- The code of a mod is never shown on its page. Since 1.57.0 the Code button is a live Preview instead.
 - **API:** no change. The `api` function saves each song entry as it is, so `preview` rides along.
 - The limit is drawn by the game, not the server: the song's link is still inside the mod's data, so it stops casual listening, not someone digging through the page.
 
