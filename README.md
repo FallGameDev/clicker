@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.51.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.51.0">
+<!-- Game version: 1.52.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.52.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,12 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## Z key, Easy Navigation and a Shop fix (1.52.0)
+
+- **Z key:** pressing Z does one click on the clicker (it calls `avatarEl.click()`, so combos, effects and mods all work the same). Holding Z only counts once, Ctrl+Z is ignored, and it does nothing while you type in a text box or while a popup covers the clicker (`isTypingTarget()`, `isClickerReachable()`).
+- **Easy Navigation:** a new card in Settings. It puts the `easy-nav` class on `<body>`: the main tabs turn into big icon only buttons on every screen size and the click counter turns into plain text. Saved on this device in `localStorage` (`easyNavMode`), off by default. The look is all CSS, in the `EASY NAVIGATION` block at the end of the `<style>` tag.
+- **Shop bug fix:** `refreshShopAffordability()` was missing some buttons (Click Boost x10, x25 and Max, Click Effects, Font Manager, Theme Switcher, Lucky Charm, Prestige), so they stayed lit up after you could not afford them anymore. The Shop tab also kept flickering for a new item after you spent the moneys for it. `checkShopNewItems()` now stops the flicker, and starts it again when you can afford the item.
 
 ## Support a Creator (1.51.0)
 

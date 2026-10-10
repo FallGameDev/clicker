@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.51.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.51.0">
+<!-- Game version: 1.52.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.52.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -9314,6 +9314,45 @@
   @media (max-width:420px){
     .te-previews{ grid-template-columns:1fr; }
   }
+  /* ---------- EASY NAVIGATION (1.52.0) ----------
+     Settings > Easy Navigation puts the "easy-nav" class on <body>.
+     The main tab bar turns into big icon only buttons on every screen size,
+     and the click counter turns into plain text (no pill, no money icon).
+     Everything uses !important so it wins over the themes and the phone layout. */
+  body.easy-nav .tabs{
+    gap:10px !important;
+    justify-content:space-between !important;
+  }
+  body.easy-nav .tab-btn{
+    flex:1 1 0 !important;
+    min-width:0 !important;
+    width:auto !important;
+    height:60px !important;
+    padding:0 !important;
+    border-radius:16px !important;
+    gap:0 !important;
+  }
+  body.easy-nav .tab-btn .tab-icon{
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    width:30px !important;
+    height:30px !important;
+  }
+  body.easy-nav .tab-btn .tab-label{ display:none !important; }
+  body.easy-nav .click-counter{
+    background:none !important;
+    border:none !important;
+    box-shadow:none !important;
+    padding:0 !important;
+    font-size:28px !important;
+    color:var(--rind) !important;
+    text-shadow:none !important;
+  }
+  body.easy-nav .click-counter::before{ display:none !important; }
+
+  /* Z KEY (1.52.0): pressing Z clicks the clicker, so it gets the same press look as a mouse click. */
+  .avatar.key-press{ transform:scale(0.92); }
 </style>
 </head>
 <body>
@@ -9818,6 +9857,18 @@
   }
   applyLowPerfMode();
 
+  /* ---------- EASY NAVIGATION (1.52.0) ----------
+     A simpler UI: icon only tabs and a plain text click counter.
+     Saved on this device in localStorage, off by default. The look is all CSS (body.easy-nav). */
+  const EASY_NAV_KEY = 'easyNavMode';
+  function isEasyNavMode(){
+    try { return localStorage.getItem(EASY_NAV_KEY) === '1'; } catch (e) { return false; }
+  }
+  function applyEasyNavMode(){
+    document.body.classList.toggle('easy-nav', isEasyNavMode());
+  }
+  applyEasyNavMode();
+
   /* ---------- LAYOUT MODE ---------- */
   const LAYOUT_MODE_KEY = 'clickerLayout';
   function isPcOrTablet(){
@@ -10279,6 +10330,39 @@
     if (game.effectsOwned && game.selectedEffect === 'shake') triggerScreenShake();
     if (game.effectsOwned && game.selectedEffect === 'bubbles') spawnClickBubbles();
     if (game.effectsOwned && game.selectedEffect === 'squish') triggerAvatarSquish();
+  });
+
+  /* ---------- Z KEY (1.52.0) ----------
+     Pressing Z does one click on the clicker, the same as clicking it with the mouse.
+     It does nothing when:
+       - the key is being held down (e.repeat), so holding Z is not a free auto clicker
+       - Ctrl, Cmd or Alt is held (Ctrl+Z is undo)
+       - the player is typing in a text box, a dropdown or the mod editor
+       - the clicker is not on screen, or a popup is covering it */
+  function isTypingTarget(el){
+    if (!el) return false;
+    const tag = (el.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+  }
+  function isClickerReachable(){
+    const r = avatarEl.getBoundingClientRect();
+    if (!r.width || !r.height) return false; // hidden (login screen, loading screen)
+    const x = Math.min(Math.max(r.left + r.width / 2, 0), window.innerWidth - 1);
+    const y = Math.min(Math.max(r.top + r.height / 2, 0), window.innerHeight - 1);
+    // Scrolled off screen is fine. If it is on screen, nothing may be covering it.
+    if (r.bottom < 0 || r.top > window.innerHeight) return true;
+    const top = document.elementFromPoint(x, y);
+    return !top || avatarEl.contains(top) || !top.closest('[class*="overlay"], [class*="modal"], .auth-box');
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'z' && e.key !== 'Z') return;
+    if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTypingTarget(e.target) || isTypingTarget(document.activeElement)) return;
+    if (!isClickerReachable()) return;
+    avatarEl.click();
+    // Short press look, since a key press does not trigger the :active style.
+    avatarEl.classList.add('key-press');
+    setTimeout(() => avatarEl.classList.remove('key-press'), 90);
   });
 
   setInterval(() => {
@@ -11275,6 +11359,13 @@
     let changed = false;
     SHOP_WATCH_ITEMS.forEach(item => {
       if (shopSeenItems.has(item.id)) return;
+      // BUG FIX (1.52.0): if you spent your moneys and can't afford the item anymore,
+      // stop the flicker. It is not marked as seen, so it flickers again once you can afford it.
+      if (shopNewItems.includes(item.id) && !safeCheck(item.owned) && !safeCheck(item.available)) {
+        shopNewItems = shopNewItems.filter(id => id !== item.id);
+        changed = true;
+        return;
+      }
       if (safeCheck(item.owned)) {
         // Bought it without opening it from the flicker, so it is not new anymore.
         shopSeenItems.add(item.id);
@@ -14530,6 +14621,28 @@
     if (autoKillBtn && !game.autoKillOwned) autoKillBtn.disabled = game.clicks < AUTO_KILL_COST;
     const noobBtn = document.getElementById('buy-noob');
     if (noobBtn) noobBtn.disabled = game.clicks < NOOB_COST;
+    // BUG FIX (1.52.0): these buttons were missing here, so they stayed lit up
+    // after your moneys dropped below the price (until the Shop was redrawn).
+    [10, 25].forEach(n => {
+      const b = document.getElementById('buy-boost-x' + n);
+      if (b) { b.disabled = game.clicks < clickBoostBulkCost(n); b.textContent = 'Buy x' + n + ' (' + clickBoostBulkCost(n) + ')'; }
+    });
+    const boostMaxBtn = document.getElementById('buy-boost-max');
+    if (boostMaxBtn) {
+      const maxN = clickBoostMaxAffordable();
+      boostMaxBtn.disabled = maxN <= 0;
+      boostMaxBtn.textContent = 'Buy Max (' + maxN + ')';
+    }
+    const effectsBtn = document.getElementById('buy-effects');
+    if (effectsBtn && !game.effectsOwned) effectsBtn.disabled = game.clicks < EFFECTS_COST;
+    const fontManagerBtn = document.getElementById('buy-font-manager');
+    if (fontManagerBtn && !game.fontManagerOwned) fontManagerBtn.disabled = game.clicks < FONT_MANAGER_COST;
+    const themesBtn = document.getElementById('buy-themes');
+    if (themesBtn && !game.themeSwitcherOwned) themesBtn.disabled = game.clicks < THEME_SWITCHER_COST;
+    const luckyCharmBtn = document.getElementById('buy-luckycharm');
+    if (luckyCharmBtn && !game.luckyCharmOwned) luckyCharmBtn.disabled = game.clicks < LUCKY_CHARM_COST;
+    const prestigeBtn = document.getElementById('do-prestige');
+    if (prestigeBtn) prestigeBtn.disabled = game.clicks < PRESTIGE_COST;
     const amogusTask1 = document.getElementById('buy-amogustask-x1');
     if (amogusTask1) amogusTask1.disabled = !canBuyAmogusTasks(1);
     const amogusTask5 = document.getElementById('buy-amogustask-x5');
@@ -27034,6 +27147,14 @@ ${hasCode
         </div>
         <button class="buy-btn" id="toggle-low-perf">${isLowPerfMode() ? 'Turn Off' : 'Turn On'}</button>
       </div>
+      <!-- EASY NAVIGATION (1.52.0): switches between the normal UI and the simple one -->
+      <div class="shop-card">
+        <div class="shop-info">
+          <h3>Easy Navigation</h3>
+          <p>A simpler UI. The tabs turn into big icons and the click counter turns into plain text. Saved on this device.</p>
+        </div>
+        <button class="buy-btn" id="toggle-easy-nav">${isEasyNavMode() ? 'Turn Off' : 'Turn On'}</button>
+      </div>
       ${isPcOrTablet() ? `
       <div class="shop-card">
         <div class="shop-info">
@@ -27125,6 +27246,13 @@ ${hasCode
       localStorage.setItem(LOW_PERF_KEY, isLowPerfMode() ? '0' : '1');
       applyLowPerfMode();
       updateDvdVisibility();
+      renderSettings();
+    });
+
+    // EASY NAVIGATION (1.52.0): flip the saved setting, then redraw so the button text matches.
+    document.getElementById('toggle-easy-nav').addEventListener('click', () => {
+      try { localStorage.setItem(EASY_NAV_KEY, isEasyNavMode() ? '0' : '1'); } catch (e) {}
+      applyEasyNavMode();
       renderSettings();
     });
 
