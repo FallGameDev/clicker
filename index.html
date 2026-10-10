@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.54.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.54.0">
+<!-- Game version: 1.55.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.55.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -9353,21 +9353,30 @@
 
   /* ---------- EASY NAVIGATION: EVERYTHING IS ICONS (1.53.0) ----------
      The JS (see "EASY NAVIGATION ICONS" in the script) puts a data-ez attribute on
-     every label it can turn into icons, for example data-ez="🛒 100" on a Buy button.
-     Here the real text is hidden (font-size:0) and the icons are drawn with ::before.
-     The numbers inside data-ez stay as text. To change an icon, edit EZ_WORDS in the script. */
+     every label it can turn into icons, and adds a <span class="ez-ico"> with SVG icons inside it.
+     Here the real text is hidden (font-size:0) and the icon holder is given a size.
+     To change an icon, edit EZ_WORDS and EZ_ICONS in the script. */
   body.easy-nav [data-ez]{
     font-size:0 !important;
     letter-spacing:0 !important;
   }
-  body.easy-nav [data-ez]::before{
-    content:attr(data-ez);
+  /* The icon holder the JS adds. Icons are 1.3 times the text size, numbers sit next to them. */
+  body.easy-nav [data-ez] > .ez-ico{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:0.3em;
     font-size:var(--ez-fs, 17px);
     line-height:1.25;
     white-space:nowrap;
+    vertical-align:middle;
+    pointer-events:none;   /* a click on an icon counts as a click on the button under it */
   }
+  .ez-ico svg{ width:1.3em; height:1.3em; flex:none; display:block; }
+  .ez-ico .ez-num::before{ content:attr(data-n); }
+  body:not(.easy-nav) .ez-ico{ display:none; }
   /* Children of an icon label (a timer, an svg) keep a readable size. */
-  body.easy-nav [data-ez] > *{ font-size:12px; }
+  body.easy-nav [data-ez] > *:not(.ez-ico){ font-size:12px; }
 
   /* The tab content becomes a grid of tiles. Anything that is not a tile takes a full row. */
   body.easy-nav #link-list{
@@ -9401,7 +9410,7 @@
   }
   /* A tile with a picture icon does not need its name. A tile without one gets an emoji from its name. */
   body.easy-nav #link-list .shop-icon ~ .shop-info h3{ display:none; }
-  body.easy-nav #link-list .shop-info h3[data-ez]{ --ez-fs:38px; margin:0; }
+  body.easy-nav #link-list .shop-info h3[data-ez]{ --ez-fs:36px; margin:0; }
   /* Descriptions are hidden. The "Owned: 3" pill inside them stays. */
   body.easy-nav #link-list .shop-info p{ font-size:0 !important; line-height:0 !important; }
   body.easy-nav #link-list .shop-info .owned:not([data-ez]){ font-size:11px !important; line-height:1.4; }
@@ -9437,6 +9446,7 @@
   }
   body.easy-nav #link-list > .achievement-card .achievement-icon svg{ width:32px; height:32px; }
   body.easy-nav .empty-state[data-ez]{ --ez-fs:30px; }
+  body.easy-nav button:disabled[data-ez] > .ez-ico svg{ filter:grayscale(0.7); opacity:0.75; }
   /* The three Theme buttons shrink so they fit inside one tile. */
   body.easy-nav #link-list > .shop-card .theme-mode-btns{ gap:4px; }
   body.easy-nav #link-list > .shop-card .theme-mode-btn{ width:28px; height:28px; }
@@ -9446,9 +9456,155 @@
   body.easy-nav #link-list .limited-title[data-ez]{ --ez-fs:26px; }
   body.easy-nav #link-list .limited-section-title[data-ez]{ --ez-fs:26px; }
   body.easy-nav #link-list .limited-sub-title[data-ez]{ --ez-fs:20px; }
-  body.easy-nav #link-list .limited-reset[data-ez] > *,
+  body.easy-nav #link-list .limited-reset[data-ez],
   body.easy-nav #link-list .limited-section-sub[data-ez]{ --ez-fs:13px; }
   body.easy-nav #page-sidebar .preferences-toggle [data-ez]{ --ez-fs:20px; }
+
+  /* ---------- MOD FONTS (1.55.0): the Fonts section of the mod editor ---------- */
+  .mod-editor-file-preview.is-font{
+    background:#38bdf8;
+    color:#181428;
+    font-size:24px;
+    line-height:1;
+  }
+  .mod-editor-font-sample{
+    font-size:18px;
+    line-height:1.3;
+    color:var(--rind);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* ---------- MOD PAGE VIEWS (1.55.0) ----------
+     The row of buttons at the bottom of a mod's banner (Banner, Icons, Cursors, ...)
+     and the box that shows what the picked button asks for. */
+  .mio-hero-tabs{
+    position:relative;
+    z-index:1;
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    padding:0 16px 14px;
+  }
+  .mio-hero-tab{
+    font-family:'Fredoka One', cursive;
+    font-size:12px;
+    color:#fff;
+    background:rgba(16,12,31,0.72);
+    border:2px solid var(--ink);
+    border-radius:999px;
+    padding:5px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    transition:transform .1s ease, background .15s ease;
+  }
+  .mio-hero-tab:hover{ transform:translateY(-1px); background:rgba(16,12,31,0.9); }
+  .mio-hero-tab.active{ background:var(--zap); color:#241c00; box-shadow:0 3px 0 var(--ink); }
+  .mio-hero-tab-count{
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    font-weight:700;
+    padding:0 6px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.22);
+  }
+  .mio-hero-tab.active .mio-hero-tab-count{ background:rgba(0,0,0,0.16); }
+  .mio-hero-view{
+    position:relative;
+    z-index:1;
+    margin:16px 16px 12px;
+    padding:14px;
+    max-height:360px;
+    overflow:auto;
+    background:rgba(16,12,31,0.78);
+    border:2px solid var(--ink);
+    border-radius:14px;
+    color:#fff;
+    text-align:left;
+  }
+  .mio-hero-view[hidden], .mio-hero-inner[hidden]{ display:none; }
+  .mio-view-title{
+    font-family:'Fredoka One', cursive;
+    font-size:15px;
+    margin:0 0 10px;
+  }
+  .mio-view-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(84px, 1fr));
+    gap:10px;
+  }
+  .mio-view-grid.is-bg{ grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); }
+  .mio-view-tile{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    min-width:0;
+  }
+  .mio-view-thumb{
+    width:100%;
+    aspect-ratio:1;
+    border:2px solid var(--ink);
+    border-radius:12px;
+    background:
+      conic-gradient(rgba(255,255,255,0.1) 25%, transparent 0 50%, rgba(255,255,255,0.1) 0 75%, transparent 0) 0 0 / 14px 14px,
+      #2a2340;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  .mio-view-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .mio-view-grid.is-cursors .mio-view-thumb img{ width:32px; height:32px; object-fit:contain; image-rendering:pixelated; }
+  .mio-view-grid.is-bg .mio-view-thumb{ aspect-ratio:16 / 9; }
+  .mio-view-name{
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    font-weight:600;
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .mio-view-rows{ display:flex; flex-direction:column; gap:10px; }
+  .mio-view-row{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    padding:10px 12px;
+    background:rgba(255,255,255,0.07);
+    border:2px solid var(--ink);
+    border-radius:12px;
+  }
+  .mio-view-row audio{ width:100%; height:34px; }
+  .mio-view-font-sample{ font-size:24px; line-height:1.25; overflow-wrap:anywhere; }
+  .mio-view-swatches{ display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
+  .mio-view-swatches span{
+    width:22px;
+    height:22px;
+    border-radius:6px;
+    border:2px solid var(--ink);
+  }
+  .mio-view-swatches em{
+    font-style:normal;
+    font-family:'Poppins', sans-serif;
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-right:4px;
+    opacity:0.8;
+  }
+  .mio-hero-view .cgc-doc-code{ margin:0; max-height:none; }
+  .mio-view-note{
+    font-family:'Poppins', sans-serif;
+    font-size:12.5px;
+    margin:0;
+    opacity:0.9;
+  }
 
   /* YOUTUBE AS AUDIO (1.54.0): the YouTube player sits far off screen, so you only hear it. */
   .yt-audio-box{
@@ -13521,6 +13677,59 @@
     fonts.forEach(f => UI_FONTS.push({ label: f.label.trim(), value: f.value.toLowerCase() }));
     rebuildPickerSelect(fontManagerSelect, 'Choose a font', UI_FONTS, e => e.value);
     fontManagerSelect.value = UI_FONTS.some(f => f.value === current) ? current : '';
+    refreshModFonts(); // MOD FONTS (1.55.0): the list was just rebuilt, so put the mod fonts back
+  }
+
+  /* ---------- MOD FONTS (1.55.0) ----------
+     A mod can carry fonts (customFiles.fonts, made in the Fonts section of the mod editor).
+     Fonts from installed mods show up in the Font Manager picker after the built-in ones.
+     Each one gets its own @font-face and a body class, the same way settings/fonts.json works.
+     refreshModFonts() runs when a mod is installed, updated or removed, and when the game starts. */
+
+  // The safe font source of one customFiles.fonts entry, or '' if it can't be used.
+  // Only uploaded font data or an https link is allowed, and nothing that could break out of the CSS.
+  function modFontSrc(f){
+    const src = String((f && (f.base64 || f.url)) || '').trim();
+    if (!/^(data:(font\/|application\/(font|x-font|vnd\.ms-fontobject|octet-stream))|https:\/\/)/i.test(src)) return '';
+    if (/['"\\<>\s]/.test(src)) return '';
+    return src;
+  }
+  // A short, steady id made from text. The same font always gets the same id.
+  function modFontHash(text){
+    let h = 5381;
+    for (let i = 0; i < text.length; i++) h = ((h * 33) ^ text.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+  function refreshModFonts(){
+    const found = [];
+    ((typeof game !== 'undefined' && game && game.installedMods) || []).forEach(mod => {
+      const fonts = mod && mod.customFiles && Array.isArray(mod.customFiles.fonts) ? mod.customFiles.fonts : [];
+      fonts.forEach((f, i) => {
+        const src = modFontSrc(f);
+        if (!src) return;
+        const value = 'mod' + modFontHash(String(mod.id) + ':' + String((f && f.file) || i));
+        if (found.some(x => x.value === value)) return;
+        found.push({ label: String((f && f.name) || 'Mod font').slice(0, 40), value, src, mod: true });
+      });
+    });
+    let styleEl = document.getElementById('mod-fonts-style');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'mod-fonts-style';
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = found.map(f =>
+      `@font-face{font-family:'ModFont_${f.value}';src:url('${f.src}');font-display:swap;}\n` +
+      `body.ui-font-${f.value} *{font-family:'ModFont_${f.value}', 'Fredoka One', cursive !important;}`
+    ).join('\n');
+
+    // Swap the old mod fonts in the picker for the new list. Built-in fonts are not touched.
+    const current = fontManagerSelect.value;
+    for (let i = UI_FONTS.length - 1; i >= 0; i--) if (UI_FONTS[i].mod) UI_FONTS.splice(i, 1);
+    found.forEach(f => UI_FONTS.push({ label: f.label, value: f.value, mod: true }));
+    rebuildPickerSelect(fontManagerSelect, 'Choose a font', UI_FONTS, e => e.value);
+    const wanted = (typeof game !== 'undefined' && game && game.fontManagerChosen && game.fontManagerOwned) ? game.selectedUiFont : current;
+    fontManagerSelect.value = UI_FONTS.some(f => f.value === wanted) ? wanted : '';
   }
 
   // Each file loads on its own, so one broken file never blocks the others.
@@ -13898,6 +14107,7 @@
     loadModThemes();
     rebuildThemeSelect();
     applyUiTheme();
+    refreshModFonts(); // MOD FONTS (1.55.0): fonts change at the same moments themes do
   }
 
   rebuildThemeSelect();
@@ -14925,83 +15135,172 @@
   }
 
   /* ======================================================
-     EASY NAVIGATION ICONS (1.53.0)
+     EASY NAVIGATION ICONS (1.53.0, SVG icons since 1.55.0)
      With Easy Navigation on, every label in the tabs and the sidebar turns into icons.
      How it works:
        1. ezScan() looks at every element matched by EZ_SELECTOR inside EZ_SCOPES.
-       2. ezIconize() swaps each known word or phrase for an emoji (EZ_WORDS) and keeps the numbers.
-          "Buy x10 (550)" becomes "🛒 x10 550".
-       3. The result goes in the data-ez attribute. The CSS hides the real text and draws data-ez.
-          The real text is never changed, so the rest of the game keeps working the same.
+       2. ezIconize() swaps each known word or phrase for one or more icons (EZ_WORDS) and
+          keeps the numbers. "Buy x10 (550)" becomes [cart icon] x10 550.
+       3. ezApplyTo() puts a small <span class="ez-ico"> with the SVG icons at the start of the
+          element and marks the element with data-ez. The CSS hides the real text.
+          The real text is never changed, and numbers are drawn with CSS (data-n), so
+          element.textContent still gives the game the same words as always.
        4. A MutationObserver runs ezScan() again whenever a tab is redrawn or a price changes.
      A label with a word that is not in EZ_WORDS is left as normal text, so player names,
      mod names and chat messages are never touched.
-     To give a new button an icon: add its words to EZ_WORDS (lowercase).
+     To give a new button an icon: add its words to EZ_WORDS (lowercase) and point them at
+     an icon name from EZ_ICONS. To draw a new icon, add it to EZ_ICONS.
      ====================================================== */
+  // Every icon: [fill color, the shapes inside a 24 by 24 box]. All of them get the same dark outline.
+  const EZ_ICONS = {
+    cart:     ['#ffd43b', '<path d="M6.5 7h13l-2 7H8z"/><path d="M3 4h2.5L8 14" fill="none"/><circle cx="9.5" cy="18.5" r="1.8"/><circle cx="16.5" cy="18.5" r="1.8"/>'],
+    check:    ['#22c55e', '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8 5.7-5.8" fill="none" stroke="#fff" stroke-width="2.6"/>'],
+    hourglass:['#f59e0b', '<path d="M7 3h10v3.5L13.5 12l3.5 5.5V21H7v-3.5L10.5 12 7 6.5z"/>'],
+    up:       ['#22c55e', '<path d="M12 3l7 8h-4.5v10h-5V11H5z"/>'],
+    top:      ['#38bdf8', '<path d="M5 3h14v3H5z"/><path d="M12 8l6 7h-4v6h-4v-6H6z"/>'],
+    swap:     ['#a78bfa', '<path d="M4 6.5h11v-3l5 4.5-5 4.5v-3H4z"/><path d="M20 14.5H9v-3L4 16l5 4.5v-3h11z"/>'],
+    bag:      ['#ff5da0', '<path d="M5 8h14l1.5 13h-17z"/><path d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3" fill="none"/>'],
+    heart:    ['#ef4444', '<path d="M12 20.5C5 15.5 3 12 3 8.8A4.6 4.6 0 0 1 12 7a4.6 4.6 0 0 1 9 1.8c0 3.2-2 6.7-9 11.7z"/>'],
+    gem:      ['#a855f7', '<path d="M7 4h10l4 5.5L12 21 3 9.5z"/><path d="M3 9.5h18" fill="none"/>'],
+    money:    ['#4ade80', '<circle cx="12" cy="12" r="9"/><path d="M14.8 9.2c-.5-1-1.5-1.5-2.8-1.5-1.6 0-2.8.8-2.8 2.1 0 3 5.8 1.3 5.8 4.3 0 1.3-1.3 2.2-3 2.2-1.4 0-2.6-.6-3.1-1.7M12 5.8v12.4" fill="none" stroke-width="1.5"/>'],
+    clipboard:['#60a5fa', '<rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="9" y="2.5" width="6" height="4" rx="1" fill="#fff"/><path d="M8.5 12l1.8 1.8 3.2-3.3M8.5 17h7" fill="none"/>'],
+    plus:     ['#22c55e', '<path d="M9.5 3h5v6.5H21v5h-6.5V21h-5v-6.5H3v-5h6.5z"/>'],
+    disc:     ['#8b5cf6', '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.8" fill="#fff"/>'],
+    pointer:  ['#38bdf8', '<path d="M5 3l14 9-6 1.5 3.5 6.5-3 1.5L10 15l-5 4z"/>'],
+    none:     ['#fff',    '<circle cx="12" cy="12" r="8.5" stroke="#ef4444" stroke-width="3"/><path d="M6 6l12 12" fill="none" stroke="#ef4444" stroke-width="3"/>'],
+    play:     ['#22c55e', '<path d="M7 4l13 8-13 8z"/>'],
+    fast:     ['#eab308', '<path d="M3 5l9 7-9 7z"/><path d="M12 5l9 7-9 7z"/>'],
+    faster:   ['#f97316', '<path d="M2.5 5l8 7-8 7z"/><path d="M10.5 5l8 7-8 7z"/><path d="M19.5 5h2v14h-2z"/>'],
+    fire:     ['#f97316', '<path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-2.5 1.2-4.2 2.5-5.5 0 2 .8 3.2 2 3.7C10 8.5 11 5 12 2z"/>'],
+    bolt:     ['#facc15', '<path d="M13.5 2L4.5 13.5h6L9.5 22l9-11.5h-6z"/>'],
+    target:   ['#ef4444', '<circle cx="12" cy="12" r="9" fill="#fff"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2" fill="#fff"/>'],
+    letters:  ['#38bdf8', '<path fill-rule="evenodd" d="M3 19.5L9 4.5h3l6 15h-3.6l-1.1-3H7.7l-1.1 3zM8.8 13.3h3.4L10.5 8.5z"/>'],
+    picture:  ['#14b8a6', '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.8" fill="#fff"/><path d="M4 18l5.5-5 3.5 3 3-2.5 4 4.5z" fill="#fff"/>'],
+    gift:     ['#ff5da0', '<rect x="4" y="10" width="16" height="11" rx="1.5"/><rect x="3" y="6.5" width="18" height="4" rx="1" fill="#fff"/><path d="M12 6.5V21M12 6.5C10 3 6.5 3.5 7.5 5.5 8 6.5 10 6.5 12 6.5zm0 0c2-3.5 5.5-3 4.5-1-.5 1-2.5 1-4.5 1z" fill="none"/>'],
+    grid:     ['#ff5da0', '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>'],
+    eye:      ['#38bdf8', '<path d="M2 12c2.5-4.5 6-6.5 10-6.5s7.5 2 10 6.5c-2.5 4.5-6 6.5-10 6.5S4.5 16.5 2 12z" fill="#fff"/><circle cx="12" cy="12" r="3.5"/>'],
+    palette:  ['#f59e0b', '<path d="M12 3a9 9 0 1 0 0 18c1.3 0 2-.9 2-2 0-1.2-1-1.5-1-2.5 0-.9.8-1.5 1.8-1.5H17a4 4 0 0 0 4-4c0-4.5-4-8-9-8z"/><circle cx="7.8" cy="11.5" r="1.3" fill="#fff"/><circle cx="10.5" cy="7.5" r="1.3" fill="#fff"/><circle cx="15" cy="7.5" r="1.3" fill="#fff"/>'],
+    square:   ['#94a3b8', '<rect x="4" y="4" width="16" height="16" rx="3"/>'],
+    globe:    ['#38bdf8', '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3.5 3-3.5 15 0 18M12 3c3.5 3 3.5 15 0 18" fill="none" stroke-width="1.4"/>'],
+    trophy:   ['#facc15', '<path d="M7 5H3.5v1.5A3.5 3.5 0 0 0 7 10M17 5h3.5v1.5A3.5 3.5 0 0 1 17 10" fill="none"/><path d="M7 3.5h10V9a5 5 0 0 1-10 0z"/><path d="M10.5 14h3v3.5h-3z"/><path d="M7.5 17.5h9V21h-9z"/>'],
+    people:   ['#60a5fa', '<circle cx="17" cy="9" r="2.8"/><path d="M13 20c0-3.8 1.8-5.8 4.5-5.8S22 16.2 22 20z"/><circle cx="8.5" cy="8" r="3.3"/><path d="M2 20c0-4 2.7-6.2 6.5-6.2S15 16 15 20z"/>'],
+    shield:   ['#6366f1', '<path d="M12 2.5l8 3v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10v-6z"/>'],
+    dotgreen: ['#22c55e', '<circle cx="12" cy="12" r="8"/>'],
+    dotyellow:['#facc15', '<circle cx="12" cy="12" r="8"/>'],
+    dotred:   ['#ef4444', '<circle cx="12" cy="12" r="8"/>'],
+    skull:    ['#fff',    '<path d="M12 3a8 8 0 0 0-8 8c0 2.8 1.3 4.8 3 6v3.5h10V17c1.7-1.2 3-3.2 3-6a8 8 0 0 0-8-8z"/><circle cx="9" cy="11.5" r="1.8" fill="#181428"/><circle cx="15" cy="11.5" r="1.8" fill="#181428"/><path d="M10.5 20.5v-2M13.5 20.5v-2" fill="none" stroke-width="1.4"/>'],
+    star:     ['#facc15', '<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z"/>'],
+    home:     ['#ff8a4c', '<path d="M3 11.5L12 3l9 8.5h-2.5V21h-13v-9.5z"/><rect x="10" y="14" width="4" height="7" fill="#fff"/>'],
+    puzzle:   ['#22c55e', '<path d="M4 8h4a2.2 2.2 0 1 1 4 0h4v4a2.2 2.2 0 1 1 0 4v4H4v-4a2.2 2.2 0 1 0 0-4z"/>'],
+    chat:     ['#38bdf8', '<path d="M3 4.5h18v11.5H10l-5 4.5V16H3z"/><path d="M8 10.2h.1M12 10.2h.1M16 10.2h.1" fill="none" stroke="#fff" stroke-width="2.4"/>'],
+    door:     ['#f59e0b', '<rect x="6" y="2.5" width="12" height="19" rx="1.5"/><circle cx="14.8" cy="12.5" r="1.2" fill="#fff"/>'],
+    chart:    ['#a78bfa', '<rect x="3.5" y="12" width="4.5" height="9" rx="1"/><rect x="9.8" y="3.5" width="4.5" height="17.5" rx="1"/><rect x="16" y="8" width="4.5" height="13" rx="1"/>'],
+    person:   ['#60a5fa', '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3.6-7.5 8-7.5s8 2.5 8 7.5z"/>'],
+    wrench:   ['#94a3b8', '<path d="M14.5 3a5 5 0 0 0-4.7 6.7L3 16.5 7.5 21l6.8-6.8A5 5 0 0 0 21 9.5l-3 3-3.5-3.5 3-3A5 5 0 0 0 14.5 3z"/>'],
+    flag:     ['#ef4444', '<path d="M5 3.5h14l-3 4.5 3 4.5H5z"/><path d="M5 21.5V3" fill="none" stroke-width="2.4"/>'],
+    trash:    ['#f87171', '<path d="M5 7h14l-1.2 14H6.2z"/><path d="M3.5 7h17M9 7V3.5h6V7M10 11v6M14 11v6" fill="none"/>'],
+    x:        ['#ef4444', '<path d="M5 7.5L7.5 5l4.5 4.5L16.5 5 19 7.5 14.5 12l4.5 4.5-2.5 2.5-4.5-4.5L7.5 19 5 16.5 9.5 12z"/>'],
+    info:     ['#38bdf8', '<circle cx="12" cy="12" r="9"/><path d="M12 11v6" fill="none" stroke="#fff" stroke-width="2.6"/><circle cx="12" cy="7.5" r="1.3" fill="#fff" stroke="none"/>'],
+    right:    ['#22c55e', '<path d="M3 9.5h10V5l8 7-8 7v-4.5H3z"/>'],
+    moon:     ['#818cf8', '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5z"/>'],
+    medal:    ['#facc15', '<path d="M8 2.5h8l-2 7h-4z" fill="#60a5fa"/><circle cx="12" cy="15" r="6"/>'],
+    bulb:     ['#facc15', '<path d="M12 2.5a6.5 6.5 0 0 0-4 11.6V17h8v-2.9a6.5 6.5 0 0 0-4-11.6z"/><path d="M9 19.5h6v2H9z" fill="#fff"/>'],
+    unlock:   ['#22c55e', '<path d="M8 10.5V7a4 4 0 0 1 7.8-1.2" fill="none"/><rect x="4.5" y="10.5" width="15" height="10.5" rx="2"/>'],
+    trend:    ['#22c55e', '<path d="M9 4h11v11h-4v-4.2L6.8 20 4 17.2 13.2 8H9z"/>'],
+    speaker:  ['#38bdf8', '<path d="M3 9h4l6-5v16l-6-5H3z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" fill="none"/>'],
+    mute:     ['#94a3b8', '<path d="M3 9h4l6-5v16l-6-5H3z"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="#ef4444" stroke-width="2.6"/>'],
+    gauge:    ['#22c55e', '<path d="M3 17a9 9 0 0 1 18 0z"/><path d="M12 17l-4.5-5" fill="none" stroke="#fff" stroke-width="2.4"/>'],
+    compass:  ['#ef4444', '<circle cx="12" cy="12" r="9" fill="#fff"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>'],
+    layout:   ['#a78bfa', '<rect x="3" y="4" width="18" height="16" rx="2" fill="#fff"/><rect x="3" y="4" width="7" height="16" rx="2"/>'],
+    bug:      ['#ef4444', '<path d="M12 6.5v14M6.5 11H3M6.5 15H3M17.5 11H21M17.5 15H21M9 5L7.5 3M15 5l1.5-2" fill="none"/><ellipse cx="12" cy="13.5" rx="5.5" ry="7"/>'],
+    reset:    ['#38bdf8', '<path d="M12 4a8 8 0 1 0 8 8h-3.5A4.5 4.5 0 1 1 12 7.5V11l6-5-6-5z"/>'],
+    book:     ['#f59e0b', '<path d="M3 5c3-1.5 6-1.5 9 0 3-1.5 6-1.5 9 0v14c-3-1.5-6-1.5-9 0-3-1.5-6-1.5-9 0z"/><path d="M12 5v14" fill="none"/>'],
+    doc:      ['#60a5fa', '<path d="M6 2.5h8l5 5v14H6z"/><path d="M14 2.5v5h5" fill="#fff"/><path d="M9 12h6.5M9 16h6.5" fill="none" stroke="#fff"/>'],
+    film:     ['#ff5da0', '<rect x="3" y="4.5" width="18" height="15" rx="2"/><path d="M10 9l5 3-5 3z" fill="#fff"/>'],
+    download: ['#22c55e', '<path d="M9.5 3h5v7H19l-7 7-7-7h4.5z"/><path d="M4 20.5h16" fill="none" stroke-width="2.4"/>'],
+    personx:  ['#94a3b8', '<circle cx="10" cy="8" r="4"/><path d="M2.5 21c0-5 3.3-7.5 7.5-7.5 2 0 3.8.6 5.2 1.8V21z"/><path d="M16.5 15.5l5 5M21.5 15.5l-5 5" fill="none" stroke="#ef4444" stroke-width="2.6"/>'],
+    off:      ['#94a3b8', '<rect x="2" y="7" width="20" height="10" rx="5"/><circle cx="7" cy="12" r="3.2" fill="#fff"/>'],
+    on:       ['#22c55e', '<rect x="2" y="7" width="20" height="10" rx="5"/><circle cx="17" cy="12" r="3.2" fill="#fff"/>'],
+    sliders:  ['#ff5da0', '<path d="M5 3v18M12 3v18M19 3v18" fill="none"/><rect x="2.8" y="13" width="4.4" height="4.4" rx="1"/><rect x="9.8" y="6" width="4.4" height="4.4" rx="1"/><rect x="16.8" y="12" width="4.4" height="4.4" rx="1"/>'],
+    box:      ['#f59e0b', '<path d="M12 2.5l9 4.5v10l-9 4.5-9-4.5V7z"/><path d="M3 7l9 4.5L21 7M12 11.5v10" fill="none"/>'],
+    sparkle:  ['#facc15', '<path d="M12 2l2.3 7.7L22 12l-7.7 2.3L12 22l-2.3-7.7L2 12l7.7-2.3z"/>']
+  };
+  // One icon as an <svg>. Its size comes from the font size around it (see .ez-ico in the CSS).
+  function ezIconSvg(name){
+    const icon = EZ_ICONS[name];
+    if (!icon) return '';
+    return `<svg viewBox="0 0 24 24" fill="${icon[0]}" stroke="#181428" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">${icon[1]}</svg>`;
+  }
+
+  // Words -> icon names from EZ_ICONS. More than one name draws the icons side by side. '' drops the word.
   const EZ_WORDS = {
     // ---- shop ----
-    'buy max': '🛒 🔝', 'level up': '⬆️', 'buy': '🛒', 'owned': '✅', 'buying': '⏳', 'max': '🔝',
-    'trade': '🔁', 'prestige shop': '🛍️', 'limited shop': '🛍️', 'prestige': '❤️', 'gems': '💎', 'gem': '💎',
-    'moneys': '💰', 'tasks': '📋', 'task': '📋', 'extra': '➕', 'clones': '📀', 'clone': '📀',
-    'equipped': '✅', 'equip': '👆', 'none': '🚫', 'installed': '✅', 'speed': '⏩', 'level': '⬆️',
-    'normal': '▶️', 'quick': '⏩', 'rapid': '⏭️', 'blazing': '🔥', 'lightning': '⚡', 'swing': '🎯',
-    'profile fonts': '🔤', 'profile frames': '🖼️', 'profile font': '🔤', 'profile frame': '🖼️', 'lucky block': '🎁',
-    'your collection': '🎒', 'new items in': '⏳', 'fonts': '🔤', 'frames': '🖼️',
+    'buy max': 'cart top', 'level up': 'up', 'buy': 'cart', 'owned': 'check', 'buying': 'hourglass', 'max': 'top',
+    'trade': 'swap', 'prestige shop': 'bag', 'limited shop': 'bag', 'prestige': 'heart', 'gems': 'gem', 'gem': 'gem',
+    'moneys': 'money', 'tasks': 'clipboard', 'task': 'clipboard', 'extra': 'plus', 'clones': 'disc', 'clone': 'disc',
+    'equipped': 'check', 'equip': 'pointer', 'none': 'none', 'installed': 'check', 'speed': 'fast', 'level': 'up',
+    'normal': 'play', 'quick': 'fast', 'rapid': 'faster', 'blazing': 'fire', 'lightning': 'bolt', 'swing': 'target',
+    'profile fonts': 'letters', 'profile frames': 'picture', 'profile font': 'letters', 'profile frame': 'picture', 'lucky block': 'gift',
+    'your collection': 'box', 'new items in': 'hourglass', 'fonts': 'letters', 'frames': 'picture',
+    '✨': 'sparkle', '⏳': 'hourglass', // the sparkle and hourglass emoji already written on the two shop buttons
     // ---- category bars ----
-    'all': '🗂️', 'visuals': '👀', 'customization': '🎨', 'plain': '🧱',
-    'global': '🌍', 'champions': '🏆', 'friends': '👥', 'admins': '🛡️',
-    'easy': '🟢', 'medium': '🟡', 'hard': '🔴', 'extreme': '💀', 'special': '⭐',
+    'all': 'grid', 'visuals': 'eye', 'customization': 'palette', 'plain': 'square',
+    'global': 'globe', 'champions': 'trophy', 'friends': 'people', 'admins': 'shield',
+    'easy': 'dotgreen', 'medium': 'dotyellow', 'hard': 'dotred', 'extreme': 'skull', 'special': 'star',
     // ---- stats ----
-    'overview': '🏠', 'mods': '🧩', 'messages off': '💬 🚫', 'messages': '💬', 'rooms': '🚪',
-    'room stats': '🚪 📊', 'player stats': '👤 📊',
-    'open workshop': '🛠️', 'new chat': '➕ 💬', 'friend requests': '🙋', 'reports to review': '🚩',
-    'accept': '✅', 'decline': '❌', 'cancel': '✖️', 'dismiss': '✖️', 'remove': '🗑️', 'delete': '🗑️',
-    'uninstall': '🗑️', 'leave chat': '🚪', 'send gift': '🎁', 'view profile': '👤',
-    'submit report': '🚩', 'reported': '🚩 ✅', 'report': '🚩', 'resolved': '✅',
-    'hide details': 'ℹ️', 'details': 'ℹ️', 'join': '➡️', 'rejoin': '➡️', 'offline': '💤',
+    'overview': 'home', 'mods': 'puzzle', 'messages off': 'chat none', 'messages': 'chat', 'rooms': 'door',
+    'room stats': 'door chart', 'player stats': 'person chart',
+    'open workshop': 'wrench', 'new chat': 'plus chat', 'friend requests': 'people plus', 'reports to review': 'flag',
+    'accept': 'check', 'decline': 'x', 'cancel': 'x', 'dismiss': 'x', 'remove': 'trash', 'delete': 'trash',
+    'uninstall': 'trash', 'leave chat': 'door', 'send gift': 'gift', 'view profile': 'person',
+    'submit report': 'flag', 'reported': 'flag check', 'report': 'flag', 'resolved': 'check',
+    'hide details': 'info', 'details': 'info', 'join': 'right', 'rejoin': 'right', 'offline': 'moon',
     // ---- leaderboard and loading boxes ----
-    'loading leaderboard': '⏳ 🏆', 'loading friends': '⏳ 👥', 'loading chats': '⏳ 💬', 'loading': '⏳',
-    'no scores yet': '🚫 🏆', 'no achievements in this difficulty yet': '🚫 🏅',
+    'loading leaderboard': 'hourglass trophy', 'loading friends': 'hourglass people', 'loading chats': 'hourglass chat', 'loading': 'hourglass',
+    'no scores yet': 'none trophy', 'no achievements in this difficulty yet': 'none medal',
     // ---- achievements ----
-    'progress': '📈', 'unlocked': '🔓', 'get a hint': '💡', 'out of hints': '🚫 💡', 'left': '',
+    'progress': 'trend', 'unlocked': 'unlock', 'get a hint': 'bulb', 'out of hints': 'none bulb', 'left': '',
     // ---- settings ----
-    'sound effects': '🔊', 'theme': '🎨', 'low performance mode': '🐢', 'easy navigation': '🧭',
-    'layout': '📐', 'debug mode': '🐞', 'reset data': '♻️', 'reset tutorial': '🎓',
-    'view applications': '📝', 'credits': '🎬', 'download the game': '⬇️', 'log out': '🚪',
-    'delete account': '❌ 👤', 'unmute': '🔊', 'mute': '🔇', 'turn on': '⬜', 'turn off': '✅',
-    'open': '▶️', 'reset': '♻️', 'replay': '🔁', 'view': '👁️', 'download': '⬇️',
+    'sound effects': 'speaker', 'theme': 'palette', 'low performance mode': 'gauge', 'easy navigation': 'compass',
+    'layout': 'layout', 'debug mode': 'bug', 'reset data': 'reset', 'reset tutorial': 'book',
+    'view applications': 'doc', 'credits': 'film', 'download the game': 'download', 'log out': 'door',
+    'delete account': 'personx', 'unmute': 'speaker', 'mute': 'mute', 'turn on': 'off', 'turn off': 'on',
+    'open': 'play', 'reset': 'reset', 'replay': 'swap', 'view': 'eye', 'download': 'download',
     // ---- sidebar ----
-    'preferences': '🎛️'
+    'preferences': 'sliders'
   };
   // Longest phrases first, so "Log Out" wins over "Out" and "Limited Shop" wins over "Shop".
+  // An icon is written into the text as \u0001name\u0001 for a moment, so the next phrases can't match inside it.
   const EZ_PHRASES = Object.keys(EZ_WORDS).sort((a, b) => b.length - a.length).map(phrase => ({
     re: new RegExp('(^|[^A-Za-z])' + phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z])', 'gi'),
-    icon: EZ_WORDS[phrase]
+    marks: EZ_WORDS[phrase].split(' ').filter(Boolean).map(name => '\u0001' + name.toUpperCase() + '\u0001').join(' ')
   }));
   // Which elements get icons, and where. Only the tabs and the sidebar, never popups or chats.
   const EZ_SELECTOR = 'button, .shop-info h3, .shop-info .owned, .empty-state, .achievements-progress-label span, ' +
     '.friend-requests-card h3, .limited-chip-state, .limited-chip-name, .speed-upgrade-btn span, .preferences-toggle > span:first-child, ' +
     '.limited-title, .limited-reset, .limited-section-title, .limited-section-sub, .limited-sub-title';
-  const EZ_LENIENT_SELECTOR = '.owned, .limited-section-sub'; // here unknown words stay next to the icons ("⏩ 0.5s")
+  const EZ_LENIENT_SELECTOR = '.owned, .limited-section-sub'; // here unknown words stay next to the icons
   const EZ_SCOPES = [list, document.getElementById('page-sidebar')];
 
-  // Turns one label into icons. Returns null when the label can't (or shouldn't) be changed.
+  // Turns one label into a list of parts: { icon: 'cart' } or { text: '550' }.
+  // Returns null when the label can't (or shouldn't) be changed.
   function ezIconize(text, lenient){
     let hit = false;
     let rest = ' ' + text + ' ';
     EZ_PHRASES.forEach(p => {
-      rest = rest.replace(p.re, (m, before) => { hit = true; return before + ' ' + p.icon + ' '; });
+      rest = rest.replace(p.re, (m, before) => { hit = true; return before + ' ' + p.marks + ' '; });
     });
     if (!hit) return null;
     const out = [];
     const words = rest.replace(/[()\[\]:!]/g, ' ').replace(/\.{2,}/g, ' ').split(/\s+/).filter(Boolean);
     for (const word of words) {
+      if (word.charAt(0) === '\u0001') { out.push({ icon: word.replace(/\u0001/g, '').toLowerCase() }); continue; }
       const hasLetters = /[A-Za-z]/.test(word);
       const isNumberish = /\d/.test(word) || /^[IVX]+$/.test(word); // 550, x10, 0.5s, Swing III
       if (hasLetters && !isNumberish && !lenient) return null;      // a word with no icon: leave the label alone
-      out.push(word);
+      out.push({ text: word });
     }
-    return out.join(' ');
+    return out;
   }
 
   // The text that sits directly inside an element (not inside its children).
@@ -15010,22 +15309,34 @@
     el.childNodes.forEach(n => { if (n.nodeType === 3) t += n.nodeValue; });
     return t.replace(/\s+/g, ' ').trim();
   }
+  // The icon holder this code added to an element, if any.
+  function ezHolder(el){
+    for (const child of el.children) if (child.classList.contains('ez-ico')) return child;
+    return null;
+  }
 
   function ezApplyTo(el){
     const text = ezOwnText(el);
-    if (el._ezText === text) return; // nothing changed since the last scan
+    const holder = ezHolder(el);
+    if (el._ezText === text && (holder || !el.hasAttribute('data-ez'))) return; // nothing changed since the last scan
     el._ezText = text;
-    const icon = text ? ezIconize(text, el.matches(EZ_LENIENT_SELECTOR)) : null;
-    if (icon) {
-      el.setAttribute('data-ez', icon);
-      // Hovering still tells you the real name.
-      if (!el.title || el.hasAttribute('data-ez-title')) { el.title = text; el.setAttribute('data-ez-title', ''); }
-    } else {
-      ezClearEl(el);
-    }
+    const parts = text ? ezIconize(text, el.matches(EZ_LENIENT_SELECTOR)) : null;
+    if (!parts || !parts.length) { ezClearEl(el); return; }
+    if (holder) holder.remove();
+    const span = document.createElement('span');
+    span.className = 'ez-ico';
+    span.setAttribute('aria-hidden', 'true');
+    // Numbers go in data-n and are drawn by CSS, so they never show up twice in textContent.
+    span.innerHTML = parts.map(part => part.icon ? ezIconSvg(part.icon) : `<span class="ez-num" data-n="${escapeChatHtml(part.text)}"></span>`).join('');
+    el.insertBefore(span, el.firstChild);
+    el.setAttribute('data-ez', parts.map(part => part.icon || part.text).join(' '));
+    // Hovering still tells you the real name.
+    if (!el.title || el.hasAttribute('data-ez-title')) { el.title = text; el.setAttribute('data-ez-title', ''); }
   }
 
   function ezClearEl(el){
+    const holder = ezHolder(el);
+    if (holder) holder.remove();
     el.removeAttribute('data-ez');
     if (el.hasAttribute('data-ez-title')) { el.removeAttribute('title'); el.removeAttribute('data-ez-title'); }
   }
@@ -15036,7 +15347,8 @@
     });
   }
 
-  // Watches the tabs and the sidebar. Setting data-ez does not wake it up (it only watches text and children).
+  // Watches the tabs and the sidebar. Adding the icon holder wakes it up once more,
+  // but that second scan finds nothing to change, so it stops there.
   let ezObserver = null;
   function ezRefresh(){
     if (isEasyNavMode()) {
@@ -17472,7 +17784,113 @@
   function openWorkshopModPage(modId){
     workshopView = 'detail';
     workshopDetailModId = modId;
+    workshopDetailTab = 'banner'; // MOD PAGE VIEWS: a new mod page always starts on its banner
     renderWorkshopBody();
+  }
+
+  /* ======================================================
+     MOD PAGE VIEWS (1.55.0)
+     The banner at the top of a mod's page has a row of buttons: Banner, Icons, Cursors,
+     Backgrounds, Music, Fonts, Themes and Code. Each one swaps the banner for a look at
+     that part of the mod. Only the parts a mod really has get a button.
+     Paid mods: the pictures can always be looked at, but Music and Code stay locked
+     until the player owns the mod (or made it), so nobody gets the paid part for free.
+     ====================================================== */
+  let workshopDetailTab = 'banner';
+  const MOD_VIEW_TABS = [
+    { id: 'icons', label: 'Icons' },
+    { id: 'cursors', label: 'Cursors' },
+    { id: 'bg', label: 'Backgrounds' },
+    { id: 'music', label: 'Music' },
+    { id: 'fonts', label: 'Fonts' },
+    { id: 'themes', label: 'Themes' },
+    { id: 'code', label: 'Code' }
+  ];
+  // A picture source that is safe to put in <img src>: uploaded picture data or a web link.
+  function modViewImageSrc(f){
+    const src = String((f && (f.base64 || f.url)) || '');
+    return /^(data:image\/|https?:\/\/)/i.test(src) ? src : '';
+  }
+  // How many things each view of this mod has. Code counts as 1 when the mod has real code.
+  function modViewCounts(item){
+    const files = (item && item.customFiles) || {};
+    const count = key => (Array.isArray(files[key]) ? files[key].filter(f => f && (f.url || f.base64)).length : 0);
+    const code = cgcScriptCode(item).trim();
+    return {
+      icons: count('icons'), cursors: count('cursors'), bg: count('bg'), music: count('music'),
+      fonts: (Array.isArray(files.fonts) ? files.fonts.filter(f => modFontSrc(f)).length : 0), // only fonts the game can load
+      themes: count('themes'),
+      code: code && code !== String(CGC_DEFAULT_CODE).trim() ? 1 : 0
+    };
+  }
+  // The row of buttons. Empty when the mod has nothing to look at besides its banner.
+  function modViewTabsHTML(item){
+    const counts = modViewCounts(item);
+    const tabs = MOD_VIEW_TABS.filter(t => counts[t.id] > 0);
+    if (!tabs.length) return '';
+    if (workshopDetailTab !== 'banner' && !tabs.some(t => t.id === workshopDetailTab)) workshopDetailTab = 'banner';
+    const btn = (id, label, n) =>
+      `<button type="button" class="mio-hero-tab${workshopDetailTab === id ? ' active' : ''}" data-mod-view="${id}">${label}${n > 1 || (n && id !== 'code') ? `<span class="mio-hero-tab-count">${n}</span>` : ''}</button>`;
+    return `<div class="mio-hero-tabs" id="mio-hero-tabs">${btn('banner', 'Banner', 0)}${tabs.map(t => btn(t.id, t.label, counts[t.id])).join('')}</div>`;
+  }
+  // The inside of the view box for the picked button.
+  function modViewHTML(item, tab){
+    const esc = escapeChatHtml;
+    const files = (item && item.customFiles) || {};
+    const list = key => (Array.isArray(files[key]) ? files[key].filter(f => f && (f.url || f.base64)) : []);
+    // Paid mod that is not yours and not downloaded: Music and Code are locked.
+    const locked = Number(item.price) > 0 && !findInstalledMod(item.id) && !isMyWorkshopItem(item);
+
+    if (tab === 'icons' || tab === 'cursors' || tab === 'bg') {
+      const tiles = list(tab).map(f => {
+        const src = modViewImageSrc(f);
+        return `<div class="mio-view-tile"><div class="mio-view-thumb">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : ''}</div><span class="mio-view-name" title="${esc(f.name || '')}">${esc(f.name || '')}</span></div>`;
+      }).join('');
+      return `<div class="mio-view-grid is-${tab}">${tiles}</div>`;
+    }
+    if (tab === 'music') {
+      if (locked) return '<p class="mio-view-note">Download this mod to hear its music.</p>';
+      return `<div class="mio-view-rows">${list('music').map(f => {
+        const src = String(f.base64 || f.url || '');
+        const player = youtubeIdFromUrl(src)
+          ? ytPreviewButtonHTML(src)
+          : (/^(data:audio\/|https?:\/\/|extras\/)/i.test(src) ? `<audio controls preload="none" src="${esc(src)}"></audio>` : '');
+        return `<div class="mio-view-row"><span class="mio-view-name">${esc(f.name || 'Song')}</span>${player}</div>`;
+      }).join('')}</div>`;
+    }
+    if (tab === 'fonts') {
+      const fonts = list('fonts').map((f, i) => ({ f, i, src: modFontSrc(f) })).filter(x => x.src);
+      const faces = fonts.map(x => `@font-face{font-family:'ModViewFont${x.i}';src:url('${x.src}');}`).join('');
+      return `<style>${faces}</style><div class="mio-view-rows">${fonts.map(x =>
+        `<div class="mio-view-row"><span class="mio-view-name">${esc(x.f.name || 'Font')}</span><span class="mio-view-font-sample" style="font-family:'ModViewFont${x.i}', sans-serif;">The quick brown fox clicks 123 times!</span></div>`
+      ).join('')}</div>`;
+    }
+    if (tab === 'themes') {
+      const keys = ['page', 'card', 'text', 'accent', 'accent2', 'money', 'danger'];
+      const row = (label, side) => `<div class="mio-view-swatches"><em>${label}</em>${keys.map(k => side && side[k] ? `<span style="background:${esc(side[k])}" title="${k}"></span>` : '').join('')}</div>`;
+      return `<div class="mio-view-rows">${list('themes').map(modThemeFromEntry).filter(Boolean).map(theme =>
+        `<div class="mio-view-row"><span class="mio-view-name">${esc(theme.name || 'Theme')}</span>${row('Light', theme.light)}${row('Dark', theme.dark)}</div>`
+      ).join('')}</div>`;
+    }
+    if (tab === 'code') {
+      if (locked) return '<p class="mio-view-note">Download this mod to see its code.</p>';
+      return cgcCode(cgcScriptCode(item)); // colored and safe: cgcHighlight escapes everything
+    }
+    return '';
+  }
+  // Shows the picked view (or the banner) without redrawing the rest of the mod page,
+  // so a comment that is being typed stays where it is.
+  function showModView(item){
+    const banner = document.getElementById('mio-hero-banner');
+    const view = document.getElementById('mio-hero-view');
+    if (!banner || !view) return;
+    ytPreviewStop(); // a song preview from the last view stops
+    const onBanner = workshopDetailTab === 'banner';
+    banner.hidden = !onBanner;
+    view.hidden = onBanner;
+    view.innerHTML = onBanner ? '' : modViewHTML(item, workshopDetailTab);
+    view.scrollTop = 0;
+    document.querySelectorAll('#mio-hero-tabs .mio-hero-tab').forEach(b => b.classList.toggle('active', b.dataset.modView === workshopDetailTab));
   }
 
   function renderWorkshopDetail(){
@@ -17511,7 +17929,7 @@
           ${nsfwShowBlur ? `<button class="nsfw-reveal-btn" id="workshop-detail-reveal-btn">\ud83d\udd1e Mature content<br><span>Click to reveal</span></button>` : ''}
           <div class="mio-hero" style="--mio-hue:${modCoverHue(item.name)}">
             ${item.iconUrl ? `<div class="mio-hero-backdrop${nsfwFlags.image && nsfwShowBlur ? ' nsfw-blur' : ''}" style="background-image:url('${esc(item.iconUrl)}')"></div>` : ''}
-            <div class="mio-hero-inner">
+            <div class="mio-hero-inner" id="mio-hero-banner">
               <div class="mio-hero-art">
                 ${item.iconUrl
                   ? `<img class="workshop-detail-icon${nsfwFlags.image && nsfwShowBlur ? ' nsfw-blur' : ''}" src="${esc(item.iconUrl)}" alt="">`
@@ -17528,6 +17946,9 @@
                 <span class="mio-hero-author">by ${workshopAuthorLabel(item)}</span>
               </div>
             </div>
+            <!-- MOD PAGE VIEWS (1.55.0): the box a view is drawn in, and the buttons that pick it. Hidden until mature content is revealed. -->
+            <div class="mio-hero-view" id="mio-hero-view" hidden></div>
+            ${nsfwShowBlur ? '' : modViewTabsHTML(item)}
           </div>
 
           <div class="mio-detail-grid">
@@ -17593,6 +18014,15 @@
       workshopView = 'browse';
       renderWorkshopBody();
     });
+    // MOD PAGE VIEWS (1.55.0): the buttons on the banner.
+    workshopBody.querySelectorAll('#mio-hero-tabs .mio-hero-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        workshopDetailTab = btn.dataset.modView;
+        showModView(item);
+      });
+    });
+    if (nsfwShowBlur) workshopDetailTab = 'banner';
+    showModView(item);
     const detailRevealBtn = document.getElementById('workshop-detail-reveal-btn');
     if (detailRevealBtn) {
       detailRevealBtn.addEventListener('click', () => {
@@ -18572,7 +19002,7 @@
     const enough = gems >= MOD_EDITOR_COST;
     confirmBox.innerHTML = `
       <h1 class="auth-heading">New Mod</h1>
-      <p class="auth-sub">Build a mod right here, no GitHub needed. Add icons, cursors, backgrounds and music, see a live preview, then publish it to the Workshop.</p>
+      <p class="auth-sub">Build a mod right here, no GitHub needed. Add icons, cursors, backgrounds, music and fonts, see a live preview, then publish it to the Workshop.</p>
       <p class="auth-sub">Creating a mod costs <strong>${MOD_EDITOR_COST} Gems</strong>, paid when you publish. You have ${gems.toLocaleString()} Gems.</p>
       <button class="auth-btn" id="mod-editor-open"${enough ? '' : ' disabled'}>${hasDraft ? 'Continue your draft' : 'Open the editor'}</button>
       ${enough ? '' : `<p class="auth-error" style="display:block;">You need ${(MOD_EDITOR_COST - gems).toLocaleString()} more Gems.</p><button class="auth-btn secondary" id="mod-editor-get-gems">Convert Moneys to Gems</button>`}
@@ -23084,8 +23514,30 @@ ${hasCode
     { id: 'icons', label: 'Icons', hint: 'Clicker avatar images. Shrunk to 128px.', accept: 'image/*', max: 128, format: 'png', linkHint: 'https://example.com/icon.png' },
     { id: 'cursors', label: 'Cursors', hint: 'Mouse cursors. Shrunk to 32px, transparent PNG works best.', accept: 'image/*', max: 32, format: 'png', linkHint: 'https://example.com/cursor.png' },
     { id: 'bg', label: 'Backgrounds', hint: 'Full page backgrounds. Uploads are shrunk to 640px, so use a link for sharp ones.', accept: 'image/*', max: 640, format: 'jpeg', linkHint: 'https://example.com/background.jpg' },
-    { id: 'music', label: 'Music', hint: 'Songs are too big to store, so add a direct link to an .mp3 file, or a YouTube link (only the sound plays).', accept: '', linkOnly: true, linkHint: 'https://example.com/song.mp3' }
+    { id: 'music', label: 'Music', hint: 'Songs are too big to store, so add a direct link to an .mp3 file, or a YouTube link (only the sound plays).', accept: '', linkOnly: true, linkHint: 'https://example.com/song.mp3' },
+    // MOD FONTS (1.55.0): raw: true means the file is stored as it is (pictures are shrunk, fonts are not).
+    { id: 'fonts', label: 'Fonts', hint: 'Fonts for the Font Manager picker. Upload a .ttf, .otf, .woff or .woff2 file (up to 300KB each), or add a link to one. Font files are big, so watch the storage bar.', accept: '.ttf,.otf,.woff,.woff2', raw: true, linkHint: 'https://example.com/font.ttf' }
   ];
+  const MOD_FONT_MAX_BYTES = 300000;  // biggest font file that can be uploaded into a mod
+  const MOD_FONT_MIMES = { ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', woff2: 'font/woff2' };
+
+  // Reads a font file into a data: link with the right type. Throws 'type' or 'size' when it can't be used.
+  function readFontFile(file){
+    return new Promise((resolve, reject) => {
+      const ext = (String(file.name).match(/\.([a-z0-9]+)$/i) || [])[1] || '';
+      const mime = MOD_FONT_MIMES[ext.toLowerCase()];
+      if (!mime) return reject(new Error('type'));
+      if (file.size > MOD_FONT_MAX_BYTES) return reject(new Error('size'));
+      const reader = new FileReader();
+      reader.onload = () => {
+        const comma = String(reader.result).indexOf(',');
+        if (comma === -1) return reject(new Error('type'));
+        resolve('data:' + mime + ';base64,' + String(reader.result).slice(comma + 1));
+      };
+      reader.onerror = () => reject(new Error('type'));
+      reader.readAsDataURL(file);
+    });
+  }
 
   // MOD THEMES (1.37.0): every theme in a mod counts as this share of the storage budget,
   // no matter how small it really is. 0.5 = 50%, so two themes fill a mod.
@@ -23120,7 +23572,7 @@ ${hasCode
       version: '1.0',
       price: 0,
       iconData: '',
-      files: { icons: [], cursors: [], bg: [], music: [] },
+      files: { icons: [], cursors: [], bg: [], music: [], fonts: [] },
       code: CGC_DEFAULT_CODE, // CGC: every new mod starts with this
       codeMode: 'text',       // BLOCK CODING (1.33.0): 'text' to type code, 'blocks' to build it from blocks
       payload: [],            // CGC: the payload folder, [{ name: 'cookie.png', url }]
@@ -23283,13 +23735,15 @@ ${hasCode
   // Builds the customFiles object in the same shape GitHub mods use, so
   // editor mods install and apply exactly like any other mod.
   function modEditorCustomFiles(){
-    const out = { music: [], icons: [], cursors: [], bg: [] };
+    const out = { music: [], icons: [], cursors: [], bg: [], fonts: [] };
     Object.keys(out).forEach(type => {
       (modEditorDraft.files[type] || []).forEach((f, i) => {
         const name = String(f.name || '').trim() || `${type} ${i + 1}`;
         out[type].push({ name, file: `${modEditorSlug(name)}-${i + 1}`, url: f.url });
       });
     });
+    // MOD FONTS (1.55.0): only added when the mod has fonts, so mods without them are saved exactly as before.
+    if (!out.fonts.length) delete out.fonts;
     // CGC: payload files keep their real names, code is stored as a text data URL so the
     // API's installed-mods compaction and rehydration treat it like any uploaded file.
     out.payload = (modEditorDraft.payload || []).map(f => ({ name: f.name, file: f.name, url: f.url }));
@@ -23422,8 +23876,8 @@ ${hasCode
       const list = d.files[t.id] || [];
       const rows = list.map((f, i) => `
         <div class="mod-editor-file">
-          <div class="mod-editor-file-preview${t.id === 'cursors' ? ' is-cursor' : ''}${t.id === 'music' ? ' is-music' : ''}">
-            ${t.id === 'music'
+          <div class="mod-editor-file-preview${t.id === 'cursors' ? ' is-cursor' : ''}${t.id === 'music' ? ' is-music' : ''}${t.id === 'fonts' ? ' is-font' : ''}"${t.id === 'fonts' ? ` style="font-family:'ModEditFont${i}', sans-serif;"` : ''}>
+            ${t.id === 'fonts' ? 'Aa' : t.id === 'music'
               ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 17.5V5l11-2.5v12.5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="6.5" cy="17.5" r="3"/><circle cx="17.5" cy="15" r="3"/></svg>'
               : `<img src="${esc(f.url)}" alt="">`}
           </div>
@@ -23431,12 +23885,18 @@ ${hasCode
             <input type="text" class="auth-input mod-editor-file-name" data-type="${t.id}" data-index="${i}" value="${esc(f.name)}" placeholder="Name shown in the picker" maxlength="40">
             <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : esc(f.url)}</span>
             ${t.id === 'music' ? (youtubeIdFromUrl(f.url) ? ytPreviewButtonHTML(f.url) : `<audio controls preload="none" src="${esc(f.url)}"></audio>`) : ''}
+            ${t.id === 'fonts' ? (modFontSrc(f) ? `<span class="mod-editor-font-sample" style="font-family:'ModEditFont${i}', sans-serif;">The quick brown fox clicks 123 times!</span>` : '<span class="mod-editor-file-src">This link is not a font file the game can use (it has to start with https://).</span>') : ''}
           </div>
           <button class="mod-editor-remove" data-type="${t.id}" data-index="${i}" title="Remove" aria-label="Remove ${esc(f.name)}">&times;</button>
         </div>
       `).join('');
+      // MOD FONTS (1.55.0): load every font in the draft so the rows above can show it.
+      const fontFaces = t.id === 'fonts'
+        ? `<style>${list.map((f, i) => modFontSrc(f) ? `@font-face{font-family:'ModEditFont${i}';src:url('${modFontSrc(f)}');}` : '').join('')}</style>`
+        : '';
       return `
         <section class="mio-panel mod-editor-section">
+          ${fontFaces}
           <div class="mod-editor-section-head">
             <h3 class="mio-panel-heading">${t.label} <span class="mod-editor-count">${list.length}</span></h3>
             ${t.linkOnly ? '' : `
@@ -23685,17 +24145,21 @@ ${hasCode
         const type = MOD_EDITOR_TYPES.find(t => t.id === input.dataset.type);
         const files = Array.from(input.files || []);
         let failed = 0;
+        let tooBig = 0;
         for (const file of files) {
           try {
-            const url = await shrinkImageFile(file, type.max, type.format);
+            // MOD FONTS (1.55.0): fonts are stored as they are, pictures are shrunk first.
+            const url = type.raw ? await readFontFile(file) : await shrinkImageFile(file, type.max, type.format);
             d.files[type.id].push({ name: file.name.replace(/\.[^.]+$/, '').slice(0, 40), url });
           } catch (err) {
+            if (err && err.message === 'size') tooBig++;
             failed++;
           }
         }
         saveModEditorDraft();
         renderModEditor();
-        if (failed) modEditorStatus(`${failed} file${failed === 1 ? '' : 's'} couldn't be read as an image.`, true);
+        if (failed && type.raw) modEditorStatus(tooBig ? `${tooBig} font${tooBig === 1 ? ' is' : 's are'} over ${Math.round(MOD_FONT_MAX_BYTES / 1000)}KB. Add a link to it instead.` : `${failed} file${failed === 1 ? '' : 's'} couldn't be read as a font. Use .ttf, .otf, .woff or .woff2.`, true);
+        else if (failed) modEditorStatus(`${failed} file${failed === 1 ? '' : 's'} couldn't be read as an image.`, true);
         else if (modEditorSize() > MOD_EDITOR_SIZE_LIMIT) modEditorOverStorageNotice();
       });
     });
@@ -23715,6 +24179,12 @@ ${hasCode
         if (youtubeIdFromUrl(url)) {
           if (type !== 'music') { modEditorStatus('A YouTube link only works as a sound. Add it under Music.', true); input.focus(); return; }
           guess = `YouTube song ${d.files[type].length + 1}`;
+        }
+        // MOD FONTS (1.55.0): a font link has to be https and point at a font file.
+        if (type === 'fonts' && !/^https:\/\/\S+\.(ttf|otf|woff2?)(\?\S*)?$/i.test(url)) {
+          modEditorStatus('A font link has to start with https:// and end in .ttf, .otf, .woff or .woff2', true);
+          input.focus();
+          return;
         }
         d.files[type].push({ name: guess || `${type} ${d.files[type].length + 1}`, url });
         saveModEditorDraft();
@@ -24114,15 +24584,17 @@ ${hasCode
   const CGA_MAX_BYTES = 8 * 1024 * 1024;       // biggest .cga the game will open
   const CGA_MAX_FILES = 300;                   // most files inside one .cga
   // folder inside the archive -> where those files live in the editor's draft
-  const CGA_FOLDERS = { icons: 'icons', cursors: 'cursors', backgrounds: 'bg', music: 'music' };
+  const CGA_FOLDERS = { icons: 'icons', cursors: 'cursors', backgrounds: 'bg', music: 'music', fonts: 'fonts' }; // fonts: 1.55.0
   const CGA_MIME_EXT = {
     'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif', 'image/svg+xml': 'svg',
     'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/wave': 'wav', 'audio/mpeg': 'mp3', 'audio/mp3': 'mp3',
-    'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/aac': 'aac', 'audio/opus': 'opus', 'audio/webm': 'webm'
+    'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/aac': 'aac', 'audio/opus': 'opus', 'audio/webm': 'webm',
+    'font/ttf': 'ttf', 'font/otf': 'otf', 'font/woff': 'woff', 'font/woff2': 'woff2' // MOD FONTS (1.55.0)
   };
   const CGA_EXT_MIME = {
     png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif', svg: 'image/svg+xml',
-    wav: 'audio/wav', mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', aac: 'audio/aac', opus: 'audio/opus', webm: 'audio/webm'
+    wav: 'audio/wav', mp3: 'audio/mpeg', ogg: 'audio/ogg', m4a: 'audio/mp4', aac: 'audio/aac', opus: 'audio/opus', webm: 'audio/webm',
+    ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', woff2: 'font/woff2' // MOD FONTS (1.55.0)
   };
 
   /* ----- zip writing and reading (no library needed) ----- */
@@ -24690,7 +25162,7 @@ ${hasCode
       if (cmRes.ok) customManifest = await cmRes.json();
     } catch (e) {}
 
-    const customFiles = { music: [], icons: [], cursors: [], bg: [] };
+    const customFiles = { music: [], icons: [], cursors: [], bg: [], fonts: [] }; // fonts: 1.55.0
     if (customManifest) {
       for (const type of Object.keys(customFiles)) {
         const list = Array.isArray(customManifest[type]) ? customManifest[type] : [];

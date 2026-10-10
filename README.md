@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.54.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.54.0">
+<!-- Game version: 1.55.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.55.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -311,6 +311,13 @@ How it is built:
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
 
+## Mod fonts, SVG Easy Navigation icons and mod page views (1.55.0)
+
+- **Fonts in mods:** the mod editor has a **Fonts** section. Upload a `.ttf`, `.otf`, `.woff` or `.woff2` file (up to `MOD_FONT_MAX_BYTES`, 300KB) or add an https link to one. They are saved in `customFiles.fonts`, the same shape as icons and music (`{ name, file, url }`). Fonts from installed mods show up in the Font Manager picker (`refreshModFonts()` in the `MOD FONTS` section). `.cga` archives carry them in a `fonts/` folder.
+  - **API:** the `api` function has to keep the `fonts` list inside `customFiles` when a mod is uploaded and when installed mods are packed and unpacked, the same way it keeps `music` or `icons`.
+- **Easy Navigation icons are SVG now:** no emojis. Every icon is drawn in `EZ_ICONS` (a fill color plus shapes in a 24 by 24 box, all with the same dark outline). `EZ_WORDS` maps words to icon names. The icons sit in a `<span class="ez-ico">` that `ezApplyTo()` adds to the start of a label. Numbers are drawn with CSS (`data-n`), so `textContent` of a button is the same as before.
+- **Mod page views:** the banner on a mod's page has buttons for Banner, Icons, Cursors, Backgrounds, Music, Fonts, Themes and Code (`MOD PAGE VIEWS` section, `modViewHTML()`). Only the parts a mod has get a button. On a paid mod you have not downloaded, Music and Code are locked.
+
 ## No right click menu and YouTube as audio (1.54.0)
 
 - **No right click menu:** the browser's menu never opens anywhere in the game. A right click with a mouse counts as a normal click on whatever is under it. A long press on a phone only gets the menu blocked. It is in the `NO RIGHT CLICK MENU` section of `index.html`.
@@ -323,7 +330,7 @@ How it is built:
 
 With Easy Navigation on (Settings), every label in the five tabs and the sidebar turns into icons. Only numbers stay as text.
 
-- **How:** the `EASY NAVIGATION ICONS` section of `index.html`. `ezScan()` looks at the labels matched by `EZ_SELECTOR`, `ezIconize()` swaps each known word for an emoji from `EZ_WORDS` and keeps the numbers ("Buy x10 (550)" becomes "🛒 x10 550"), and the result is stored in a `data-ez` attribute. The CSS hides the real text and draws `data-ez` with `::before`. The real text is never changed, so buying, saving and mods work the same.
+- **How:** the `EASY NAVIGATION ICONS` section of `index.html`. `ezScan()` looks at the labels matched by `EZ_SELECTOR`, `ezIconize()` swaps each known word for an icon from `EZ_WORDS` and keeps the numbers ("Buy x10 (550)" becomes a cart icon then "x10 550"). Since 1.55.0 the icons are SVG, see the 1.55.0 section above. The CSS hides the real text. The real text is never changed, so buying, saving and mods work the same.
 - **Tiles:** Shop, Settings and Achievements cards become a grid of icon tiles. Tap a tile (not its button) to get a banner with its name and description. Hovering a button shows its real name.
 - **Redraws:** a `MutationObserver` runs `ezScan()` again when a tab is redrawn or a price changes.
 - **Not changed:** a label with a word that is not in `EZ_WORDS` stays as text. That keeps player names, mod names, font names and chat messages readable. Popups (Workshop, profiles, chats, confirm boxes) are not touched.
