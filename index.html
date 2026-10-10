@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.52.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.52.0">
+<!-- Game version: 1.53.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.53.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -9351,6 +9351,105 @@
   }
   body.easy-nav .click-counter::before{ display:none !important; }
 
+  /* ---------- EASY NAVIGATION: EVERYTHING IS ICONS (1.53.0) ----------
+     The JS (see "EASY NAVIGATION ICONS" in the script) puts a data-ez attribute on
+     every label it can turn into icons, for example data-ez="🛒 100" on a Buy button.
+     Here the real text is hidden (font-size:0) and the icons are drawn with ::before.
+     The numbers inside data-ez stay as text. To change an icon, edit EZ_WORDS in the script. */
+  body.easy-nav [data-ez]{
+    font-size:0 !important;
+    letter-spacing:0 !important;
+  }
+  body.easy-nav [data-ez]::before{
+    content:attr(data-ez);
+    font-size:var(--ez-fs, 17px);
+    line-height:1.25;
+    white-space:nowrap;
+  }
+  /* Children of an icon label (a timer, an svg) keep a readable size. */
+  body.easy-nav [data-ez] > *{ font-size:12px; }
+
+  /* The tab content becomes a grid of tiles. Anything that is not a tile takes a full row. */
+  body.easy-nav #link-list{
+    display:grid !important;
+    grid-template-columns:repeat(auto-fill, minmax(112px, 1fr));
+    grid-auto-flow:dense;
+    gap:12px;
+  }
+  body.easy-nav #link-list > *{ grid-column:1 / -1; min-width:0; }
+  body.easy-nav #link-list > .shop-card,
+  body.easy-nav #link-list > .achievement-card{ grid-column:auto; }
+
+  /* Shop and Settings tiles: big icon on top, the button under it. */
+  body.easy-nav #link-list > .shop-card{
+    flex-wrap:wrap;
+    justify-content:center;
+    align-content:center;
+    gap:8px;
+    padding:14px 8px;
+    cursor:help;
+  }
+  body.easy-nav #link-list > .shop-card > .shop-icon{
+    width:58px;
+    height:58px;
+    margin:0 calc(50% - 29px);   /* takes the whole row, so the button drops under it */
+  }
+  body.easy-nav #link-list > .shop-card > .shop-icon svg{ width:32px; height:32px; }
+  body.easy-nav #link-list > .shop-card > .shop-info{
+    flex:0 0 100%;
+    text-align:center;
+  }
+  /* A tile with a picture icon does not need its name. A tile without one gets an emoji from its name. */
+  body.easy-nav #link-list .shop-icon ~ .shop-info h3{ display:none; }
+  body.easy-nav #link-list .shop-info h3[data-ez]{ --ez-fs:38px; margin:0; }
+  /* Descriptions are hidden. The "Owned: 3" pill inside them stays. */
+  body.easy-nav #link-list .shop-info p{ font-size:0 !important; line-height:0 !important; }
+  body.easy-nav #link-list .shop-info .owned:not([data-ez]){ font-size:11px !important; line-height:1.4; }
+  body.easy-nav #link-list .shop-info .owned[data-ez]{ --ez-fs:12px; line-height:1.4; }
+  body.easy-nav #link-list .dvd-math-stats,
+  body.easy-nav #link-list .bulk-buy-panel > p{ display:none !important; }
+  body.easy-nav #link-list .buy-btn[data-ez],
+  body.easy-nav #link-list .bulk-buy-btn[data-ez],
+  body.easy-nav #link-list .auth-btn[data-ez]{ --ez-fs:16px; }
+  body.easy-nav #link-list .shop-category-btn[data-ez],
+  body.easy-nav #link-list .stats-subtab-btn[data-ez]{ --ez-fs:20px; }
+  body.easy-nav #link-list .bulk-buy-panel{
+    width:100%;
+    margin:0;
+    border-top:2px solid var(--ink);
+    border-radius:16px;
+    flex-wrap:wrap;
+  }
+  body.easy-nav #link-list > .shop-card:has(+ .bulk-buy-panel){ border-radius:18px; }
+
+  /* Achievement tiles: only the icon. Tap one to see its name. */
+  body.easy-nav #link-list > .achievement-card{
+    justify-content:center;
+    padding:16px 8px;
+    cursor:help;
+  }
+  body.easy-nav #link-list > .achievement-card .achievement-info{ display:none; }
+  body.easy-nav #link-list > .achievement-card .achievement-icon{
+    width:56px;
+    height:56px;
+    border-radius:14px;
+    font-size:26px;
+  }
+  body.easy-nav #link-list > .achievement-card .achievement-icon svg{ width:32px; height:32px; }
+  body.easy-nav .empty-state[data-ez]{ --ez-fs:30px; }
+  /* The three Theme buttons shrink so they fit inside one tile. */
+  body.easy-nav #link-list > .shop-card .theme-mode-btns{ gap:4px; }
+  body.easy-nav #link-list > .shop-card .theme-mode-btn{ width:28px; height:28px; }
+  body.easy-nav #link-list > .shop-card .theme-mode-btn svg{ width:15px; height:15px; }
+  body.easy-nav #link-list > .shop-card select{ max-width:100%; }
+  /* Limited Shop headers */
+  body.easy-nav #link-list .limited-title[data-ez]{ --ez-fs:26px; }
+  body.easy-nav #link-list .limited-section-title[data-ez]{ --ez-fs:26px; }
+  body.easy-nav #link-list .limited-sub-title[data-ez]{ --ez-fs:20px; }
+  body.easy-nav #link-list .limited-reset[data-ez] > *,
+  body.easy-nav #link-list .limited-section-sub[data-ez]{ --ez-fs:13px; }
+  body.easy-nav #page-sidebar .preferences-toggle [data-ez]{ --ez-fs:20px; }
+
   /* Z KEY (1.52.0): pressing Z clicks the clicker, so it gets the same press look as a mouse click. */
   .avatar.key-press{ transform:scale(0.92); }
 </style>
@@ -14590,6 +14689,153 @@
     void list.offsetWidth;
     list.classList.add('tab-pop-x');
   }
+
+  /* ======================================================
+     EASY NAVIGATION ICONS (1.53.0)
+     With Easy Navigation on, every label in the tabs and the sidebar turns into icons.
+     How it works:
+       1. ezScan() looks at every element matched by EZ_SELECTOR inside EZ_SCOPES.
+       2. ezIconize() swaps each known word or phrase for an emoji (EZ_WORDS) and keeps the numbers.
+          "Buy x10 (550)" becomes "🛒 x10 550".
+       3. The result goes in the data-ez attribute. The CSS hides the real text and draws data-ez.
+          The real text is never changed, so the rest of the game keeps working the same.
+       4. A MutationObserver runs ezScan() again whenever a tab is redrawn or a price changes.
+     A label with a word that is not in EZ_WORDS is left as normal text, so player names,
+     mod names and chat messages are never touched.
+     To give a new button an icon: add its words to EZ_WORDS (lowercase).
+     ====================================================== */
+  const EZ_WORDS = {
+    // ---- shop ----
+    'buy max': '🛒 🔝', 'level up': '⬆️', 'buy': '🛒', 'owned': '✅', 'buying': '⏳', 'max': '🔝',
+    'trade': '🔁', 'prestige shop': '🛍️', 'limited shop': '🛍️', 'prestige': '❤️', 'gems': '💎', 'gem': '💎',
+    'moneys': '💰', 'tasks': '📋', 'task': '📋', 'extra': '➕', 'clones': '📀', 'clone': '📀',
+    'equipped': '✅', 'equip': '👆', 'none': '🚫', 'installed': '✅', 'speed': '⏩', 'level': '⬆️',
+    'normal': '▶️', 'quick': '⏩', 'rapid': '⏭️', 'blazing': '🔥', 'lightning': '⚡', 'swing': '🎯',
+    'profile fonts': '🔤', 'profile frames': '🖼️', 'profile font': '🔤', 'profile frame': '🖼️', 'lucky block': '🎁',
+    'your collection': '🎒', 'new items in': '⏳', 'fonts': '🔤', 'frames': '🖼️',
+    // ---- category bars ----
+    'all': '🗂️', 'visuals': '👀', 'customization': '🎨', 'plain': '🧱',
+    'global': '🌍', 'champions': '🏆', 'friends': '👥', 'admins': '🛡️',
+    'easy': '🟢', 'medium': '🟡', 'hard': '🔴', 'extreme': '💀', 'special': '⭐',
+    // ---- stats ----
+    'overview': '🏠', 'mods': '🧩', 'messages off': '💬 🚫', 'messages': '💬', 'rooms': '🚪',
+    'room stats': '🚪 📊', 'player stats': '👤 📊',
+    'open workshop': '🛠️', 'new chat': '➕ 💬', 'friend requests': '🙋', 'reports to review': '🚩',
+    'accept': '✅', 'decline': '❌', 'cancel': '✖️', 'dismiss': '✖️', 'remove': '🗑️', 'delete': '🗑️',
+    'uninstall': '🗑️', 'leave chat': '🚪', 'send gift': '🎁', 'view profile': '👤',
+    'submit report': '🚩', 'reported': '🚩 ✅', 'report': '🚩', 'resolved': '✅',
+    'hide details': 'ℹ️', 'details': 'ℹ️', 'join': '➡️', 'rejoin': '➡️', 'offline': '💤',
+    // ---- leaderboard and loading boxes ----
+    'loading leaderboard': '⏳ 🏆', 'loading friends': '⏳ 👥', 'loading chats': '⏳ 💬', 'loading': '⏳',
+    'no scores yet': '🚫 🏆', 'no achievements in this difficulty yet': '🚫 🏅',
+    // ---- achievements ----
+    'progress': '📈', 'unlocked': '🔓', 'get a hint': '💡', 'out of hints': '🚫 💡', 'left': '',
+    // ---- settings ----
+    'sound effects': '🔊', 'theme': '🎨', 'low performance mode': '🐢', 'easy navigation': '🧭',
+    'layout': '📐', 'debug mode': '🐞', 'reset data': '♻️', 'reset tutorial': '🎓',
+    'view applications': '📝', 'credits': '🎬', 'download the game': '⬇️', 'log out': '🚪',
+    'delete account': '❌ 👤', 'unmute': '🔊', 'mute': '🔇', 'turn on': '⬜', 'turn off': '✅',
+    'open': '▶️', 'reset': '♻️', 'replay': '🔁', 'view': '👁️', 'download': '⬇️',
+    // ---- sidebar ----
+    'preferences': '🎛️'
+  };
+  // Longest phrases first, so "Log Out" wins over "Out" and "Limited Shop" wins over "Shop".
+  const EZ_PHRASES = Object.keys(EZ_WORDS).sort((a, b) => b.length - a.length).map(phrase => ({
+    re: new RegExp('(^|[^A-Za-z])' + phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?![A-Za-z])', 'gi'),
+    icon: EZ_WORDS[phrase]
+  }));
+  // Which elements get icons, and where. Only the tabs and the sidebar, never popups or chats.
+  const EZ_SELECTOR = 'button, .shop-info h3, .shop-info .owned, .empty-state, .achievements-progress-label span, ' +
+    '.friend-requests-card h3, .limited-chip-state, .limited-chip-name, .speed-upgrade-btn span, .preferences-toggle > span:first-child, ' +
+    '.limited-title, .limited-reset, .limited-section-title, .limited-section-sub, .limited-sub-title';
+  const EZ_LENIENT_SELECTOR = '.owned, .limited-section-sub'; // here unknown words stay next to the icons ("⏩ 0.5s")
+  const EZ_SCOPES = [list, document.getElementById('page-sidebar')];
+
+  // Turns one label into icons. Returns null when the label can't (or shouldn't) be changed.
+  function ezIconize(text, lenient){
+    let hit = false;
+    let rest = ' ' + text + ' ';
+    EZ_PHRASES.forEach(p => {
+      rest = rest.replace(p.re, (m, before) => { hit = true; return before + ' ' + p.icon + ' '; });
+    });
+    if (!hit) return null;
+    const out = [];
+    const words = rest.replace(/[()\[\]:!]/g, ' ').replace(/\.{2,}/g, ' ').split(/\s+/).filter(Boolean);
+    for (const word of words) {
+      const hasLetters = /[A-Za-z]/.test(word);
+      const isNumberish = /\d/.test(word) || /^[IVX]+$/.test(word); // 550, x10, 0.5s, Swing III
+      if (hasLetters && !isNumberish && !lenient) return null;      // a word with no icon: leave the label alone
+      out.push(word);
+    }
+    return out.join(' ');
+  }
+
+  // The text that sits directly inside an element (not inside its children).
+  function ezOwnText(el){
+    let t = '';
+    el.childNodes.forEach(n => { if (n.nodeType === 3) t += n.nodeValue; });
+    return t.replace(/\s+/g, ' ').trim();
+  }
+
+  function ezApplyTo(el){
+    const text = ezOwnText(el);
+    if (el._ezText === text) return; // nothing changed since the last scan
+    el._ezText = text;
+    const icon = text ? ezIconize(text, el.matches(EZ_LENIENT_SELECTOR)) : null;
+    if (icon) {
+      el.setAttribute('data-ez', icon);
+      // Hovering still tells you the real name.
+      if (!el.title || el.hasAttribute('data-ez-title')) { el.title = text; el.setAttribute('data-ez-title', ''); }
+    } else {
+      ezClearEl(el);
+    }
+  }
+
+  function ezClearEl(el){
+    el.removeAttribute('data-ez');
+    if (el.hasAttribute('data-ez-title')) { el.removeAttribute('title'); el.removeAttribute('data-ez-title'); }
+  }
+
+  function ezScan(){
+    EZ_SCOPES.forEach(scope => {
+      if (scope) scope.querySelectorAll(EZ_SELECTOR).forEach(ezApplyTo);
+    });
+  }
+
+  // Watches the tabs and the sidebar. Setting data-ez does not wake it up (it only watches text and children).
+  let ezObserver = null;
+  function ezRefresh(){
+    if (isEasyNavMode()) {
+      if (!ezObserver) {
+        ezObserver = new MutationObserver(ezScan);
+        EZ_SCOPES.forEach(scope => {
+          if (scope) ezObserver.observe(scope, { childList: true, subtree: true, characterData: true });
+        });
+      }
+      ezScan();
+    } else {
+      if (ezObserver) { ezObserver.disconnect(); ezObserver = null; }
+      document.querySelectorAll('[data-ez]').forEach(el => { ezClearEl(el); el._ezText = undefined; });
+    }
+  }
+  ezRefresh();
+
+  // Tap a tile (not its button) to see what it is: a banner with the name and the description.
+  let ezLastTileBanner = 0;
+  list.addEventListener('click', (e) => {
+    if (!isEasyNavMode()) return;
+    if (e.target.closest('button, select, input, a, label')) return;
+    const tile = e.target.closest('.shop-card, .achievement-card');
+    if (!tile || tile.parentElement !== list) return;
+    if (Date.now() - ezLastTileBanner < 1200) return; // no banner spam
+    const h3 = tile.querySelector('h3');
+    const p = tile.querySelector('p');
+    const name = h3 ? h3.textContent.replace(/\s+/g, ' ').trim() : '';
+    const desc = p ? p.textContent.replace(/\s+/g, ' ').trim() : '';
+    if (!name && !desc) return;
+    ezLastTileBanner = Date.now();
+    showBanner(name && desc ? name + ': ' + desc : (name || desc));
+  });
 
   function refreshShopAffordability(){
     if (activeTab !== 'shop') return;
@@ -27151,7 +27397,7 @@ ${hasCode
       <div class="shop-card">
         <div class="shop-info">
           <h3>Easy Navigation</h3>
-          <p>A simpler UI. The tabs turn into big icons and the click counter turns into plain text. Saved on this device.</p>
+          <p>A simpler UI where everything is icons. Only numbers stay as text. Tap a tile to see its name. Saved on this device.</p>
         </div>
         <button class="buy-btn" id="toggle-easy-nav">${isEasyNavMode() ? 'Turn Off' : 'Turn On'}</button>
       </div>
@@ -27254,6 +27500,7 @@ ${hasCode
       try { localStorage.setItem(EASY_NAV_KEY, isEasyNavMode() ? '0' : '1'); } catch (e) {}
       applyEasyNavMode();
       renderSettings();
+      ezRefresh(); // EASY NAVIGATION ICONS (1.53.0): draw or remove the icons right away
     });
 
     updateDvdStatsPanel(); // fill in the DVD math box for the settings card just drawn

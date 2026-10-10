@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.52.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.52.0">
+<!-- Game version: 1.53.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.53.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,16 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## Easy Navigation: everything is icons (1.53.0)
+
+With Easy Navigation on (Settings), every label in the five tabs and the sidebar turns into icons. Only numbers stay as text.
+
+- **How:** the `EASY NAVIGATION ICONS` section of `index.html`. `ezScan()` looks at the labels matched by `EZ_SELECTOR`, `ezIconize()` swaps each known word for an emoji from `EZ_WORDS` and keeps the numbers ("Buy x10 (550)" becomes "🛒 x10 550"), and the result is stored in a `data-ez` attribute. The CSS hides the real text and draws `data-ez` with `::before`. The real text is never changed, so buying, saving and mods work the same.
+- **Tiles:** Shop, Settings and Achievements cards become a grid of icon tiles. Tap a tile (not its button) to get a banner with its name and description. Hovering a button shows its real name.
+- **Redraws:** a `MutationObserver` runs `ezScan()` again when a tab is redrawn or a price changes.
+- **Not changed:** a label with a word that is not in `EZ_WORDS` stays as text. That keeps player names, mod names, font names and chat messages readable. Popups (Workshop, profiles, chats, confirm boxes) are not touched.
+- **Adding a button:** put its words in `EZ_WORDS` (lowercase). If it is a new kind of element, add it to `EZ_SELECTOR`.
 
 ## Z key, Easy Navigation and a Shop fix (1.52.0)
 
