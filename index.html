@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.63.0 | Deployment: 215 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.63.0">
+<!-- Game version: 1.64.0 | Deployment: 215 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.64.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -9681,7 +9681,41 @@
     opacity:0;
     pointer-events:none;
   }
-  .yt-preview-btn{ align-self:flex-start; margin-top:4px; }
+  /* YOUTUBE PLAYER BAR (1.64.0): a YouTube song gets the same kind of bar a normal song has
+     (play, time, seek, mute) instead of a "Play sound" button. It is built to look like the
+     browser's own sound bar: a light gray pill with dark buttons, the same in every theme. */
+  .yt-player{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    width:100%;
+    height:32px;              /* the same height as the <audio> bars next to it */
+    padding:0 10px 0 4px;
+    border-radius:16px;
+    background:#f1f3f4;
+    color:#202124;
+    box-sizing:border-box;
+    font-family:Arial, Helvetica, sans-serif;
+  }
+  .yt-player button{
+    flex:none;
+    width:26px;
+    height:26px;
+    padding:0;
+    border:0;
+    border-radius:50%;
+    background:transparent;
+    color:inherit;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .yt-player button:hover{ background:rgba(0,0,0,.09); }
+  .yt-player button svg{ width:18px; height:18px; display:block; }
+  .yt-player-time{ flex:none; font-size:12px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .yt-player-seek{ flex:1 1 auto; min-width:30px; height:4px; margin:0; accent-color:#5f6368; cursor:pointer; }
+  .yt-player-seek:disabled{ cursor:default; opacity:.55; }
 
   /* Z KEY (1.52.0): pressing Z clicks the clicker, so it gets the same press look as a mouse click. */
   .avatar.key-press{ transform:scale(0.92); }
@@ -12612,6 +12646,17 @@
       this.ready = false;
       this.setPlaying(false);
     }
+    // YOUTUBE PLAYER BAR (1.64.0): where the song is, how long it is, and jumping around in it.
+    currentTime(){
+      try { return this.ready ? Number(this.player.getCurrentTime()) || 0 : 0; } catch (e) { return 0; }
+    }
+    duration(){
+      try { return this.ready ? Number(this.player.getDuration()) || 0 : 0; } catch (e) { return 0; }
+    }
+    seek(seconds){
+      if (!this.ready) return;
+      try { this.player.seekTo(Math.max(0, Number(seconds) || 0), true); } catch (e) {}
+    }
     setPlaying(on){
       if (this.playing === on) return;
       this.playing = on;
@@ -12658,25 +12703,130 @@
     }
   }
 
-  // The Play / Stop button on a YouTube row in the mod editor. One preview at a time.
-  let ytPreview = null;
+  /* ---------- YOUTUBE PLAYER BAR (1.64.0) ----------
+     A YouTube song row shows a bar that works like the <audio> bar of a normal song:
+       [play / pause]  0:12 / 3:40  [=====seek=====]  [mute]
+     The sound still comes from the hidden YouTube player (YtAudio). This is only the
+     buttons. One YouTube song plays at a time: pressing play on another row stops the first.
+       ytPreview       the YtAudio that is loaded right now, or null
+       ytPreviewEl     the bar (.yt-player) that owns it
+     ytPlayerHTML(url) makes a bar. ytPreviewStop() stops everything and resets every bar. */
+  const YT_ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
+  const YT_ICON_PAUSE = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h4v14H6zm8 0h4v14h-4z"/></svg>';
+  const YT_ICON_SOUND = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4z"/></svg>';
+  const YT_ICON_MUTED = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm18.3-.3-1.4-1.4L17.5 9.6l-2.4-2.3-1.4 1.4 2.4 2.3-2.4 2.4 1.4 1.4 2.4-2.4 2.4 2.4 1.4-1.4-2.4-2.4z"/></svg>';
+  const YT_SEEK_STEPS = 1000; // the seek slider goes from 0 to this, whatever the song's length
+
+  let ytPreview = null;       // the YouTube song that is loaded
+  let ytPreviewEl = null;     // the bar it belongs to
+  let ytPreviewTimer = null;  // updates the time and the slider a few times a second
+  let ytSeekDragging = false; // true while the slider is held, so the timer does not fight the hand
+
+  // 75 seconds -> "1:15". An hour or more -> "1:02:03".
+  function ytTimeWords(seconds){
+    const total = Math.max(0, Math.floor(Number(seconds) || 0));
+    const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), sec = total % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(sec).padStart(2, '0');
+  }
+
+  // Puts a bar back to how it looks before anything was played. The mute choice is kept.
+  function ytPlayerReset(el){
+    el.classList.remove('playing');
+    const play = el.querySelector('.yt-player-play');
+    const seek = el.querySelector('.yt-player-seek');
+    const time = el.querySelector('.yt-player-time');
+    if (play) { play.innerHTML = YT_ICON_PLAY; play.setAttribute('aria-label', 'Play'); }
+    if (seek) { seek.value = 0; seek.disabled = true; }
+    if (time) time.textContent = '0:00 / 0:00';
+  }
+
+  // Shows the play or the pause picture on the bar that is playing.
+  function ytPlayerShowPlaying(on){
+    if (!ytPreviewEl) return;
+    ytPreviewEl.classList.toggle('playing', on);
+    const play = ytPreviewEl.querySelector('.yt-player-play');
+    if (play) { play.innerHTML = on ? YT_ICON_PAUSE : YT_ICON_PLAY; play.setAttribute('aria-label', on ? 'Pause' : 'Play'); }
+  }
+
+  // Runs a few times a second: writes "0:12 / 3:40" and moves the slider.
+  function ytPlayerTick(){
+    if (!ytPreview || !ytPreviewEl || !ytPreview.ready) return;
+    const now = ytPreview.currentTime(), length = ytPreview.duration();
+    const seek = ytPreviewEl.querySelector('.yt-player-seek');
+    const time = ytPreviewEl.querySelector('.yt-player-time');
+    if (seek) {
+      seek.disabled = !(length > 0); // the slider wakes up once the song's length is known
+      if (!ytSeekDragging && length > 0) seek.value = Math.round(now / length * YT_SEEK_STEPS);
+    }
+    if (time && !ytSeekDragging) time.textContent = ytTimeWords(now) + ' / ' + ytTimeWords(length);
+  }
+
+  // Stops the YouTube song (and any paid preview) and resets every bar.
   function ytPreviewStop(){
     modSongPreviewStop(); // PAID SONG PREVIEW (1.56.0): every place that stops a preview stops this one too
+    clearInterval(ytPreviewTimer);
+    ytPreviewTimer = null;
+    ytSeekDragging = false;
     if (ytPreview) { ytPreview.stop(); ytPreview = null; }
-    document.querySelectorAll('.yt-preview-btn.playing').forEach(b => { b.classList.remove('playing'); b.textContent = 'Play sound'; });
+    ytPreviewEl = null;
+    document.querySelectorAll('.yt-player').forEach(ytPlayerReset);
   }
+
   document.addEventListener('click', (e) => {
-    const btn = e.target.closest ? e.target.closest('.yt-preview-btn') : null;
-    if (!btn) return;
-    const wasPlaying = btn.classList.contains('playing');
+    if (!e.target.closest) return;
+    // The mute button: remembered on the bar, and sent to the song if this bar is the one playing.
+    const muteBtn = e.target.closest('.yt-player-mute');
+    if (muteBtn) {
+      const el = muteBtn.closest('.yt-player');
+      const muted = el.dataset.muted !== '1';
+      el.dataset.muted = muted ? '1' : '';
+      muteBtn.innerHTML = muted ? YT_ICON_MUTED : YT_ICON_SOUND;
+      muteBtn.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
+      if (el === ytPreviewEl && ytPreview) { ytPreview.volume = muted ? 0 : 1; ytPreview.apply(); }
+      return;
+    }
+    const playBtn = e.target.closest('.yt-player-play');
+    if (!playBtn) return;
+    const el = playBtn.closest('.yt-player');
+    // The same bar again: pause, or carry on from where it was.
+    if (el === ytPreviewEl && ytPreview) {
+      if (ytPreview.wantPlay) { ytPreview.pause(); ytPlayerShowPlaying(false); }
+      else { ytPreview.play(); ytPlayerShowPlaying(true); }
+      return;
+    }
+    // A different bar: stop whatever was playing and load this one.
     ytPreviewStop();
-    if (wasPlaying) return;
-    btn.classList.add('playing');
-    btn.textContent = 'Stop';
-    ytPreview = new YtAudio(btn.dataset.url, {
+    ytPreviewEl = el;
+    ytPreview = new YtAudio(el.dataset.url, {
+      onPlay: () => ytPlayerShowPlaying(true),
+      onPause: () => ytPlayerShowPlaying(false), // paused, or the song reached its end
       onError: () => { ytPreviewStop(); modEditorStatus("That YouTube video can't be played here. Its owner may have turned off playing on other sites.", true); }
     });
+    ytPreview.volume = el.dataset.muted === '1' ? 0 : 1;
+    ytPlayerShowPlaying(true); // the pause picture shows right away, while YouTube loads
     ytPreview.play();
+    ytPreviewTimer = setInterval(ytPlayerTick, 250);
+  });
+
+  // Dragging the slider: the time words follow the hand, and letting go jumps the song there.
+  document.addEventListener('pointerdown', (e) => {
+    if (e.target.classList && e.target.classList.contains('yt-player-seek')) ytSeekDragging = true;
+  });
+  document.addEventListener('input', (e) => {
+    const seek = e.target;
+    if (!seek.classList || !seek.classList.contains('yt-player-seek')) return;
+    if (seek.closest('.yt-player') !== ytPreviewEl || !ytPreview) return;
+    const length = ytPreview.duration();
+    const time = ytPreviewEl.querySelector('.yt-player-time');
+    if (time && length > 0) time.textContent = ytTimeWords(seek.value / YT_SEEK_STEPS * length) + ' / ' + ytTimeWords(length);
+  });
+  document.addEventListener('change', (e) => {
+    const seek = e.target;
+    if (!seek.classList || !seek.classList.contains('yt-player-seek')) return;
+    ytSeekDragging = false;
+    if (seek.closest('.yt-player') !== ytPreviewEl || !ytPreview) return;
+    const length = ytPreview.duration();
+    if (length > 0) ytPreview.seek(seek.value / YT_SEEK_STEPS * length);
   });
   /* ======================================================
      PAID SONG PREVIEW (1.56.0)
@@ -12745,10 +12895,17 @@
     return `<button type="button" class="workshop-icon-btn mod-preview-btn" data-src="${escapeChatHtml(src)}" data-start="${modPreviewStart(start)}">${label}</button>`;
   }
 
-  // The HTML of that button, used by the Music and Payload rows.
-  function ytPreviewButtonHTML(url){
-    return `<button type="button" class="workshop-icon-btn yt-preview-btn" data-url="${escapeChatHtml(url)}">Play sound</button>`;
+  // YOUTUBE PLAYER BAR (1.64.0): the HTML of one bar, used by the Music and Payload rows.
+  function ytPlayerHTML(url){
+    return `<div class="yt-player" data-url="${escapeChatHtml(url)}">
+      <button type="button" class="yt-player-play" aria-label="Play">${YT_ICON_PLAY}</button>
+      <span class="yt-player-time">0:00 / 0:00</span>
+      <input type="range" class="yt-player-seek" min="0" max="${YT_SEEK_STEPS}" step="1" value="0" aria-label="Seek" disabled>
+      <button type="button" class="yt-player-mute" aria-label="Mute">${YT_ICON_SOUND}</button>
+    </div>`;
   }
+  // The old name (it used to make a "Play sound" button). Kept so nothing that calls it breaks.
+  function ytPreviewButtonHTML(url){ return ytPlayerHTML(url); }
 
   const musicPlayerEl = document.getElementById('music-player');
   const songSelect = document.getElementById('song-select');

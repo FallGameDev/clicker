@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.63.0 | Deployment: 215 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.63.0">
+<!-- Game version: 1.64.0 | Deployment: 215 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.64.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,15 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## YouTube player bar (1.64.0)
+
+A YouTube song row (mod editor Music and Payload, and the Music view on a mod's page) used to have a "Play sound" button. It now has a bar like a normal song's: play / pause, `0:12 / 3:40`, a seek slider and a mute button.
+
+- Search `YOUTUBE PLAYER BAR` in `index.html`. `ytPlayerHTML(url)` makes a bar, the click and slider listeners sit right above it.
+- The sound still comes from the hidden YouTube player (`YtAudio`, which got `currentTime()`, `duration()` and `seek()`). One YouTube song plays at a time.
+- The slider is off until YouTube has loaded the song and knows how long it is.
+- It is styled to look like the browser's own sound bar (light gray pill), so it is the same in every theme.
 
 ## Song uploads (1.63.0)
 
