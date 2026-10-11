@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.70.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.70.0">
+<!-- Game version: 1.71.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.71.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -14016,6 +14016,7 @@
   // fonts.json entries: { label, value, family, fallback, file?, google?, weights? }
   //   file    = a .ttf/.otf/.woff2 in the fonts folder (like "fonts/caveat.ttf"), loaded with @font-face
   //   google  = true to load the family from Google Fonts (only when it is the picked font)
+  //   googleFamily = for Google fonts: the name on Google, when it is different from "family"
   //   weights = for Google fonts: which thicknesses to get, like "400;700" (normal and bold).
   //             Leave it out for fonts that only come in one thickness.
   function applySettingsFonts(list){
@@ -14031,7 +14032,11 @@
       if (f.google) {
         // MORE FONTS (1.69.0): the link is only remembered here. loadUiFont() adds it when the font is picked.
         const weights = /^\d{3}(;\d{3})*$/.test(String(f.weights || '')) ? ':wght@' + f.weights : '';
-        GOOGLE_UI_FONTS[f.value.toLowerCase()] = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family).replace(/%20/g, '+') + weights + '&display=swap';
+        // FEWER FONTS (1.71.0): "googleFamily" is the name to ask Google for when it is not the same
+        // as "family". Comic Sans uses it: the device's own Comic Sans MS is tried first, and
+        // Comic Neue (its free look-alike from Google) is the backup on devices without it.
+        const googleName = quote(String(f.googleFamily || family).trim());
+        GOOGLE_UI_FONTS[f.value.toLowerCase()] = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(googleName).replace(/%20/g, '+') + weights + '&display=swap';
       }
       css.push(`body.ui-font-${f.value.toLowerCase()} *{font-family:'${family}', ${fallback} !important;}`);
     });

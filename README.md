@@ -105,7 +105,8 @@ Built-in lists live in the `settings/` folder, so they can be changed without ed
 - `file` (optional): a font file in the `fonts/` folder, like `fonts/caveat.ttf`.
 - `google` (optional): `true` to load the family from Google Fonts. The `family` has to be spelled exactly like on fonts.google.com. Since 1.69.0 a Google font is only downloaded when it is the picked font (`loadUiFont()`), so a long list does not slow the game down.
 - `weights` (optional, Google fonts only): the thicknesses to get, like `"400;700"` for normal and bold. Leave it out for a font that only has one thickness.
-- **More fonts (1.69.0):** 40 Google fonts were added, in four groups: rounded and chunky (Baloo 2 to Russo One), pixel and techy (Press Start 2P to JetBrains Mono), handwriting (Caveat to Lobster), fancy and spooky (Creepster to Black Ops One). All are free Google fonts.
+- `googleFamily` (optional, Google fonts only): the name on Google when it is not the same as `family`.
+- **The font list (1.71.0):** the 4 original fonts plus 10 well known ones: Comic Sans, Luckiest Guy, Bangers, Press Start 2P, Permanent Marker, Pacifico, Lobster, Bebas Neue, Creepster and Typewriter (Special Elite). Comic Sans uses the device's own Comic Sans MS when it has it, and Comic Neue from Google when it does not. (1.69.0 had 40 extra fonts, which was too many niche ones. A player who had picked a removed font goes back to the normal font.)
 
 **themes.json:** a list of `{ "id", "label", "dark": { ... }, "light": { ... } }`.
 - `id`: short id, letters, numbers, `-` and `_` only. Never change it for an existing theme, players' saved choice uses it.
@@ -141,8 +142,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.70.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.70.0">
+<!-- Game version: 1.71.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.71.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
