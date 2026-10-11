@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.66.0 | Deployment: 216 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.66.0">
+<!-- Game version: 1.67.0 | Deployment: 216 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.67.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -21113,7 +21113,7 @@
           </div>
           <div class="mod-editor-file-main">
             <input type="text" class="auth-input cgc-payload-name" data-index="${i}" value="${esc(f.name)}" maxlength="60" spellcheck="false" aria-label="File name">
-            <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : esc(f.url)}</span>
+            <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : (isStorageUrl(f.url) ? 'Uploaded file' : esc(f.url))}</span>
             ${isYoutube ? ytPreviewButtonHTML(f.url) : (isAudio ? `<audio controls preload="none" src="${esc(f.url)}"></audio>` : '')}
           </div>
           <button class="mod-editor-remove cgc-payload-remove" data-index="${i}" title="Remove" aria-label="Remove ${esc(f.name)}">&times;</button>
@@ -21242,25 +21242,25 @@
       const problems = [];
       for (const file of files) {
         try {
+          // ALL UPLOADS TO STORAGE (1.67.0): each file is sent to Storage first. If that does not
+          // work, the old rules apply (small sounds and small GIFs stay inside the mod).
           let url;
           if (/^audio\//.test(file.type)) {
-            if (file.size > CGC_PAYLOAD_AUDIO_MAX_BYTES) { problems.push(`${file.name} is too big to upload, add it as a link instead`); continue; }
-            url = await new Promise((resolve, reject) => {
-              const r = new FileReader();
-              r.onload = () => resolve(r.result);
-              r.onerror = reject;
-              r.readAsDataURL(file);
-            });
-          } else if (/^image\/gif$/.test(file.type) && file.size < 150000) {
-            // Small GIFs stay animated.
-            url = await new Promise((resolve, reject) => {
-              const r = new FileReader();
-              r.onload = () => resolve(r.result);
-              r.onerror = reject;
-              r.readAsDataURL(file);
-            });
+            if (file.size > FILE_UPLOAD_MAX_BYTES) { problems.push(`${file.name} is too big to upload, add it as a link instead`); continue; }
+            const raw = await fileToDataUrl(file);
+            url = await storeDataUrl(raw, file.name);
+            if (!url) {
+              if (file.size > CGC_PAYLOAD_AUDIO_MAX_BYTES) { problems.push(`${file.name} is too big to upload, add it as a link instead`); continue; }
+              url = raw;
+            }
+          } else if (/^image\/gif$/.test(file.type) && file.size <= FILE_UPLOAD_MAX_BYTES) {
+            // GIFs stay animated when they are saved as they are. Without Storage only small ones can be.
+            const raw = await fileToDataUrl(file);
+            url = await storeDataUrl(raw, file.name);
+            if (!url) url = file.size < 150000 ? raw : await shrinkImageFile(file, CGC_PAYLOAD_IMAGE_MAX, 'png');
           } else {
-            url = await shrinkImageFile(file, CGC_PAYLOAD_IMAGE_MAX, 'png');
+            const small = await shrinkImageFile(file, CGC_PAYLOAD_IMAGE_MAX, 'png');
+            url = (await storeDataUrl(small, file.name)) || small;
           }
           d.payload.push({ name: cgcUniqueFileName(file.name, d.payload, -1), url });
         } catch (err) {
@@ -24295,16 +24295,18 @@ ${hasCode
   // every mod is sent to every player who opens the workshop, so keep mods light.
   // Uploads are shrunk, and links to files hosted elsewhere barely count against it.
   const MOD_EDITOR_SIZE_LIMIT = 250000;
+  // ALL UPLOADS TO STORAGE (1.67.0): "max" is the size a picture is shrunk to when it has to stay
+  // inside the mod. "storedMax" is the bigger size used when it can be saved in Supabase Storage.
   const MOD_EDITOR_TYPES = [
-    { id: 'icons', label: 'Icons', hint: 'Clicker avatar images. Shrunk to 128px.', accept: 'image/*', max: 128, format: 'png', linkHint: 'https://example.com/icon.png' },
+    { id: 'icons', label: 'Icons', hint: 'Clicker avatar images. Shrunk to 256px.', accept: 'image/*', max: 128, storedMax: 256, format: 'png', linkHint: 'https://example.com/icon.png' },
     { id: 'cursors', label: 'Cursors', hint: 'Mouse cursors. Shrunk to 32px, transparent PNG works best.', accept: 'image/*', max: 32, format: 'png', linkHint: 'https://example.com/cursor.png' },
-    { id: 'bg', label: 'Backgrounds', hint: 'Full page backgrounds. Uploads are shrunk to 640px, so use a link for sharp ones.', accept: 'image/*', max: 640, format: 'jpeg', linkHint: 'https://example.com/background.jpg' },
+    { id: 'bg', label: 'Backgrounds', hint: 'Full page backgrounds. Uploads are shrunk to 1920px.', accept: 'image/*', max: 640, storedMax: 1920, format: 'jpeg', linkHint: 'https://example.com/background.jpg' },
     // SONG UPLOADS (1.63.0): song: true means an uploaded file is sent to Supabase Storage and only its link is kept.
     { id: 'music', label: 'Music', hint: 'Upload a song file (.mp3, .wav, .ogg or .m4a, up to 6MB), or add a direct link to one, or a YouTube link (only the sound plays). Only upload music you made or are allowed to share.', accept: '.mp3,.wav,.ogg,.m4a,audio/*', song: true, linkHint: 'https://example.com/song.mp3' },
     // MOD FONTS (1.55.0): raw: true means the file is stored as it is (pictures are shrunk, fonts are not).
-    { id: 'fonts', label: 'Fonts', hint: 'Fonts for the Font Manager picker. Upload a .ttf, .otf, .woff or .woff2 file (up to 300KB each), or add a link to one. Font files are big, so watch the storage bar.', accept: '.ttf,.otf,.woff,.woff2', raw: true, linkHint: 'https://example.com/font.ttf' }
+    { id: 'fonts', label: 'Fonts', hint: 'Fonts for the Font Manager picker. Upload a .ttf, .otf, .woff or .woff2 file (up to 2MB each), or add a link to one.', accept: '.ttf,.otf,.woff,.woff2', raw: true, linkHint: 'https://example.com/font.ttf' }
   ];
-  const MOD_FONT_MAX_BYTES = 300000;  // biggest font file that can be uploaded into a mod
+  const MOD_FONT_MAX_BYTES = 300000;  // biggest font file that can be kept INSIDE a mod (Storage allows FILE_UPLOAD_MAX_BYTES)
 
   /* ---------- SONG UPLOADS (1.63.0) ----------
      A song is far too big to keep inside a mod, so an uploaded song goes to
@@ -24325,6 +24327,55 @@ ${hasCode
     full: 'You have used all of your song slots. Add a link instead.',
     server: "The song couldn't be saved right now. Try again in a bit."
   };
+
+  /* ---------- ALL UPLOADS TO STORAGE (1.67.0) ----------
+     Pictures, fonts and Payload sounds used to be kept INSIDE the mod as long "data:" text,
+     which made every mod heavy. Now they go to Supabase Storage like songs do, and the mod
+     keeps a short link. Because the file no longer weighs the mod down, it can be bigger:
+     backgrounds up to 1920px, icons 256px, fonts and Payload sounds up to 2MB.
+       storeDataUrl(dataUrl, name)   sends one file, answers its link, or '' if it could not
+     When it answers '' (not logged in, offline, function not updated) the old way is used:
+     the file stays inside the mod at the old small size. So nothing breaks without Storage. */
+  const FILE_UPLOAD_MAX_BYTES = 2 * 1024 * 1024; // keep the same as MAX_FILE_BYTES in the uploads function
+  let fileStorageOff = false; // true once the function said it does not know "file", so we stop asking
+
+  // True when a link points at a file saved in Supabase Storage.
+  function isStorageUrl(url){
+    return String(url || '').indexOf('/storage/v1/object/public/') !== -1;
+  }
+
+  // Sends a "data:" link to Storage. Gives back the https link, or '' when it was not saved.
+  async function storeDataUrl(dataUrl, name){
+    const text = String(dataUrl || '');
+    const comma = text.indexOf(',');
+    if (fileStorageOff || offlineMode || !currentUsername) return '';
+    if (text.indexOf('data:') !== 0 || comma === -1 || !/;base64$/i.test(text.slice(0, comma))) return '';
+    const data = text.slice(comma + 1);
+    if (data.length * 0.75 > FILE_UPLOAD_MAX_BYTES) return ''; // base64 is 4 letters for every 3 bytes
+    try {
+      const res = await fetch(uploadsApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' }, // same text/plain trick as sheetRequest()
+        body: JSON.stringify({ action: 'file', username: currentUsername, name: name || 'file', data })
+      });
+      if (res.status === 404) { fileStorageOff = true; return ''; }
+      const reply = await res.json();
+      if (reply && reply.error === 'unknownaction') { fileStorageOff = true; return ''; } // an older uploads function
+      return reply && reply.success && reply.url ? String(reply.url) : '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // Reads a file as a "data:" link, just as it is.
+  function fileToDataUrl(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(new Error('read'));
+      reader.readAsDataURL(file);
+    });
+  }
 
   // The link of the "uploads" function (the api link with /api swapped for /uploads).
   function uploadsApiUrl(){
@@ -24376,12 +24427,12 @@ ${hasCode
   const MOD_FONT_MIMES = { ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', woff2: 'font/woff2' };
 
   // Reads a font file into a data: link with the right type. Throws 'type' or 'size' when it can't be used.
-  function readFontFile(file){
+  function readFontFile(file, maxBytes){
     return new Promise((resolve, reject) => {
       const ext = (String(file.name).match(/\.([a-z0-9]+)$/i) || [])[1] || '';
       const mime = MOD_FONT_MIMES[ext.toLowerCase()];
       if (!mime) return reject(new Error('type'));
-      if (file.size > MOD_FONT_MAX_BYTES) return reject(new Error('size'));
+      if (file.size > (maxBytes || MOD_FONT_MAX_BYTES)) return reject(new Error('size'));
       const reader = new FileReader();
       reader.onload = () => {
         const comma = String(reader.result).indexOf(',');
@@ -24741,7 +24792,7 @@ ${hasCode
           </div>
           <div class="mod-editor-file-main">
             <input type="text" class="auth-input mod-editor-file-name" data-type="${t.id}" data-index="${i}" value="${esc(f.name)}" placeholder="Name shown in the picker" maxlength="40">
-            <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : (String(f.url).indexOf('/storage/v1/object/public/songs/') !== -1 ? 'Uploaded song' : esc(f.url))}</span>
+            <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : (isStorageUrl(f.url) ? (t.id === 'music' ? 'Uploaded song' : 'Uploaded file') : esc(f.url))}</span>
             ${t.id === 'music' ? (youtubeIdFromUrl(f.url) ? ytPreviewButtonHTML(f.url) : `<audio controls preload="none" src="${esc(f.url)}"></audio>`) : ''}
             ${t.id === 'music' ? `
             <label class="mod-editor-preview-start" title="If your mod costs Gems, players who have not bought it hear ${MOD_PREVIEW_SECONDS} seconds of this song, starting here.">
@@ -25033,10 +25084,20 @@ ${hasCode
         }
         let failed = 0;
         let tooBig = 0;
+        if (files.length) modEditorStatus(`Uploading ${files.length} file${files.length === 1 ? '' : 's'}...`);
         for (const file of files) {
           try {
             // MOD FONTS (1.55.0): fonts are stored as they are, pictures are shrunk first.
-            const url = type.raw ? await readFontFile(file) : await shrinkImageFile(file, type.max, type.format);
+            // ALL UPLOADS TO STORAGE (1.67.0): first try the bigger size and save it in Storage.
+            // If Storage says no, fall back to the small size that fits inside the mod.
+            let url = '';
+            if (!fileStorageOff && !offlineMode && currentUsername) {
+              try {
+                const big = type.raw ? await readFontFile(file, FILE_UPLOAD_MAX_BYTES) : await shrinkImageFile(file, type.storedMax || type.max, type.format);
+                url = await storeDataUrl(big, file.name);
+              } catch (e) { /* the small way below reports the real problem */ }
+            }
+            if (!url) url = type.raw ? await readFontFile(file) : await shrinkImageFile(file, type.max, type.format);
             d.files[type.id].push({ name: file.name.replace(/\.[^.]+$/, '').slice(0, 40), url });
           } catch (err) {
             if (err && err.message === 'size') tooBig++;
@@ -25048,6 +25109,7 @@ ${hasCode
         if (failed && type.raw) modEditorStatus(tooBig ? `${tooBig} font${tooBig === 1 ? ' is' : 's are'} over ${Math.round(MOD_FONT_MAX_BYTES / 1000)}KB. Add a link to it instead.` : `${failed} file${failed === 1 ? '' : 's'} couldn't be read as a font. Use .ttf, .otf, .woff or .woff2.`, true);
         else if (failed) modEditorStatus(`${failed} file${failed === 1 ? '' : 's'} couldn't be read as an image.`, true);
         else if (modEditorSize() > MOD_EDITOR_SIZE_LIMIT) modEditorOverStorageNotice();
+        else modEditorStatus('');
       });
     });
 

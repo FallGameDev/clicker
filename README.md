@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.66.0 | Deployment: 216 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.66.0">
+<!-- Game version: 1.67.0 | Deployment: 216 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.67.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,27 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## All mod uploads go to Storage (1.67.0)
+
+Pictures, fonts and Payload sounds uploaded in the mod editor used to be kept inside the mod as long `data:` text. They now go to Supabase Storage like songs, and the mod keeps a short link. Mods get much lighter, so uploads can be bigger.
+
+| Upload | Before | Now |
+|---|---|---|
+| Icons | 128px | 256px |
+| Cursors | 32px | 32px (a cursor is shown at its real size) |
+| Backgrounds | 640px | 1920px |
+| Fonts | 300KB | 2MB |
+| Payload pictures | 512px | 512px |
+| Payload sounds | 300KB | 2MB |
+| Payload GIFs (animated) | 150KB | 2MB |
+
+- Game: search `ALL UPLOADS TO STORAGE` in `index.html`. `storeDataUrl(dataUrl, name)` sends one file and answers its link, or `''`.
+- **Safe fallback:** when it answers `''` (not logged in, offline, or an older `uploads` function) the old way is used and the file stays inside the mod at the old small size.
+- Server: the `file` action in `supabase/functions/uploads/index.ts`. It checks the first bytes of the file (png, jpg, gif, webp, ttf, otf, woff, woff2, or a sound) and saves it in the public `files` bucket, in a folder named by `player_id`. No SVG, because an SVG can carry code.
+- Limits: 2MB for each file and 300 files for each player (`MAX_FILE_BYTES`, `MAX_FILES_EACH`, and `FILE_UPLOAD_MAX_BYTES` in the game).
+- If the `files` bucket never shows up, run `supabase/sql/files-bucket.sql`.
+- Not moved: the mod's own icon (128px, still inside the mod), profile pictures and banners (those belong to `api`), and files in mods made before this update.
 
 ## YouTube uploader credit (1.66.0)
 
