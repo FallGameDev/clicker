@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.60.0 | Deployment: 214 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.60.0">
+<!-- Game version: 1.61.0 | Deployment: 214 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.61.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -14119,6 +14119,56 @@
     try { localStorage.setItem(UI_THEME_KEY, themeSelect.value); } catch (e) {}
     applyUiTheme();
   });
+
+  /* ---------- PICKED LABELS (1.61.0) ----------
+     Each Preferences drop-down says what it is in front of the thing you picked:
+       "Music \u2022 FIVE FIVE!"   "Background \u2022 Space Nebula"   "Cursor \u2022 ..."
+     Nothing picked yet = the old "Choose a song" style words, unchanged.
+     HOW: the option that is picked gets the label put in front of its name, and every
+     other option keeps its plain name (remembered in data-plain).
+     To rename a label, change the word in PREF_PICKER_LABELS. */
+  const PREF_PICKER_LABELS = [
+    [songSelect, 'Music'],
+    [cursorSelect, 'Cursor'],
+    [bgSelect, 'Background'],
+    [iconSelect, 'Icon'],
+    [effectSelect, 'Effect'],
+    [fontManagerSelect, 'Font'],
+    [themeSelect, 'Theme']
+  ];
+
+  // Rewrites the words of one drop-down so only the picked option carries the label.
+  function refreshPrefPickerLabel(select, label){
+    Array.from(select.options).forEach(opt => {
+      if (opt.dataset.plain === undefined) opt.dataset.plain = opt.textContent; // first time we see it
+      const picked = opt.selected && opt.value !== '';
+      const want = picked ? label + ' \u2022 ' + opt.dataset.plain : opt.dataset.plain;
+      if (opt.textContent !== want) opt.textContent = want; // only touch it when it is wrong
+    });
+  }
+
+  (function(){
+    // The browser's own way of reading and setting a drop-down's value.
+    const nativeValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+    PREF_PICKER_LABELS.forEach(([select, label]) => {
+      if (!select) return;
+      const refresh = () => refreshPrefPickerLabel(select, label);
+      // 1. The player picks something.
+      select.addEventListener('change', refresh);
+      // 2. The game sets the value itself (select.value = ...), which fires no event,
+      //    so setting the value on these drop-downs also refreshes the words.
+      if (nativeValue && nativeValue.set) {
+        Object.defineProperty(select, 'value', {
+          configurable: true,
+          get(){ return nativeValue.get.call(this); },
+          set(v){ nativeValue.set.call(this, v); refresh(); }
+        });
+      }
+      // 3. The list is rebuilt (new songs, a mod was added, themes loaded).
+      new MutationObserver(refresh).observe(select, { childList: true, subtree: true });
+      refresh();
+    });
+  })();
 
   function showThemePicker(){
     updatePickerVisibility();
