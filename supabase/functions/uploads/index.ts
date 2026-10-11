@@ -31,6 +31,8 @@
 //   Name it exactly:  uploads
 //   Paste this whole file, turn OFF "Verify JWT" (same as "api"), Deploy.
 //   The function makes its own "songs" bucket the first time it runs.
+//   If the bucket never shows up in Storage, run supabase/sql/songs-bucket.sql
+//   once in the SQL Editor (safe to re-run).
 //
 // RULE FOR PLAYERS: only upload music you made or are allowed to share.
 //
