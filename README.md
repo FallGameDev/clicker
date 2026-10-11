@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.67.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.67.0">
+<!-- Game version: 1.68.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.68.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,18 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## Workshop cache (1.68.0)
+
+The Workshop no longer waits on a download every time it opens. The list of mods is kept in the browser, shown right away, and refreshed quietly in the background.
+
+- Search `WORKSHOP CACHE` in `index.html`. `openWorkshop()` shows the saved list, calls `workshopFetch()`, and redraws only if something changed (the scroll spot is kept).
+- Kept in two places: in memory (`workshopItemsCache`) and in IndexedDB (database `clicker-cache`, one entry for each account). IndexedDB is used because the list is too big for localStorage.
+- With no internet, the saved list still opens.
+- The mod update check and the Limited Shop deal use `workshopItemsRecent()`, so they share one download instead of each fetching the list.
+- A redraw is skipped on a mod's page and in the mod editor, so a test run or your typing is never interrupted. Those pages get the new list the next time they are drawn.
+- The files inside mods (pictures, songs, fonts) are cached by the browser itself: Storage links are served with a one year cache time.
+- To wipe it while testing: browser dev tools > Application > IndexedDB > delete `clicker-cache`.
 
 ## All mod uploads go to Storage (1.67.0)
 

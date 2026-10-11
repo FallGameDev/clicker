@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.67.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.67.0">
+<!-- Game version: 1.68.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.68.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -12006,12 +12006,13 @@
     limitedModTriedWeek = week;
     let deal = null;
     try {
-      const [market, workshop] = await Promise.all([
+      // WORKSHOP CACHE (1.68.0): the list of mods is shared with the Workshop instead of downloaded again.
+      const [market, workshopItems] = await Promise.all([
         marketRequest({ action: 'get' }),
-        sheetRequest({ action: 'getWorkshop', username: currentUsername })
+        workshopItemsRecent(WORKSHOP_BG_FRESH_MS)
       ]);
       const pick = market && market.success ? market.limitedMod : null;
-      const items = workshop && Array.isArray(workshop.items) ? workshop.items : [];
+      const items = Array.isArray(workshopItems) ? workshopItems : [];
       const item = pick ? items.find(m => m && String(m.id) === String(pick.id)) : null;
       if (pick && item && Number(pick.salePrice) > 0) {
         deal = {
@@ -17483,25 +17484,138 @@
   });
   document.getElementById('workshop-gems-display').addEventListener('click', openGemsConvertDialog);
 
+  /* ---------- WORKSHOP CACHE (1.68.0) ----------
+     The Workshop used to download the whole list of mods every time it was opened, and
+     showed "Loading..." until it arrived. Now the list is kept in the browser:
+       1. opening the Workshop shows the saved list RIGHT AWAY
+       2. the fresh list is fetched quietly in the background
+       3. if anything changed, the page is redrawn (your scroll spot is kept)
+     Where the list is kept:
+       in memory        workshopItemsCache, until the page is closed
+       in the browser   IndexedDB (database "clicker-cache"), so it survives a reload.
+                        IndexedDB is used because the list is too big for localStorage.
+     Each account has its own saved list. With no internet, the saved list still opens.
+     The mod update check and the Limited Shop deal share the same download
+     (workshopItemsRecent), so the list is not fetched three times in a row. */
+  const WORKSHOP_CACHE_DB = 'clicker-cache';        // the IndexedDB database
+  const WORKSHOP_CACHE_STORE = 'kv';                // one simple "name -> value" box inside it
+  const WORKSHOP_OPEN_FRESH_MS = 15 * 1000;         // opened again this soon: skip the background fetch
+  const WORKSHOP_BG_FRESH_MS = 5 * 60 * 1000;       // background checks reuse a list this new
+  let workshopFetchedAt = 0;        // when the list in memory came from the server (0 = it is from the saved copy)
+  let workshopFetchedFor = null;    // the account the list in memory belongs to
+  let workshopFetchPromise = null;  // a download that is running right now, shared by everyone who asks
+  let cacheDbPromise = null;
+
+  // Opens the cache database (made the first time). Gives null when the browser has no IndexedDB.
+  function cacheDb(){
+    if (!cacheDbPromise) {
+      cacheDbPromise = new Promise(resolve => {
+        try {
+          const req = indexedDB.open(WORKSHOP_CACHE_DB, 1);
+          req.onupgradeneeded = () => req.result.createObjectStore(WORKSHOP_CACHE_STORE);
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+          req.onblocked = () => resolve(null);
+        } catch (e) { resolve(null); }
+      });
+    }
+    return cacheDbPromise;
+  }
+  // Reads one saved value. null = nothing saved (or the cache can't be used). Never throws.
+  async function cacheGet(key){
+    const db = await cacheDb();
+    if (!db) return null;
+    return new Promise(resolve => {
+      try {
+        const req = db.transaction(WORKSHOP_CACHE_STORE).objectStore(WORKSHOP_CACHE_STORE).get(key);
+        req.onsuccess = () => resolve(req.result === undefined ? null : req.result);
+        req.onerror = () => resolve(null);
+      } catch (e) { resolve(null); }
+    });
+  }
+  // Saves one value. Problems (a full disk, private mode) are ignored: the cache is only a speed-up.
+  async function cacheSet(key, value){
+    const db = await cacheDb();
+    if (!db) return;
+    try { db.transaction(WORKSHOP_CACHE_STORE, 'readwrite').objectStore(WORKSHOP_CACHE_STORE).put(value, key); } catch (e) {}
+  }
+  function workshopCacheKey(user){
+    return 'workshop:' + String(user || 'guest').toLowerCase();
+  }
+
+  // Downloads the list of mods. Everyone who asks while it is running gets the same download.
+  // A good answer goes into memory and into the browser cache.
+  function workshopFetch(){
+    if (workshopFetchPromise) return workshopFetchPromise;
+    const user = currentUsername;
+    workshopFetchPromise = sheetRequest({ action: 'getWorkshop', username: user }).then(result => {
+      const items = (result && Array.isArray(result.items)) ? result.items : null;
+      if (!items) return []; // not a real list (an error answer): nothing is saved over the good copy
+      if (user === currentUsername) {
+        workshopItemsCache = items;
+        workshopFetchedAt = Date.now();
+        workshopFetchedFor = user;
+      }
+      cacheSet(workshopCacheKey(user), { items, at: Date.now() });
+      return items;
+    });
+    const done = () => { workshopFetchPromise = null; };
+    workshopFetchPromise.then(done, done);
+    return workshopFetchPromise;
+  }
+
+  // The list of mods for background checks: reused if it was downloaded in the last maxAgeMs.
+  function workshopItemsRecent(maxAgeMs){
+    if (workshopFetchedFor === currentUsername && workshopFetchedAt && Date.now() - workshopFetchedAt < maxAgeMs) return Promise.resolve(workshopItemsCache);
+    return workshopFetch();
+  }
+
   async function openWorkshop(){
     workshopView = 'browse';
     workshopOverlay.classList.add('visible');
     workshopSearchInput.value = workshopSearchQuery || '';
-    workshopBody.innerHTML = '<div class="empty-state loading-state">Loading...</div>';
     document.getElementById('workshop-profile-btn-img').src = currentProfileIcon || 'images/ui/profile.png';
     document.getElementById('workshop-profile-btn-name').textContent = currentUsername || 'Guest';
     updateWorkshopGemsDisplay();
+    const user = currentUsername;
+
+    // 1. Show what we already have. Memory first, then the copy saved in the browser.
+    if (workshopFetchedFor !== user) {
+      workshopItemsCache = []; // a list left over from another account is never shown
+      workshopFetchedAt = 0;
+      workshopBody.innerHTML = '<div class="empty-state loading-state">Loading...</div>';
+      const saved = await cacheGet(workshopCacheKey(user));
+      // While we waited, a download may have finished or the Workshop may have been closed.
+      if (workshopFetchedFor !== user && user === currentUsername && saved && Array.isArray(saved.items) && saved.items.length) {
+        workshopItemsCache = saved.items;
+        workshopFetchedFor = user;
+      }
+    }
+    const shown = workshopFetchedFor === user && workshopItemsCache.length > 0;
+    if (shown) renderWorkshopBody();
+
+    // 2. Fetch the fresh list (and the market) in the background.
+    const snapshot = () => JSON.stringify([workshopItemsCache, marketPacks]);
+    const before = shown ? snapshot() : '';
+    const fresh = shown && workshopFetchedAt && Date.now() - workshopFetchedAt < WORKSHOP_OPEN_FRESH_MS;
     try {
       // MARKET (1.42.0): packs and boosts load at the same time as the mods.
-      const [result] = await Promise.all([
-        sheetRequest({ action: 'getWorkshop', username: currentUsername }),
-        loadMarket()
-      ]);
-      workshopItemsCache = result.items || [];
-      renderWorkshopBody();
+      await Promise.all([fresh ? null : workshopFetch(), loadMarket()]);
     } catch (e) {
-      workshopBody.innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
+      // No internet. With a saved list the Workshop just keeps showing it.
+      if (!shown) workshopBody.innerHTML = '<div class="empty-state">Couldn\'t reach the database.</div>';
+      return;
     }
+    if (!workshopOverlay.classList.contains('visible') || user !== currentUsername) return;
+    if (!shown) { renderWorkshopBody(); return; }
+
+    // 3. Redraw only if something changed, and only on pages that a redraw can't disturb
+    //    (not a mod's page with a test running, and not the mod editor).
+    if (snapshot() === before) return;
+    if (!['browse', 'profile', 'pack'].includes(workshopView)) return;
+    const scroll = workshopBody.scrollTop;
+    renderWorkshopBody();
+    workshopBody.scrollTop = scroll;
   }
 
   function updateWorkshopGemsDisplay(){
@@ -27449,8 +27563,8 @@ ${hasCode
   async function checkModUpdates(){
     if (!currentUsername || offlineMode || !siteNotifActive('mods') || !(game.installedMods || []).length) return;
     try {
-      const result = await sheetRequest({ action: 'getWorkshop', username: currentUsername });
-      const items = (result && result.items) || [];
+      // WORKSHOP CACHE (1.68.0): reuses a list downloaded in the last few minutes.
+      const items = (await workshopItemsRecent(WORKSHOP_BG_FRESH_MS)) || [];
       let seen = {};
       try { seen = JSON.parse(localStorage.getItem(MOD_UPDATE_SEEN_KEY) || '{}') || {}; } catch (e) {}
       const fresh = items.filter(item => {
