@@ -137,7 +137,7 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.63.0 | Deployment: 214 | Update both on every release, see README.md -->
+<!-- Game version: 1.63.0 | Deployment: 215 | Update both on every release, see README.md -->
 <meta name="game-version" content="1.63.0">
 ```
 
@@ -321,7 +321,7 @@ The mod editor's Music section has an **Upload files** button. A song is too big
 - Rule shown to players: only upload music you made or are allowed to share.
 - Game: search `SONG UPLOADS` in `index.html` (`uploadSongFile()`, `SONG_UPLOAD_ERRORS`).
 - Server: `supabase/functions/uploads/index.ts`. Actions: `song` (upload), `list` (a player's songs), `remove` (delete one of your own). The game only uses `song` so far.
-- **Turn it on (once):** Supabase dashboard > Edge Functions > Deploy a new function > Via editor, name it exactly `uploads`, paste `supabase/functions/uploads/index.ts`, turn OFF "Verify JWT" (same as `api`), Deploy. The function makes its own `songs` bucket. Until then the upload button says uploads are not turned on yet.
+- **Deployed (deployment 215).** If it is ever set up again: Supabase dashboard > Edge Functions > Deploy a new function > Via editor, name it exactly `uploads`, paste `supabase/functions/uploads/index.ts`, turn OFF "Verify JWT" (same as `api`), Deploy. The function makes its own `songs` bucket. Until then the upload button says uploads are not turned on yet.
 
 ## Picked labels in Preferences (1.61.0)
 
