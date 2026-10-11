@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.62.0 | Deployment: 214 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.62.0">
+<!-- Game version: 1.63.0 | Deployment: 214 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.63.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -24088,11 +24088,75 @@ ${hasCode
     { id: 'icons', label: 'Icons', hint: 'Clicker avatar images. Shrunk to 128px.', accept: 'image/*', max: 128, format: 'png', linkHint: 'https://example.com/icon.png' },
     { id: 'cursors', label: 'Cursors', hint: 'Mouse cursors. Shrunk to 32px, transparent PNG works best.', accept: 'image/*', max: 32, format: 'png', linkHint: 'https://example.com/cursor.png' },
     { id: 'bg', label: 'Backgrounds', hint: 'Full page backgrounds. Uploads are shrunk to 640px, so use a link for sharp ones.', accept: 'image/*', max: 640, format: 'jpeg', linkHint: 'https://example.com/background.jpg' },
-    { id: 'music', label: 'Music', hint: 'Songs are too big to store, so add a direct link to an .mp3 file, or a YouTube link (only the sound plays).', accept: '', linkOnly: true, linkHint: 'https://example.com/song.mp3' },
+    // SONG UPLOADS (1.63.0): song: true means an uploaded file is sent to Supabase Storage and only its link is kept.
+    { id: 'music', label: 'Music', hint: 'Upload a song file (.mp3, .wav, .ogg or .m4a, up to 6MB), or add a direct link to one, or a YouTube link (only the sound plays). Only upload music you made or are allowed to share.', accept: '.mp3,.wav,.ogg,.m4a,audio/*', song: true, linkHint: 'https://example.com/song.mp3' },
     // MOD FONTS (1.55.0): raw: true means the file is stored as it is (pictures are shrunk, fonts are not).
     { id: 'fonts', label: 'Fonts', hint: 'Fonts for the Font Manager picker. Upload a .ttf, .otf, .woff or .woff2 file (up to 300KB each), or add a link to one. Font files are big, so watch the storage bar.', accept: '.ttf,.otf,.woff,.woff2', raw: true, linkHint: 'https://example.com/font.ttf' }
   ];
   const MOD_FONT_MAX_BYTES = 300000;  // biggest font file that can be uploaded into a mod
+
+  /* ---------- SONG UPLOADS (1.63.0) ----------
+     A song is far too big to keep inside a mod, so an uploaded song goes to
+     Supabase Storage and the mod keeps only the LINK to it:
+       1. the file is read and turned into base64 text      (songFileToBase64)
+       2. the text is sent to the "uploads" function         (uploadSongFile)
+       3. the function saves the file and answers its link   (supabase/functions/uploads/index.ts)
+       4. the link is added to Music like any other link
+     Until the "uploads" function is deployed, uploading says it is not turned on yet
+     and links still work as before. */
+  const SONG_UPLOAD_MAX_BYTES = 6 * 1024 * 1024; // keep the same as MAX_SONG_BYTES in the uploads function
+  const SONG_UPLOAD_ERRORS = {
+    nofunction: 'Song uploads are not turned on yet. Add a link instead.',
+    invalid: 'Log in to upload a song.',
+    toobig: 'That song is over 6MB. Use a shorter or smaller file, or add a link instead.',
+    notsound: 'That file is not a song the game can use. Use .mp3, .wav, .ogg or .m4a.',
+    baddata: "That file couldn't be read.",
+    full: 'You have used all of your song slots. Add a link instead.',
+    server: "The song couldn't be saved right now. Try again in a bit."
+  };
+
+  // The link of the "uploads" function (the api link with /api swapped for /uploads).
+  function uploadsApiUrl(){
+    return SHEET_API_URL.replace(/\/api\/?$/, '/uploads');
+  }
+
+  // Reads a file and gives back just its base64 text (no "data:audio/mpeg;base64," at the front).
+  function songFileToBase64(file){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result);
+        const comma = text.indexOf(',');
+        if (comma === -1) return reject(new Error('baddata'));
+        resolve(text.slice(comma + 1));
+      };
+      reader.onerror = () => reject(new Error('baddata'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Sends one song file to Supabase Storage. Gives back its link, or throws an error
+  // whose message is one of the keys of SONG_UPLOAD_ERRORS.
+  async function uploadSongFile(file){
+    if (offlineMode || !currentUsername) throw new Error('invalid');
+    if (file.size > SONG_UPLOAD_MAX_BYTES) throw new Error('toobig');
+    const data = await songFileToBase64(file);
+    let res;
+    try {
+      res = await fetch(uploadsApiUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' }, // same text/plain trick as sheetRequest()
+        body: JSON.stringify({ action: 'song', username: currentUsername, name: file.name, data })
+      });
+    } catch (e) {
+      throw new Error('server');
+    }
+    if (res.status === 404) throw new Error('nofunction'); // the function has not been deployed yet
+    let reply = null;
+    try { reply = await res.json(); } catch (e) {}
+    if (!reply || !reply.success || !reply.url) throw new Error((reply && reply.error) || 'server');
+    return reply.url;
+  }
   const MOD_FONT_MIMES = { ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', woff2: 'font/woff2' };
 
   // Reads a font file into a data: link with the right type. Throws 'type' or 'size' when it can't be used.
@@ -24461,7 +24525,7 @@ ${hasCode
           </div>
           <div class="mod-editor-file-main">
             <input type="text" class="auth-input mod-editor-file-name" data-type="${t.id}" data-index="${i}" value="${esc(f.name)}" placeholder="Name shown in the picker" maxlength="40">
-            <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : esc(f.url)}</span>
+            <span class="mod-editor-file-src">${String(f.url).indexOf('data:') === 0 ? `Uploaded file &middot; ${(f.url.length / 1000).toFixed(1)}K` : (String(f.url).indexOf('/storage/v1/object/public/songs/') !== -1 ? 'Uploaded song' : esc(f.url))}</span>
             ${t.id === 'music' ? (youtubeIdFromUrl(f.url) ? ytPreviewButtonHTML(f.url) : `<audio controls preload="none" src="${esc(f.url)}"></audio>`) : ''}
             ${t.id === 'music' ? `
             <label class="mod-editor-preview-start" title="If your mod costs Gems, players who have not bought it hear ${MOD_PREVIEW_SECONDS} seconds of this song, starting here.">
@@ -24484,7 +24548,7 @@ ${hasCode
           ${fontFaces}
           <div class="mod-editor-section-head">
             <h3 class="mio-panel-heading">${t.label} <span class="mod-editor-count">${list.length}</span></h3>
-            ${t.linkOnly ? '' : `
+            ${`
               <label class="workshop-icon-btn mod-editor-upload-btn">
                 Upload files
                 <input type="file" class="mod-editor-file-input" data-type="${t.id}" accept="${t.accept}" multiple>
@@ -24729,6 +24793,27 @@ ${hasCode
       input.addEventListener('change', async () => {
         const type = MOD_EDITOR_TYPES.find(t => t.id === input.dataset.type);
         const files = Array.from(input.files || []);
+        // SONG UPLOADS (1.63.0): songs go to Supabase Storage one at a time, and the mod keeps the link.
+        if (type.song) {
+          let added = 0;
+          let problem = '';
+          for (let i = 0; i < files.length; i++) {
+            modEditorStatus(`Uploading song ${i + 1} of ${files.length}...`);
+            try {
+              const url = await uploadSongFile(files[i]);
+              d.files.music.push({ name: files[i].name.replace(/\.[^.]+$/, '').slice(0, 40), url });
+              added++;
+              saveModEditorDraft(); // saved after each one, so a later failure can't lose it
+            } catch (err) {
+              problem = SONG_UPLOAD_ERRORS[err && err.message] || SONG_UPLOAD_ERRORS.server;
+              if (['nofunction', 'invalid', 'full'].includes(err && err.message)) break; // the rest would fail the same way
+            }
+          }
+          renderModEditor();
+          if (problem) modEditorStatus(added ? `${added} song${added === 1 ? '' : 's'} uploaded. ${problem}` : problem, true);
+          else modEditorStatus(`${added} song${added === 1 ? '' : 's'} uploaded.`);
+          return;
+        }
         let failed = 0;
         let tooBig = 0;
         for (const file of files) {

@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.62.0 | Deployment: 214 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.62.0">
+<!-- Game version: 1.63.0 | Deployment: 214 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.63.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,18 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## Song uploads (1.63.0)
+
+The mod editor's Music section has an **Upload files** button. A song is too big to keep inside a mod, so the file goes to Supabase Storage and the mod keeps only the link.
+
+- How it travels: the game reads the file, turns it into base64 text and sends it to the `uploads` function. The function turns it back into a file, checks the first bytes to make sure it really is a sound (mp3, wav, ogg or m4a), saves it in the public `songs` bucket and answers with the link.
+- Limits: 6MB for each song and 10 songs for each player (`MAX_SONG_BYTES` and `MAX_SONGS_EACH` in the function, `SONG_UPLOAD_MAX_BYTES` in the game). Files live in a folder named by `player_id`.
+- Links and YouTube links work the same as before. YouTube songs are only ever played through YouTube's own player, never copied.
+- Rule shown to players: only upload music you made or are allowed to share.
+- Game: search `SONG UPLOADS` in `index.html` (`uploadSongFile()`, `SONG_UPLOAD_ERRORS`).
+- Server: `supabase/functions/uploads/index.ts`. Actions: `song` (upload), `list` (a player's songs), `remove` (delete one of your own). The game only uses `song` so far.
+- **Turn it on (once):** Supabase dashboard > Edge Functions > Deploy a new function > Via editor, name it exactly `uploads`, paste `supabase/functions/uploads/index.ts`, turn OFF "Verify JWT" (same as `api`), Deploy. The function makes its own `songs` bucket. Until then the upload button says uploads are not turned on yet.
 
 ## Picked labels in Preferences (1.61.0)
 
