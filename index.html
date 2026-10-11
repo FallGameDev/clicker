@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.59.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.59.0">
+<!-- Game version: 1.60.0 | Deployment: 214 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.60.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -3425,13 +3425,19 @@
     60%{ transform:scale(1, .98); opacity:1; }
     100%{ transform:scale(1, 1); opacity:1; }
   }
-  /* The button you picked gets a tiny squash too, so it feels pressed. */
-  .stats-subtab-btn.subtab-btn-pop{ animation:subtab-btn-pop-kf .22s ease; }
-  @keyframes subtab-btn-pop-kf{
-    0%{ transform:translate(-1px,-1px) scale(1.12, .86); }
-    60%{ transform:translate(-1px,-1px) scale(.96, 1.05); }
-    100%{ transform:translate(-1px,-1px) scale(1, 1); }
+  /* STRETCHY BUTTON (1.60.0): the colored button itself stretches over to the subtab
+     you picked, then lets go of the old one. It is drawn by one extra box (the "pill")
+     that sits behind the buttons for a moment. The buttons it passes go see-through
+     (pill-through) so the pill shows, and their words stay on top. */
+  .stats-subtabs{ position:relative; isolation:isolate; }
+  .stats-subtab-pill{
+    position:absolute;
+    z-index:-1;               /* behind the buttons, in front of the page */
+    box-sizing:border-box;
+    pointer-events:none;
+    transform:translate(-1px,-1px); /* the same little lift an active button has */
   }
+  .stats-subtab-btn.pill-through{ background:transparent !important; box-shadow:none !important; border-color:transparent !important; } /* no outlines inside the stretched button */
   #friends-search-input{
     margin-bottom:4px;
   }
@@ -15872,6 +15878,55 @@
   const STATS_SUBTAB_OUT_MS = 110;   // keep the same as the subtab-out time in the CSS
   let statsSubtabSwapTimer = null;   // the wait between step 1 and step 2
 
+  /* STRETCHY BUTTON (1.60.0)
+     The colored button stretches from the old subtab to the new one and then
+     lets go of the old one:
+       1. a "pill" box that looks just like the colored button is put right on the old button
+       2. it grows until it covers the old AND the new button (the stretch)
+       3. it shrinks onto the new button (the switch), then it is removed */
+  const STATS_PILL_STRETCH_MS = 140; // how long the stretch takes
+  const STATS_PILL_SNAP_MS = 190;    // how long the shrink onto the new button takes
+  let statsSubtabPillTimers = [];    // the waits between the steps
+
+  // Stops a pill that is still moving and gives the buttons their normal look back.
+  function statsSubtabPillClear(buttons){
+    statsSubtabPillTimers.forEach(clearTimeout);
+    statsSubtabPillTimers = [];
+    document.querySelectorAll('.stats-subtab-pill').forEach(el => el.remove());
+    (buttons || []).forEach(btn => btn.classList.remove('pill-through'));
+  }
+
+  function statsSubtabPillRun(oldBtn, newBtn, buttons, pillLook){
+    const row = oldBtn.parentElement;
+    if (!row || !pillLook) return;
+    // Where a button sits inside the row.
+    const box = btn => ({ left: btn.offsetLeft, top: btn.offsetTop, right: btn.offsetLeft + btn.offsetWidth, bottom: btn.offsetTop + btn.offsetHeight });
+    const from = box(oldBtn), to = box(newBtn);
+    // One box big enough to cover both buttons.
+    const both = { left: Math.min(from.left, to.left), top: Math.min(from.top, to.top), right: Math.max(from.right, to.right), bottom: Math.max(from.bottom, to.bottom) };
+    const pill = document.createElement('div');
+    pill.className = 'stats-subtab-pill';
+    Object.assign(pill.style, pillLook);
+    const place = b => Object.assign(pill.style, { left: b.left + 'px', top: b.top + 'px', width: (b.right - b.left) + 'px', height: (b.bottom - b.top) + 'px' });
+    const speed = (ms, curve) => { pill.style.transition = ['left', 'top', 'width', 'height'].map(what => what + ' ' + ms + 'ms ' + curve).join(', '); };
+
+    place(from);                 // step 1
+    row.appendChild(pill);
+    // Every button the pill passes over goes see-through so the pill shows behind its words.
+    buttons.forEach(btn => {
+      const b = box(btn);
+      if (b.left < both.right && b.right > both.left && b.top < both.bottom && b.bottom > both.top) btn.classList.add('pill-through');
+    });
+    void pill.offsetWidth;       // lets the browser see step 1 before step 2 starts
+    speed(STATS_PILL_STRETCH_MS, 'ease-in');
+    place(both);                 // step 2: stretch
+    statsSubtabPillTimers.push(setTimeout(() => {
+      speed(STATS_PILL_SNAP_MS, 'cubic-bezier(.3,1.5,.5,1)'); // a little bounce at the end
+      place(to);                 // step 3: switch
+    }, STATS_PILL_STRETCH_MS));
+    statsSubtabPillTimers.push(setTimeout(() => statsSubtabPillClear(buttons), STATS_PILL_STRETCH_MS + STATS_PILL_SNAP_MS + 30));
+  }
+
   function switchStatsSubtab(tab){
     const buttons = Array.from(document.querySelectorAll('.stats-subtab-btn'));
     const panes = Array.from(document.querySelectorAll('.stats-subtab-pane'));
@@ -15881,15 +15936,18 @@
     const noMotion = document.body.classList.contains('low-perf') ||
       (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
-    buttons.forEach(btn => {
-      const on = btn.dataset.subtab === tab;
-      btn.classList.toggle('active', on);
-      btn.classList.remove('subtab-btn-pop');
-      if (on && changing && !noMotion) {
-        void btn.offsetWidth; // restarts the squash if it was already playing
-        btn.classList.add('subtab-btn-pop');
-      }
-    });
+    statsSubtabPillClear(buttons); // a pill still moving from the last click is dropped first
+    const oldBtn = buttons.find(btn => btn.classList.contains('active')) || null;
+    const newBtn = buttons.find(btn => btn.dataset.subtab === tab) || null;
+    // The look of the colored button is copied now, while the old button still has it.
+    const look = oldBtn ? getComputedStyle(oldBtn) : null;
+    const pillLook = look ? {
+      backgroundColor: look.backgroundColor, backgroundImage: look.backgroundImage,
+      border: look.border, borderRadius: look.borderRadius, boxShadow: look.boxShadow
+    } : null;
+
+    buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.subtab === tab));
+    if (changing && !noMotion && oldBtn && newBtn && oldBtn !== newBtn) statsSubtabPillRun(oldBtn, newBtn, buttons, pillLook);
 
     // Step 2: hide every other pane, show the new one, and load what it needs.
     const show = (animate) => {

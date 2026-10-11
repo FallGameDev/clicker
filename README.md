@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.59.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.59.0">
+<!-- Game version: 1.60.0 | Deployment: 214 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.60.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -313,9 +313,10 @@ How it is built:
 
 ## Subtab swap animation (1.59.0)
 
-Switching between the Stats subtabs (Overview, Friends, Mods, Messages, Rooms) plays a "stretch and replace": the old pane stretches tall and thin and fades out, then the new one starts in that shape and springs back. The button you picked squashes a little too.
+Switching between the Stats subtabs (Overview, Friends, Mods, Messages, Rooms) plays a "stretch and replace": the old pane stretches tall and thin and fades out, then the new one starts in that shape and springs back. 
+**Stretchy button (1.60.0):** the colored button itself stretches from the old subtab over to the new one, then lets go of the old one. A "pill" box that copies the colored button's look sits behind the buttons for a moment, and the buttons it passes go see-through (`pill-through`) so their words stay on top. Search `STRETCHY BUTTON` in `index.html` (`statsSubtabPillRun()`, speeds: `STATS_PILL_STRETCH_MS` and `STATS_PILL_SNAP_MS`).
 
-- CSS: search `SUBTAB SWAP` in `index.html` (`subtab-out`, `subtab-in`, `subtab-btn-pop`).
+- CSS: search `SUBTAB SWAP` in `index.html` (`subtab-out`, `subtab-in`).
 - Script: `switchStatsSubtab()`. `STATS_SUBTAB_OUT_MS` must match the `subtab-out` time in the CSS.
 - Low Performance Mode and devices that ask for reduced motion skip it.
 - The pane only gets narrower, never wider, so the page can't get a sideways scroll bar.
@@ -328,7 +329,7 @@ A profile of a player who is offline now says when they were last on, next to th
 - Nothing shows for a player who is online, busy or has a custom status, for your own profile, or for a player who picked **Appear Offline** (the time would give them away).
 - Server: `get` in `supabase/functions/social/index.ts` answers `lastSeen`. `bye` used to wipe `last_seen` to 0. It now saves the leaving time as a negative number, which still means "not on the site" but keeps the time. No new table column.
 - Game: `socialLastOnlineHtml()` in the `SOCIAL` section, added to the status line in `openPublicProfile()`.
-- **Needs a redeploy:** paste the new `supabase/functions/social/index.ts` over the `social` function in Supabase. Until then profiles look the same as before (no time shows). A player's time appears after their next visit.
+- **Redeployed (deployment 214).** If it is ever set up again: paste the new `supabase/functions/social/index.ts` over the `social` function in Supabase. Until then profiles look the same as before (no time shows). A player's time appears after their next visit.
 
 ## Mod preview and simple blocks (1.57.0)
 
