@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.64.0 | Deployment: 215 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.64.0">
+<!-- Game version: 1.65.0 | Deployment: 215 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.65.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -24311,7 +24311,12 @@ ${hasCode
     if (res.status === 404) throw new Error('nofunction'); // the function has not been deployed yet
     let reply = null;
     try { reply = await res.json(); } catch (e) {}
-    if (!reply || !reply.success || !reply.url) throw new Error((reply && reply.error) || 'server');
+    if (!reply || !reply.success || !reply.url) {
+      const err = new Error((reply && reply.error) || 'server');
+      // SONG UPLOADS (1.65.0): the server also says WHY in "detail", so the player can pass it on.
+      err.detail = reply && reply.detail ? String(reply.detail).slice(0, 160) : (reply ? '' : 'answer ' + res.status);
+      throw err;
+    }
     return reply.url;
   }
   const MOD_FONT_MIMES = { ttf: 'font/ttf', otf: 'font/otf', woff: 'font/woff', woff2: 'font/woff2' };
@@ -24963,6 +24968,7 @@ ${hasCode
               saveModEditorDraft(); // saved after each one, so a later failure can't lose it
             } catch (err) {
               problem = SONG_UPLOAD_ERRORS[err && err.message] || SONG_UPLOAD_ERRORS.server;
+              if (err && err.detail) problem += ` (${err.detail})`; // the server's own words, for fixing it
               if (['nofunction', 'invalid', 'full'].includes(err && err.message)) break; // the rest would fail the same way
             }
           }

@@ -1,5 +1,5 @@
 // =====================================================================
-// The Clicker Game! UPLOADS (song files for mods)                1.63.0
+// The Clicker Game! UPLOADS (song files for mods)                1.65.0
 // =====================================================================
 // A SEPARATE Supabase Edge Function from "api", so the main backend is
 // never touched. The game calls it at the api link with /api swapped
@@ -33,6 +33,11 @@
 //   The function makes its own "songs" bucket the first time it runs.
 //   If the bucket never shows up in Storage, run supabase/sql/songs-bucket.sql
 //   once in the SQL Editor (safe to re-run).
+//
+// WHEN SOMETHING GOES WRONG (1.65.0)
+//   An answer of { error: "server" } also carries "detail": the real words
+//   Supabase gave, and the game shows them. To test without the game, send
+//   { "action": "check" }: it answers whether the "songs" bucket is there.
 //
 // RULE FOR PLAYERS: only upload music you made or are allowed to share.
 //
@@ -111,20 +116,28 @@ function sniffSound(b: Uint8Array) {
 // ---------------------------------------------------------------------
 // THE BUCKET: made once per cold start if it is missing.
 // ---------------------------------------------------------------------
-let bucketReady: Promise<void> | null = null;
-function ensureBucket() {
-  if (!bucketReady) {
-    bucketReady = (async () => {
-      const { data } = await db.storage.getBucket(BUCKET);
-      if (data) return;
-      await db.storage.createBucket(BUCKET, {
-        public: true,
-        fileSizeLimit: MAX_SONG_BYTES,
-        allowedMimeTypes: Object.values(SOUND_TYPES),
-      });
-    })().catch(() => { bucketReady = null; });
-  }
-  return bucketReady;
+// Answers "" when the bucket is there (or was just made), or the reason it could not be made.
+let bucketOk = false; // true once we have seen the bucket, so later uploads skip the check
+async function ensureBucket(): Promise<string> {
+  if (bucketOk) return "";
+  const found = await db.storage.getBucket(BUCKET);
+  if (found.data) { bucketOk = true; return ""; }
+  const made = await db.storage.createBucket(BUCKET, {
+    public: true,
+    fileSizeLimit: MAX_SONG_BYTES,
+    allowedMimeTypes: Object.values(SOUND_TYPES),
+  });
+  // "already exists" means another upload made it a moment ago, which is fine.
+  if (made.error && !/exist/i.test(String(made.error.message))) return "bucket: " + String(made.error.message);
+  bucketOk = true;
+  return "";
+}
+
+// ---- check: is the "songs" bucket there? Changes nothing except making the bucket if it is missing. ----
+async function check(_p: any) {
+  const problem = await ensureBucket();
+  if (problem) return { error: "server", detail: problem };
+  return { success: true, bucket: BUCKET, maxBytes: MAX_SONG_BYTES, maxSongs: MAX_SONGS_EACH };
 }
 
 // The account row for a username, or null.
@@ -151,10 +164,11 @@ async function song(p: any) {
   const kind = sniffSound(bytes);
   if (!kind) return { error: "notsound" };
 
-  await ensureBucket();
+  const problem = await ensureBucket();
+  if (problem) return { error: "server", detail: problem };
   // How many songs this player already has.
   const have = await db.storage.from(BUCKET).list(playerId, { limit: MAX_SONGS_EACH + 1 });
-  if (have.error) return { error: "server" };
+  if (have.error) return { error: "server", detail: "list: " + String(have.error.message) };
   if ((have.data || []).length >= MAX_SONGS_EACH) return { error: "full", max: MAX_SONGS_EACH };
 
   const path = `${playerId}/${Date.now()}-${safeName(p.name)}.${kind}`;
@@ -163,7 +177,7 @@ async function song(p: any) {
     cacheControl: "31536000", // the file never changes, so browsers may keep it for a year
     upsert: false,
   });
-  if (saved.error) return { error: "server" };
+  if (saved.error) return { error: "server", detail: "save: " + String(saved.error.message) };
   const link = db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
   return { success: true, url: link, bytes: bytes.length, left: MAX_SONGS_EACH - (have.data || []).length - 1 };
 }
@@ -173,9 +187,10 @@ async function list(p: any) {
   const account = await getAccount(p.username);
   if (!account) return { error: "invalid" };
   const playerId = String(account.player_id);
-  await ensureBucket();
+  const problem = await ensureBucket();
+  if (problem) return { error: "server", detail: problem };
   const have = await db.storage.from(BUCKET).list(playerId, { limit: 100 });
-  if (have.error) return { error: "server" };
+  if (have.error) return { error: "server", detail: "list: " + String(have.error.message) };
   const songs = (have.data || []).map((f: any) => ({
     name: f.name,
     url: db.storage.from(BUCKET).getPublicUrl(`${playerId}/${f.name}`).data.publicUrl,
@@ -197,11 +212,11 @@ async function remove(p: any) {
   const file = decodeURIComponent(url.slice(at + marker.length).split("?")[0]);
   if (!file || file.includes("/") || file.includes("..")) return { error: "notyours" };
   const gone = await db.storage.from(BUCKET).remove([`${playerId}/${file}`]);
-  if (gone.error) return { error: "server" };
+  if (gone.error) return { error: "server", detail: "remove: " + String(gone.error.message) };
   return { success: true };
 }
 
-const ACTIONS: Record<string, (p: any) => Promise<any>> = { song, list, remove };
+const ACTIONS: Record<string, (p: any) => Promise<any>> = { song, list, remove, check };
 
 // ---- the one entry point ----
 Deno.serve(async (req) => {
@@ -220,7 +235,8 @@ Deno.serve(async (req) => {
     const action = Object.prototype.hasOwnProperty.call(ACTIONS, name) ? ACTIONS[name] : null;
     if (!action) return json({ error: "unknownaction" }, 400);
     return json(await action(p));
-  } catch (_e) {
-    return json({ error: "server" }, 500);
+  } catch (e) {
+    // Something broke that we did not plan for: say what, so it can be fixed.
+    return json({ error: "server", detail: "crash: " + String((e as Error)?.message || e) }, 500);
   }
 });
