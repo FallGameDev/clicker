@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.58.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.58.0">
+<!-- Game version: 1.59.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.59.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,15 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## Subtab swap animation (1.59.0)
+
+Switching between the Stats subtabs (Overview, Friends, Mods, Messages, Rooms) plays a "stretch and replace": the old pane stretches tall and thin and fades out, then the new one starts in that shape and springs back. The button you picked squashes a little too.
+
+- CSS: search `SUBTAB SWAP` in `index.html` (`subtab-out`, `subtab-in`, `subtab-btn-pop`).
+- Script: `switchStatsSubtab()`. `STATS_SUBTAB_OUT_MS` must match the `subtab-out` time in the CSS.
+- Low Performance Mode and devices that ask for reduced motion skip it.
+- The pane only gets narrower, never wider, so the page can't get a sideways scroll bar.
 
 ## Last online (1.58.0)
 

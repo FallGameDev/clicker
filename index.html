@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.58.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.58.0">
+<!-- Game version: 1.59.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.59.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -3408,6 +3408,29 @@
     display:flex;
     flex-direction:column;
     gap:13px;
+  }
+  /* SUBTAB SWAP (1.59.0): "stretch and replace" when switching Stats subtabs.
+     The old pane stretches tall and thin and fades out (subtab-out), then the new
+     pane starts in that same stretched shape and springs back to normal (subtab-in).
+     It only gets narrower, never wider, so the page can't get a sideways scroll bar.
+     To change the speed, edit the two times here and STATS_SUBTAB_OUT_MS in the script. */
+  .stats-subtab-pane{ transform-origin:top center; }
+  .stats-subtab-pane.subtab-out{ animation:subtab-out-kf .11s ease-in forwards; pointer-events:none; }
+  .stats-subtab-pane.subtab-in{ animation:subtab-in-kf .26s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes subtab-out-kf{
+    to{ transform:scale(.9, 1.06); opacity:0; }
+  }
+  @keyframes subtab-in-kf{
+    0%{ transform:scale(.9, 1.06); opacity:0; }
+    60%{ transform:scale(1, .98); opacity:1; }
+    100%{ transform:scale(1, 1); opacity:1; }
+  }
+  /* The button you picked gets a tiny squash too, so it feels pressed. */
+  .stats-subtab-btn.subtab-btn-pop{ animation:subtab-btn-pop-kf .22s ease; }
+  @keyframes subtab-btn-pop-kf{
+    0%{ transform:translate(-1px,-1px) scale(1.12, .86); }
+    60%{ transform:translate(-1px,-1px) scale(.96, 1.05); }
+    100%{ transform:translate(-1px,-1px) scale(1, 1); }
   }
   #friends-search-input{
     margin-bottom:4px;
@@ -15842,22 +15865,53 @@
     renderNotificationBadges();
   }
 
+  /* SUBTAB SWAP (1.59.0): the "stretch and replace" animation between Stats subtabs.
+     Step 1: the pane you are leaving plays subtab-out (stretches and fades).
+     Step 2: after STATS_SUBTAB_OUT_MS it is hidden and the new pane plays subtab-in.
+     Low Performance Mode and "reduce motion" devices skip it and swap right away. */
+  const STATS_SUBTAB_OUT_MS = 110;   // keep the same as the subtab-out time in the CSS
+  let statsSubtabSwapTimer = null;   // the wait between step 1 and step 2
+
   function switchStatsSubtab(tab){
-    document.querySelectorAll('.stats-subtab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.subtab === tab));
-    const overviewPane = document.getElementById('stats-pane-overview');
-    const friendsPane = document.getElementById('stats-pane-friends');
-    const modsPane = document.getElementById('stats-pane-mods');
-    const messagesPane = document.getElementById('stats-pane-messages');
-    if (overviewPane) overviewPane.style.display = tab === 'overview' ? '' : 'none';
-    if (friendsPane) friendsPane.style.display = tab === 'friends' ? '' : 'none';
-    if (modsPane) modsPane.style.display = tab === 'mods' ? '' : 'none';
-    if (messagesPane) messagesPane.style.display = tab === 'messages' ? '' : 'none';
-    const roomsPane = document.getElementById('stats-pane-rooms');
-    if (roomsPane) roomsPane.style.display = tab === 'rooms' ? '' : 'none';
-    if (tab === 'rooms') renderRoomsLobby(); // ROOMS: create, join or browse
-    if (tab === 'friends') loadFriendsList();
-    if (tab === 'mods') renderInstalledModsList();
-    if (tab === 'messages') loadChatsList();
+    const buttons = Array.from(document.querySelectorAll('.stats-subtab-btn'));
+    const panes = Array.from(document.querySelectorAll('.stats-subtab-pane'));
+    const target = document.getElementById('stats-pane-' + tab);
+    const current = panes.find(p => p.style.display !== 'none') || null; // the pane showing right now
+    const changing = !!target && current !== target;
+    const noMotion = document.body.classList.contains('low-perf') ||
+      (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+    buttons.forEach(btn => {
+      const on = btn.dataset.subtab === tab;
+      btn.classList.toggle('active', on);
+      btn.classList.remove('subtab-btn-pop');
+      if (on && changing && !noMotion) {
+        void btn.offsetWidth; // restarts the squash if it was already playing
+        btn.classList.add('subtab-btn-pop');
+      }
+    });
+
+    // Step 2: hide every other pane, show the new one, and load what it needs.
+    const show = (animate) => {
+      statsSubtabSwapTimer = null;
+      panes.forEach(p => {
+        p.classList.remove('subtab-out', 'subtab-in');
+        p.style.display = p === target ? '' : 'none';
+      });
+      if (target && animate) {
+        void target.offsetWidth; // makes the browser start the animation from the beginning
+        target.classList.add('subtab-in');
+      }
+      if (tab === 'rooms') renderRoomsLobby(); // ROOMS: create, join or browse
+      if (tab === 'friends') loadFriendsList();
+      if (tab === 'mods') renderInstalledModsList();
+      if (tab === 'messages') loadChatsList();
+    };
+
+    clearTimeout(statsSubtabSwapTimer); // a fast second click replaces the swap that was waiting
+    if (!changing || !current || noMotion) { show(false); return; }
+    current.classList.add('subtab-out'); // step 1
+    statsSubtabSwapTimer = setTimeout(() => show(true), STATS_SUBTAB_OUT_MS);
   }
 
   function renderInstalledModsList(){
