@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.61.0 | Deployment: 214 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.61.0">
+<!-- Game version: 1.62.0 | Deployment: 214 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.62.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -14096,8 +14096,8 @@
     placeholder.textContent = 'Choose a theme';
     placeholder.disabled = true;
     themeSelect.appendChild(placeholder);
-    // Two groups (1.39.0): the built-in themes from settings/themes.json, then the downloaded mods.
-    // A group with nothing in it is left out, so the list never shows an empty heading.
+    // ONE group (1.62.0): themes from downloaded mods sit in the main Themes list, right after
+    // the built-in ones from settings/themes.json. (1.39.0 to 1.61.0 had a "Downloaded mods" group.)
     const addGroup = (title, themes) => {
       if (!themes.length) return;
       const group = document.createElement('optgroup');
@@ -14110,8 +14110,7 @@
       });
       themeSelect.appendChild(group);
     };
-    addGroup('Themes', UI_THEMES);
-    addGroup('Downloaded mods', MOD_THEMES);
+    addGroup('Themes', allUiThemes());
     themeSelect.value = allUiThemes().some(t => t.id === saved) ? saved : '';
   }
 
@@ -14278,8 +14277,16 @@
       });
       const modName = String(mod.name || 'Mod');
       found.forEach(({ theme, i }) => {
-        // One theme: the option is just the mod's name. More than one: "Mod name: Theme name".
-        const label = found.length === 1 ? modName : `${modName}: ${theme.name}`;
+        // MOD THEME NAMES (1.62.0): the option is the THEME's own name ("Minecraft"), not the mod's
+        // name ("FallGameDev's mod"). Two cases still need the mod's name:
+        //   1. the maker never named the theme (blank, or still "Theme 1"): the mod's name is used
+        //   2. the name is already in the list (a built-in theme or another mod has it):
+        //      it becomes "Minecraft (Mod name)" so you can tell them apart
+        const own = String(theme.name || '').trim();
+        const unnamed = !own || /^theme\s*\d*$/i.test(own);
+        let label = unnamed ? (found.length === 1 ? modName : `${modName} ${i + 1}`) : own;
+        const taken = name => UI_THEMES.concat(MOD_THEMES).some(t => String(t.label || '').toLowerCase() === name.toLowerCase());
+        if (taken(label)) label = `${label} (${modName})`;
         MOD_THEMES.push({ id: `mod:${mod.id}:${i}`, label, light: modThemeVars(theme.light), dark: modThemeVars(theme.dark), corners: theme.corners });
       });
     });
