@@ -2,5 +2,9 @@
   { "label": "Color", "file": "default" },
   { "label": "Backrooms", "file": "backgrounds/backroom.jpeg" },
   { "label": "Grace", "file": "backgrounds/zen.jpeg" },
-  { "label": "Space Nebula", "file": "backgrounds/space.jpg" }
+  { "label": "Space Nebula", "file": "backgrounds/space.jpg" },
+  { "label": "Jellyfish", "file": "backgrounds/jellyfish.jpg" },
+  { "label": "Sunset Beach", "file": "backgrounds/sunset-beach.jpg" },
+  { "label": "Northern Lights", "file": "backgrounds/northern-lights.jpg" },
+  { "label": "Cozy Bedroom", "file": "backgrounds/cozy-bedroom.jpg" }
 ]

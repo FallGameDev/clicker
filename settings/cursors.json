@@ -2,5 +2,7 @@
   { "label": "System", "file": "default" },
   { "label": "Duck", "file": "images/cursors/duck.png" },
   { "label": "Banana", "file": "images/cursors/banan.png" },
-  { "label": "Error", "file": "images/cursors/error.png" }
+  { "label": "Error", "file": "images/cursors/error.png" },
+  { "label": "Cat Paw", "file": "images/cursors/catpaw.png" },
+  { "label": "Hand", "file": "images/cursors/hand.png", "hotspot": [6, 1] }
 ]

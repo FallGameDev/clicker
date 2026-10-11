@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.69.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.69.0">
+<!-- Game version: 1.70.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.70.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -13295,7 +13295,9 @@
     { label: "System", file: "default" },
     { label: "Duck", file: "images/cursors/duck.png" },
     { label: "Banana", file: "images/cursors/banan.png" },
-    { label: "Error", file: "images/cursors/error.png" }
+    { label: "Error", file: "images/cursors/error.png" },
+    { label: "Cat Paw", file: "images/cursors/catpaw.png" },
+    { label: "Hand", file: "images/cursors/hand.png", hotspot: [6, 1] } // hotspot = the fingertip (see applyCursor)
   ];
 
   function renderCursorOption(entry){
@@ -13412,7 +13414,14 @@
       }
     }
 
-    document.body.style.cursor = `url('${cursorCache[value]}') 16 16, auto`;
+    // CURSOR HOTSPOT (1.70.0): the "hotspot" is the exact dot of the picture that does the clicking.
+    // It is the middle (16, 16) unless the cursor's line in settings/cursors.json has its own
+    // "hotspot": [x, y], counted from the top left of the 32 by 32 picture. A pointing hand
+    // uses it so the click lands on the fingertip instead of the back of the hand.
+    const entry = CURSORS.find(c => c && c.file === value);
+    const spot = entry && Array.isArray(entry.hotspot) ? entry.hotspot : [16, 16];
+    const inside = n => Math.max(0, Math.min(31, Math.round(Number(n)) || 0)); // kept inside the picture
+    document.body.style.cursor = `url('${cursorCache[value]}') ${inside(spot[0])} ${inside(spot[1])}, auto`;
   }
 
   cursorSelect.addEventListener('change', () => {
@@ -13539,7 +13548,11 @@
     { label: "Color", file: "default" },
     { label: "Backrooms", file: "backgrounds/backroom.jpeg" },
     { label: "Grace", file: "backgrounds/zen.jpeg" },
-    { label: "Space Nebula", file: "backgrounds/space.jpg" }
+    { label: "Space Nebula", file: "backgrounds/space.jpg" },
+    { label: "Jellyfish", file: "backgrounds/jellyfish.jpg" },
+    { label: "Sunset Beach", file: "backgrounds/sunset-beach.jpg" },
+    { label: "Northern Lights", file: "backgrounds/northern-lights.jpg" },
+    { label: "Cozy Bedroom", file: "backgrounds/cozy-bedroom.jpg" }
   ];
 
   const bgPickerEl = document.getElementById('bg-picker');

@@ -96,6 +96,8 @@ Built-in lists live in the `settings/` folder, so they can be changed without ed
 
 **music.json, cursors.json, backgrounds.json:** a list of `{ "label": "Name shown in the picker", "file": "file name" }`. Songs can also have `"artist"` and `"thumb"` (a small picture, like `images/songs/sy.jpg`) for the Now Playing banner. Write the full path from the main folder, like `audio/music/lofi.mp3`, `images/cursors/duck.png`, `backgrounds/zen.jpeg` or `extras/name.mp3`. For cursors and backgrounds, `"default"` means the normal cursor or plain color background.
 
+**Cursor hotspot (1.70.0):** a cursor is shown at 32 by 32 and clicks with its middle. A cursor with a pointy part can add `"hotspot": [x, y]` to its line in `cursors.json`: the dot that does the clicking, counted from the top left of the 32 by 32 picture. The Hand cursor uses `[6, 1]`, its fingertip. Backgrounds work best as a `.jpg` at most 1920 wide.
+
 **fonts.json:** a list of `{ "label", "value", "family", "fallback", "file", "google", "weights" }`.
 - `value`: short id, letters, numbers, `-` and `_` only. Never change it for an existing font, players' saved choice uses it.
 - `family`: the font's name.
@@ -139,8 +141,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.69.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.69.0">
+<!-- Game version: 1.70.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.70.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
