@@ -137,7 +137,7 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.65.0 | Deployment: 215 | Update both on every release, see README.md -->
+<!-- Game version: 1.65.0 | Deployment: 216 | Update both on every release, see README.md -->
 <meta name="game-version" content="1.65.0">
 ```
 
@@ -331,7 +331,7 @@ The mod editor's Music section has an **Upload files** button. A song is too big
 - Game: search `SONG UPLOADS` in `index.html` (`uploadSongFile()`, `SONG_UPLOAD_ERRORS`).
 - Server: `supabase/functions/uploads/index.ts`. Actions: `song` (upload), `list` (a player's songs), `remove` (delete one of your own), `check` (is the `songs` bucket there). The game only uses `song` so far.
 - **Errors (1.65.0):** when saving fails the function answers `detail` with Supabase's own words, and the game shows them in brackets after the message. If the bucket is missing, run `supabase/sql/songs-bucket.sql`.
-- **Deployed (deployment 215).** If it is ever set up again: Supabase dashboard > Edge Functions > Deploy a new function > Via editor, name it exactly `uploads`, paste `supabase/functions/uploads/index.ts`, turn OFF "Verify JWT" (same as `api`), Deploy. The function makes its own `songs` bucket. Until then the upload button says uploads are not turned on yet.
+- **Deployed (deployment 216 has the 1.65.0 code).** If it is ever set up again: Supabase dashboard > Edge Functions > Deploy a new function > Via editor, name it exactly `uploads`, paste `supabase/functions/uploads/index.ts`, turn OFF "Verify JWT" (same as `api`), Deploy. The function makes its own `songs` bucket. Until then the upload button says uploads are not turned on yet.
 
 ## Picked labels in Preferences (1.61.0)
 
