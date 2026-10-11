@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.57.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.57.0">
+<!-- Game version: 1.58.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.58.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -3119,6 +3119,8 @@
     margin:-4px 0 10px;
   }
   .public-profile-status:empty{ display:none; }
+  /* LAST ONLINE (1.58.0): the "Last online 2 hours ago" words after an Offline status on a profile. */
+  .public-profile-status .status-last-online{ opacity:.85; }
   .friend-picker-row.messages-off{ opacity:.55; cursor:not-allowed; }
   .auth-error{
     color:#ff6b6b;
@@ -26640,7 +26642,7 @@ ${hasCode
 
   let socialMe = { status: 'online', customText: '', noMessages: false, noRequests: false }; // my own settings
   let socialReady = false;   // true once the social function has answered
-  const socialCache = {};    // lowercase username -> { state, text, noMessages, noRequests, at }
+  const socialCache = {};    // lowercase username -> { state, text, lastSeen, noMessages, noRequests, at }
 
   // One request to the social function. Same text/plain trick as sheetRequest().
   async function socialRequest(payload){
@@ -26712,6 +26714,37 @@ ${hasCode
     let words = state === 'custom' ? escapeChatHtml(info.text) : SOCIAL_STATUS_WORDS[state];
     if (selfView && socialMe.status === 'offline') words = 'Appearing offline';
     return '<span class="status-dot status-' + state + '"></span><span class="status-label">' + words + '</span>';
+  }
+
+  /* LAST ONLINE (1.58.0)
+     Turns a time (milliseconds, like Date.now()) into words: "just now",
+     "5 minutes ago", "3 hours ago", "yesterday", "4 days ago", and after a
+     week the date itself ("Oct 3" or "Oct 3, 2025" for another year). */
+  function socialAgoWords(ms){
+    const gone = Math.max(0, Date.now() - ms);
+    const mins = Math.floor(gone / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return mins + (mins === 1 ? ' minute ago' : ' minutes ago');
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours + (hours === 1 ? ' hour ago' : ' hours ago');
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'yesterday';
+    if (days < 7) return days + ' days ago';
+    const then = new Date(ms);
+    const sameYear = then.getFullYear() === new Date().getFullYear();
+    return 'on ' + then.toLocaleDateString(undefined, sameYear ? { month: 'short', day: 'numeric' } : { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  // The " • Last online 2 hours ago" words for a profile, or '' when there is nothing to show.
+  // Only an offline player gets them. The server sends lastSeen = 0 when it has no time
+  // to share (never played since this update, or they picked Appear Offline).
+  function socialLastOnlineHtml(info){
+    const when = info ? Number(info.lastSeen || 0) : 0;
+    if (!info || !when) return '';
+    if (['online', 'busy', 'custom'].includes(info.state)) return '';
+    // Hovering the words shows the exact day and time.
+    const exact = escapeChatHtml(new Date(when).toLocaleString());
+    return '<span class="status-last-online" title="' + exact + '"> \u2022 Last online ' + escapeChatHtml(socialAgoWords(when)) + '</span>';
   }
 
   // Fills every element inside `root` that has data-status-for="username" with that player's status.
@@ -27250,7 +27283,10 @@ ${hasCode
       } else if (currentUsername) {
         publicProfileStatus.dataset.statusFor = String(account.username || '').toLowerCase();
         socialLookup([account.username]).then(() => {
-          if (currentViewedProfile === account) socialFillStatuses(publicProfileStatus);
+          if (currentViewedProfile !== account) return;
+          socialFillStatuses(publicProfileStatus);
+          // LAST ONLINE (1.58.0): an offline player's profile also says when they were last on.
+          publicProfileStatus.insertAdjacentHTML('beforeend', socialLastOnlineHtml(socialInfo(account.username)));
         });
       }
       renderPublicProfileFeatured(account, isSelf);

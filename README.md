@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.57.0 | Deployment: 213 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.57.0">
+<!-- Game version: 1.58.0 | Deployment: 213 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.58.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,16 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## Last online (1.58.0)
+
+A profile of a player who is offline now says when they were last on, next to the status: `Offline • Last online 2 hours ago`. Hovering the words shows the exact day and time.
+
+- Words: "just now", minutes, hours, "yesterday", days, and after a week the date (`socialAgoWords()`).
+- Nothing shows for a player who is online, busy or has a custom status, for your own profile, or for a player who picked **Appear Offline** (the time would give them away).
+- Server: `get` in `supabase/functions/social/index.ts` answers `lastSeen`. `bye` used to wipe `last_seen` to 0. It now saves the leaving time as a negative number, which still means "not on the site" but keeps the time. No new table column.
+- Game: `socialLastOnlineHtml()` in the `SOCIAL` section, added to the status line in `openPublicProfile()`.
+- **Needs a redeploy:** paste the new `supabase/functions/social/index.ts` over the `social` function in Supabase. Until then profiles look the same as before (no time shows). A player's time appears after their next visit.
 
 ## Mod preview and simple blocks (1.57.0)
 

@@ -1,5 +1,5 @@
 // =====================================================================
-// The Clicker Game! SOCIAL (online status + privacy switches)   1.41.0
+// The Clicker Game! SOCIAL (online status + privacy switches)   1.58.0
 // =====================================================================
 // A SEPARATE Supabase Edge Function from "api", so the main backend is
 // never touched. The game calls it at the api link with /api swapped
@@ -12,7 +12,9 @@
 //                   "offline"  Appear Offline: always shows Offline to everyone else
 //                   "custom"   shows their own words while they are on the site
 //   custom_text   the words for "custom"
-//   last_seen     the last time their game checked in (milliseconds)
+//   last_seen     the last time their game checked in (milliseconds).
+//                 A NEGATIVE number means "they closed the game at this time"
+//                 (see "bye"), so the time is kept for "Last online" (1.58.0).
 //   no_messages   true = "Disable messages" is on in Advanced Settings
 //   no_requests   true = "Disable friend requests" is on in Advanced Settings
 //
@@ -20,6 +22,12 @@
 //   An open game sends "ping" every minute. A player counts as on the
 //   site if their last ping was less than ONLINE_MS ago. Closing the tab
 //   sends "bye" so they go offline right away.
+//
+// HOW "LAST ONLINE" WORKS (1.58.0)
+//   "get" also answers lastSeen: the time the player was last on the site,
+//   only while they show as offline. It is 0 when there is no time to share:
+//   they have not played since this update, or they picked Appear Offline
+//   (otherwise "Last online just now" would give them away).
 //
 // TURN IT ON (once), same as "rooms", "reset" and "mcp":
 //   Supabase dashboard > Edge Functions > Deploy a new function > Via editor.
@@ -192,15 +200,21 @@ function mine(row: any) {
 // What OTHER players see of someone.
 //   state  "online", "busy", "custom" or "offline"
 //   text   the custom words (only for "custom")
+//   lastSeen  when they were last on the site (milliseconds), or 0 = nothing to show
 // Anyone who is not on the site is "offline", whatever they picked. "Appear Offline" is always "offline".
 function seenByOthers(row: any, now: number) {
   const me = mine(row);
-  const onSite = !!row && now - Number(row.last_seen || 0) < ONLINE_MS;
+  const seen = row ? Number(row.last_seen || 0) : 0;
+  // A negative last_seen is a "bye" (they left at that time), so it never counts as on the site.
+  const onSite = seen > 0 && now - seen < ONLINE_MS;
   let state = "offline";
   if (onSite && me.status !== "offline") state = me.status === "custom" && !me.customText ? "online" : me.status;
+  // LAST ONLINE: shared only for a player who really is offline and did not pick Appear Offline.
+  const lastSeen = state === "offline" && me.status !== "offline" ? Math.min(Math.abs(seen), now) : 0;
   return {
     state,
     text: state === "custom" ? me.customText : "",
+    lastSeen,
     noMessages: me.noMessages,
     noRequests: me.noRequests,
   };
@@ -230,7 +244,9 @@ async function ping(p: any) {
 async function bye(p: any) {
   const who = await whoAmI(p);
   if (who.error) return { error: who.error };
-  if (who.row) await store.save(who.playerId!, who.row, { last_seen: 0 });
+  // Saved as a NEGATIVE time: still "not on the site", but the moment they left is kept
+  // so profiles can say "Last online 5 minutes ago". (It used to be wiped to 0.)
+  if (who.row) await store.save(who.playerId!, who.row, { last_seen: -Date.now() });
   return { success: true };
 }
 
@@ -250,7 +266,7 @@ async function set(p: any) {
 }
 
 // ---- get: look up how a list of players shows to others ----
-// Answers { people: { "lowercase username": { state, text, noMessages, noRequests } } }.
+// Answers { people: { "lowercase username": { state, text, lastSeen, noMessages, noRequests } } }.
 // A player who has never checked in is simply "offline" with both switches off.
 async function get(p: any) {
   const names = Array.from(new Set((Array.isArray(p.usernames) ? p.usernames : []).map(lower).filter(Boolean))).slice(0, MAX_LOOKUP) as string[];
