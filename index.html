@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.65.0 | Deployment: 216 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.65.0">
+<!-- Game version: 1.66.0 | Deployment: 216 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.66.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -12582,6 +12582,32 @@
     } catch (e) { return 0; }
   }
 
+  /* YOUTUBE UPLOADER (1.66.0): who uploaded a YouTube song, so the Now Playing banner can
+     give them credit ("Song name \u2022 Mod maker \u2022 YouTube: Channel name").
+     The name comes from two places:
+       1. the hidden YouTube player tells us when the song starts (youtubeUploaderRemember)
+       2. if it did not, YouTube's "oEmbed" page is asked for it   (youtubeUploaderLookup)
+     Names are kept in YT_UPLOADERS until the page is closed, so each video is asked about once. */
+  const YT_UPLOADERS = {};        // video id -> channel name
+  const YT_UPLOADER_ASKED = {};   // video id -> the promise of a lookup that is already running
+  function youtubeUploaderRemember(id, name){
+    const clean = String(name || '').trim().slice(0, 60);
+    if (id && clean) YT_UPLOADERS[id] = clean;
+  }
+  // Gives the channel name for a video id, or '' if it can't be found. Never throws.
+  function youtubeUploaderLookup(id){
+    if (!id) return Promise.resolve('');
+    if (YT_UPLOADERS[id]) return Promise.resolve(YT_UPLOADERS[id]);
+    if (!YT_UPLOADER_ASKED[id]) {
+      const page = 'https://www.youtube.com/oembed?format=json&url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + id);
+      YT_UPLOADER_ASKED[id] = fetch(page)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => { youtubeUploaderRemember(id, data && data.author_name); return YT_UPLOADERS[id] || ''; })
+        .catch(() => '');
+    }
+    return YT_UPLOADER_ASKED[id];
+  }
+
   // Loads YouTube's player script once. Every YtAudio waits on the same promise.
   let youtubeApiPromise = null;
   function loadYoutubeApi(){
@@ -12689,7 +12715,11 @@
             },
             onStateChange: (ev) => {
               if (this.dead) return;
-              if (ev.data === 1) { this.apply(); this.setPlaying(true); }       // 1 = playing
+              if (ev.data === 1) {                                             // 1 = playing
+                // YOUTUBE UPLOADER (1.66.0): the player knows the channel's name once the song starts.
+                try { const video = this.player.getVideoData(); youtubeUploaderRemember(this.id, video && video.author); } catch (e) {}
+                this.apply(); this.setPlaying(true);
+              }
               else if (ev.data === 0) {                                        // 0 = ended
                 if (this.loop && this.wantPlay) { try { this.player.seekTo(this.startAt || 0, true); this.player.playVideo(); } catch (e) {} }
                 else { this.wantPlay = false; this.setPlaying(false); }
@@ -12971,11 +13001,12 @@
        background songs      BG_SONG_INFO above
        Music Player songs    "artist" and "thumb" in settings/music.json
        songs from a mod      the mod's icon, the song's name, and the mod's maker
+       YouTube songs         all of the above, plus "YouTube: channel name" (1.66.0)
        songs you uploaded    just the name
      A song with no picture gets a colored tile with a music note. */
 
   // Looks up { name, artist, thumb, seed } for the file an <audio> is playing. null = unknown song.
-  function songInfoFor(src){
+  function songInfoBase(src){
     if (!src) return null;
     if (BG_SONG_INFO[src]) return BG_SONG_INFO[src];
     const song = SONGS.find(s => s.file === src);
@@ -12988,6 +13019,15 @@
       return { name: song.label, artist: mod.author || mod.name || listed.name || 'Mod', thumb: mod.iconUrl || listed.iconUrl || '', seed: mod.name || song.label };
     }
     return { name: song.label, artist: song.artist || '', thumb: song.thumb || '', seed: song.label };
+  }
+
+  // YOUTUBE UPLOADER (1.66.0): the same info, plus "uploader" (the YouTube channel) when the
+  // song is a YouTube link and we already know who uploaded it.
+  function songInfoFor(src){
+    const info = songInfoBase(src);
+    const ytId = info ? youtubeIdFromUrl(src) : '';
+    if (!ytId) return info;
+    return Object.assign({}, info, { ytId, uploader: YT_UPLOADERS[ytId] || '' });
   }
 
   let songBannerClose = null;  // closes the Now Playing banner that is showing (only one at a time)
@@ -13035,6 +13075,20 @@
       artistEl.className = 'song-banner-artist';
       artistEl.textContent = ' \u2022 ' + info.artist;
       text.appendChild(artistEl);
+    }
+    // YOUTUBE UPLOADER (1.66.0): a YouTube song also credits the channel that uploaded it.
+    if (info.ytId) {
+      const uploaderEl = document.createElement('span');
+      uploaderEl.className = 'song-banner-artist';
+      text.appendChild(uploaderEl);
+      const showUploader = name => {
+        // Skipped when it is the same name that is already showing as the artist.
+        if (!name || name.toLowerCase() === String(info.artist || '').toLowerCase()) return;
+        uploaderEl.textContent = ' \u2022 YouTube: ' + name;
+      };
+      if (info.uploader) showUploader(info.uploader);
+      // Not known yet: ask, and add it to the banner when the answer comes (if it is still up).
+      else youtubeUploaderLookup(info.ytId).then(name => { if (uploaderEl.isConnected) { showUploader(name); repositionBanners(); } });
     }
     banner.appendChild(text);
 

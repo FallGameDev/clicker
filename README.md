@@ -137,8 +137,8 @@ Rules:
 Near the top of `index.html`:
 
 ```html
-<!-- Game version: 1.65.0 | Deployment: 216 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.65.0">
+<!-- Game version: 1.66.0 | Deployment: 216 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.66.0">
 ```
 
 Bump both the version comment and the `game-version` meta tag on every release. The deployment number is an internal counter for tracking Apps Script/Sheet deployments - increment it whenever the backend Web App is redeployed, even if the game version string doesn't change.
@@ -310,6 +310,14 @@ How it is built:
 - Game: the `SOCIAL` section of `index.html`. `socialLookup()` fills `socialCache`, and any element with `data-status-for="username"` is filled by `socialFillStatuses()`.
 - The privacy switches are enforced by the game, not by `api` (which this update does not touch): the sender's game checks the switch before sending, and the receiver's game hides or declines. A player running a changed copy of the game could still send a message, but the receiver would not see it in a turned off Messages tab. To make it airtight, `sendMessage`, `createChat` and `sendFriendRequest` in `api` would have to read the `social` table too.
 - Notification choices live in `localStorage` (`fgd_site_notifs`). `sendSiteNotification(kind, title, body)` is the one place that pops one up.
+
+## YouTube uploader credit (1.66.0)
+
+When a YouTube song starts, the Now Playing banner also names the channel that uploaded it: `Song name • Mod maker • YouTube: Channel name`.
+
+- Search `YOUTUBE UPLOADER` in `index.html`. The hidden YouTube player gives the name when the song starts (`youtubeUploaderRemember()`). If it does not, YouTube's oEmbed page is asked (`youtubeUploaderLookup()`) and the name is added to the banner when it arrives.
+- Names are kept in `YT_UPLOADERS` until the page is closed. `songInfoFor()` adds `uploader` and `ytId` for YouTube songs.
+- Nothing extra shows if the name can't be found, or if it is the same as the artist already showing.
 
 ## YouTube player bar (1.64.0)
 
