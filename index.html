@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.68.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.68.0">
+<!-- Game version: 1.69.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.69.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -13864,11 +13864,26 @@
     fontManagerSelect.insertBefore(placeholder, fontManagerSelect.firstChild);
   })();
 
+  /* MORE FONTS (1.69.0): the Font Manager has dozens of Google fonts now, so a font is only
+     downloaded when it is the one you picked (not all of them every time the game opens).
+       GOOGLE_UI_FONTS   font id -> the Google Fonts link for it (filled from settings/fonts.json)
+       loadUiFont(id)    adds that link to the page once */
+  const GOOGLE_UI_FONTS = {};
+  function loadUiFont(value){
+    const href = GOOGLE_UI_FONTS[String(value || '').toLowerCase()];
+    if (!href || document.querySelector(`link[href="${href}"]`)) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    document.head.appendChild(link);
+  }
+
   function applyUiFont(value){
     // Removes every ui-font-* class, including fonts added later by settings/fonts.json.
     Array.from(document.body.classList).filter(c => c.indexOf('ui-font-') === 0)
       .forEach(c => document.body.classList.remove(c));
     if (value) document.body.classList.add('ui-font-' + value);
+    loadUiFont(value); // MORE FONTS (1.69.0): fetch this one font if it comes from Google
   }
 
   fontManagerSelect.addEventListener('change', () => {
@@ -13985,9 +14000,11 @@
     bgSelect.value = BACKGROUNDS.some(b => b.file === current) ? current : '';
   }
 
-  // fonts.json entries: { label, value, family, fallback, file?, google? }
-  //   file   = a .ttf/.otf/.woff2 in the fonts folder (like "fonts/caveat.ttf"), loaded with @font-face
-  //   google = true to load the family from Google Fonts
+  // fonts.json entries: { label, value, family, fallback, file?, google?, weights? }
+  //   file    = a .ttf/.otf/.woff2 in the fonts folder (like "fonts/caveat.ttf"), loaded with @font-face
+  //   google  = true to load the family from Google Fonts (only when it is the picked font)
+  //   weights = for Google fonts: which thicknesses to get, like "400;700" (normal and bold).
+  //             Leave it out for fonts that only come in one thickness.
   function applySettingsFonts(list){
     const fonts = (Array.isArray(list) ? list : []).filter(f =>
       f && typeof f.label === 'string' && /^[a-z0-9_-]{1,30}$/i.test(String(f.value || '')) && typeof f.family === 'string' && f.family.trim());
@@ -13999,13 +14016,9 @@
       const fallback = quote(f.fallback || 'sans-serif');
       if (f.file) css.push(`@font-face{font-family:'${family}';src:url('${quote(fixAssetPath(f.file))}');font-display:swap;}`);
       if (f.google) {
-        const href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family).replace(/%20/g, '+') + '&display=swap';
-        if (!document.querySelector(`link[href="${href}"]`)) {
-          const link = document.createElement('link');
-          link.rel = 'stylesheet';
-          link.href = href;
-          document.head.appendChild(link);
-        }
+        // MORE FONTS (1.69.0): the link is only remembered here. loadUiFont() adds it when the font is picked.
+        const weights = /^\d{3}(;\d{3})*$/.test(String(f.weights || '')) ? ':wght@' + f.weights : '';
+        GOOGLE_UI_FONTS[f.value.toLowerCase()] = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family).replace(/%20/g, '+') + weights + '&display=swap';
       }
       css.push(`body.ui-font-${f.value.toLowerCase()} *{font-family:'${family}', ${fallback} !important;}`);
     });
@@ -14023,6 +14036,8 @@
     rebuildPickerSelect(fontManagerSelect, 'Choose a font', UI_FONTS, e => e.value);
     fontManagerSelect.value = UI_FONTS.some(f => f.value === current) ? current : '';
     refreshModFonts(); // MOD FONTS (1.55.0): the list was just rebuilt, so put the mod fonts back
+    // MORE FONTS (1.69.0): the font that is already on (picked before this list arrived) gets fetched now.
+    Array.from(document.body.classList).filter(c => c.indexOf('ui-font-') === 0).forEach(c => loadUiFont(c.slice('ui-font-'.length)));
   }
 
   /* ---------- MOD FONTS (1.55.0) ----------
