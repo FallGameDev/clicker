@@ -1650,13 +1650,9 @@
     --brand-gradient: var(--melon-light);
     --hero-gradient: var(--melon-light);
   }
-  /* AMOGUS SPRITES: no frame animation or glow in low perf. Dead ones jump straight to the last frame. */
+  /* AMOGUS SPRITES: the sprite animations still play in low perf, only the glow is turned off. */
   body.low-perf .crewmate .sprite{
-    animation:none !important;
     filter:none !important;
-  }
-  body.low-perf .crewmate.dead .sprite{
-    background-position:calc(var(--amg-fw) * -34) 0;
   }
   body.low-perf .noob-head,
   body.low-perf .noob-torso,
