@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.71.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.71.0">
+<!-- Game version: 1.72.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.72.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -1433,6 +1433,69 @@
     background:var(--brand-gradient);
     transition:width .5s ease;
   }
+
+  /* ---------- QUESTS (1.72.0) ---------- */
+  .quest-head{
+    width:100%;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    margin:0 2px 10px;
+    font-family:'Poppins', sans-serif;
+    font-size:12px;
+    font-weight:600;
+    color:var(--muted);
+  }
+  .quest-card{
+    width:100%;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:14px;
+    padding:12px 16px;
+    margin-bottom:10px;
+    box-shadow:var(--pop-sm);
+    transition:opacity .15s ease, border-color .15s ease;
+  }
+  .quest-card.done{ border-color:var(--zap); }
+  .quest-card.claimed{ opacity:.55; }
+  .quest-card.locked{ opacity:.4; }
+  .quest-card.quest-bonus{ border-style:dashed; }
+  .quest-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .quest-title{
+    font-family:'Fredoka One', cursive;
+    font-size:14px;
+    line-height:1.3;
+  }
+  .quest-track{
+    height:10px;
+    border-radius:999px;
+    background:var(--night);
+    border:2px solid var(--ink);
+    overflow:hidden;
+    margin:10px 0 6px;
+  }
+  .quest-fill{
+    height:100%;
+    border-radius:999px;
+    background:var(--brand-gradient);
+    transition:width .3s ease;
+  }
+  .quest-meta{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    flex-wrap:wrap;
+    font-family:'Poppins', sans-serif;
+    font-size:11px;
+    font-weight:600;
+    color:var(--muted);
+  }
+  .quest-claim{ flex-shrink:0; }
 
   /* ---------- SHOP ---------- */
   .shop-card{
@@ -10340,6 +10403,7 @@
     leaderboard: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4h10v4a5 5 0 0 1-5 5 5 5 0 0 1-5-5V4z"/><path d="M7 5H4v2a3 3 0 0 0 3 3M17 5h3v2a3 3 0 0 1-3 3"/><path d="M12 13v3M9 19h6l-1-3H10l-1 3z"/></svg>',
     shop: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 8l1.5-4h13L20 8v2a2.5 2.5 0 0 1-4.5 1.5A2.5 2.5 0 0 1 11 10a2.5 2.5 0 0 1-4.5 1.5A2.5 2.5 0 0 1 4 10V8z"/><path d="M5 10.8V20h14v-9.2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 20v-5a2.5 2.5 0 0 1 5 0v5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
     achievements: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5L7 21l5-2.5L17 21l-1.5-6.5"/></svg>',
+    quests: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 3h9l4 4v14H6z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M15 3v4h4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 12l1.8 1.8L14.5 10M9 17h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     settings: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z"/><path d="M19.4 13a7.4 7.4 0 0 0 .1-1 7.4 7.4 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7.6 7.6 0 0 0-1.7-1L15 3h-4l-.3 2.6a7.6 7.6 0 0 0-1.7 1l-2.4-1-2 3.4L6.6 11a7.4 7.4 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 0 0 1.7 1L11 21h4l.3-2.6a7.6 7.6 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>'
   };
 
@@ -10348,6 +10412,7 @@
     { id: "leaderboard", label: "Leaderboard", data: null },
     { id: "shop", label: "Shop", data: null },
     { id: "achievements", label: "Achievements", data: null },
+    { id: "quests", label: "Quests", data: null },
     { id: "settings", label: "Settings", data: null }
   ];
 
@@ -10470,6 +10535,7 @@
       prestigeMultOwned: 0,
       autoBuyerOwned: false,
       gems: 0,
+      quests: null, // QUESTS (1.72.0): { daily, weekly, peak }, kept through Prestige
       installedMods: [],
       modData: {}, // CGC: { modId: { currency: {}, storage: {} } }, saved to the API as a list
       // LIMITED SHOP (1.13.0): owned profile fonts/frames and what is equipped.
@@ -11831,6 +11897,7 @@
     setBadge(tabBar.querySelector('.tab-btn[data-tab="stats"]'), total, 'tab-notif-badge', true);
     setBadge(document.getElementById('stats-subtab-overview'), notifCounts.requests);
     setBadge(document.getElementById('stats-subtab-messages'), notifCounts.messages);
+    questBadge(); // QUESTS: rewards waiting to be claimed
   }
 
   let notifPollBusy = false;
@@ -16090,6 +16157,8 @@
       renderSettings();
     } else if (activeTab === 'achievements') {
       renderAchievements();
+    } else if (activeTab === 'quests') {
+      questRender();
     } else {
       renderLinks(TABS.find(t => t.id === activeTab).data);
     }
@@ -29756,6 +29825,7 @@ ${hasCode
     const keepCosmetics = game.cosmeticsOwned || [];
     const keepEquippedFont = game.equippedFont || '';
     const keepEquippedFrame = game.equippedFrame || '';
+    const keepQuests = game.quests || null; // QUESTS: daily/weekly progress survives a Prestige
     // Mods are bought with Gems (kept), so installed mods and their saved data stay too.
     const keepInstalledMods = game.installedMods || [];
     const keepModData = game.modData || {};
@@ -29766,6 +29836,7 @@ ${hasCode
     game.cosmeticsOwned = keepCosmetics;
     game.equippedFont = keepEquippedFont;
     game.equippedFrame = keepEquippedFrame;
+    game.quests = keepQuests;
     game.prestige = keepPrestige;
     game.boosts = keepBoosts;
     game.totalPrestige = keepTotalPrestige;
@@ -31217,6 +31288,395 @@ ${hasCode
     setTimeout(maybeShowDailyReward, 2500); // let the game settle (and the birthday gift go first)
   }
 
+  /* ======================================================
+     QUESTS (1.72.0)
+     A Quests tab with two subtabs.
+       Daily   3 quests. Everybody gets the same 3 (the types are picked from the date),
+               but the targets grow with how far YOU are. Pays a decent reward, plus a
+               bonus for claiming all 3. Resets at 00:00 UTC.
+       Weekly  5 very hard tasks, claim any 3. Pays a huge reward, plus a Mastery Bonus
+               for claiming 3. Resets Monday 00:00 UTC.
+
+     HOW IT WORKS
+       - The quests live in game.quests = { daily, weekly, peak }. Prestige keeps them.
+       - Progress is measured by watching the game once a second (questPoll), so the
+         shop and the other earning code did not have to change:
+           earn / spend  = moneys going up / down  (game.clicks)
+           buy           = the owned-upgrade counters going up (see questSig)
+           prestige      = totalPrestige going up
+           play          = a minute counts only while the page is visible
+         Clicks come from the avatar's own click event (the Z key clicks the avatar too).
+       - Targets and rewards are fixed when the day or week starts, so they do not move
+         while you play. "Wealth" is your best moneys total since your last prestige, so
+         spending everything before a reset does not make the quests easy.
+       - Inside a Room the save is the room's, so quests are paused there.
+
+     TUNING: QUEST_REWARDS and QUEST_TYPES below hold every number.
+     NOT SYNCED: the Accounts sheet has no quests column, so quests are saved per browser
+     (localStorage), like the Daily Reward. See README.md.
+     ====================================================== */
+  const QUEST_DAY_MS = 864e5;
+  const QUEST_WEEKLY_PICKS = 3; // how many weekly tasks a player may claim
+  const QUEST_REWARDS = {
+    daily:  { moneyPct: 0.06, moneyMin: 150,    gems: 2,  bonusMoneyPct: 0.15, bonusMoneyMin: 500,    bonusGems: 5 },
+    weekly: { moneyPct: 0.75, moneyMin: 10000,  gems: 25, bonusMoneyPct: 2,    bonusMoneyMin: 100000, bonusGems: 100 }
+  };
+  // Owned-upgrade counters. A rise in their total = something was bought.
+  const QUEST_BUY_NUMBERS = ['clickBoostOwned', 'autoClickerOwned', 'autoSpeedLevel', 'dvdOwned', 'swingLevel',
+    'amogusOwned', 'noobOwned', 'noobLevel', 'amogusExtraTasks', 'megaBoostOwned', 'turboClickerOwned',
+    'headStartOwned', 'prestigeMultOwned'];
+  const QUEST_BUY_FLAGS = ['musicPlayerOwned', 'cursorsOwned', 'bgOwned', 'offlineEarningsOwned', 'iconModifierOwned',
+    'autoKillOwned', 'effectsOwned', 'fontManagerOwned', 'themeSwitcherOwned', 'luckyCharmOwned', 'autoBuyerOwned'];
+
+  let questSub = 'daily';
+  let questBase = null;        // what the counters read at the last check
+  let questStarted = false;
+  let questDirty = false;      // progress changed since the last save
+  let questLastSave = 0;
+  let questLastLive = 0;
+  let questRenderedKey = '';
+
+  function questPad(n){ return String(n).padStart(2, '0'); }
+  function questDayKey(ms){
+    const d = new Date(ms === undefined ? Date.now() : ms);
+    return d.getUTCFullYear() + '-' + questPad(d.getUTCMonth() + 1) + '-' + questPad(d.getUTCDate());
+  }
+  function questDayStart(){
+    const d = new Date();
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  }
+  function questWeekStart(){ // Monday 00:00 UTC
+    const t = questDayStart();
+    return t - ((new Date(t).getUTCDay() + 6) % 7) * QUEST_DAY_MS;
+  }
+  function questNextReset(kind){ return kind === 'daily' ? questDayStart() + QUEST_DAY_MS : questWeekStart() + 7 * QUEST_DAY_MS; }
+  function questPeriodKey(kind){ return kind === 'daily' ? questDayKey() : questDayKey(questWeekStart()); }
+
+  function questHash(s){
+    let h = 1779033703 ^ s.length;
+    for (let i = 0; i < s.length; i++) { h = Math.imul(h ^ s.charCodeAt(i), 3432918353); h = (h << 13) | (h >>> 19); }
+    return h >>> 0;
+  }
+  function questRng(seed){ // same seed = same numbers for every player
+    let a = seed;
+    return () => {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function questShuffle(arr, rnd){
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+  function questNice(n){ // 2 significant figures, so targets read cleanly
+    if (!isFinite(n)) return 1;
+    if (n < 100) return Math.max(1, Math.round(n));
+    const e = Math.pow(10, Math.floor(Math.log10(n)) - 1);
+    return Math.round(n / e) * e;
+  }
+  function questFmt(n){
+    if (!isFinite(n)) return String(n);
+    const big = [[1e15, ' quadrillion'], [1e12, ' trillion'], [1e9, ' billion'], [1e6, ' million']];
+    for (const [size, word] of big) {
+      if (Math.abs(n) >= size) return (n / size).toFixed(2).replace(/\.?0+$/, '') + word;
+    }
+    return Math.round(n).toLocaleString('en-US');
+  }
+
+  function questState(){
+    if (!game.quests || typeof game.quests !== 'object') game.quests = {};
+    return game.quests;
+  }
+  function questActive(){ return !!currentUsername && !roomSession; }
+  function questWealth(){ return Math.max(game.clicks || 0, questState().peak || 0); }
+  function questPower(){ return Math.log10(Math.max(10, questWealth())) + (game.prestige || 0) * 2; }
+
+  const QUEST_TYPES = {
+    clicks: {
+      icon: '\u{1F446}', text: t => 'Click the avatar ' + questFmt(t) + ' times',
+      daily:  p => questNice(Math.min(25000, 50 * Math.pow(1.3, p))),
+      weekly: p => questNice(Math.min(250000, 1500 * Math.pow(1.3, p)))
+    },
+    earn: {
+      icon: '\u{1F4B0}', text: t => 'Earn ' + questFmt(t) + ' moneys',
+      daily:  (p, w) => questNice(Math.max(250, w * 0.4)),
+      weekly: (p, w) => questNice(Math.max(2500, w * 3))
+    },
+    spend: {
+      icon: '\u{1F6D2}', text: t => 'Spend ' + questFmt(t) + ' moneys',
+      daily:  (p, w) => questNice(Math.max(100, w * 0.25)),
+      weekly: (p, w) => questNice(Math.max(1000, w * 2))
+    },
+    buy: {
+      icon: '\u{1F9FE}', text: t => 'Buy ' + questFmt(t) + ' shop upgrade' + (t === 1 ? '' : 's'),
+      daily:  p => Math.min(12, 2 + Math.floor(p / 2)),
+      weekly: p => Math.min(60, 10 + Math.floor(p * 1.5))
+    },
+    play: {
+      icon: '\u23F1\uFE0F', text: t => 'Play for ' + questFmt(t) + ' minutes',
+      daily:  p => Math.min(40, 8 + Math.floor(p)),
+      weekly: p => Math.min(300, 90 + Math.floor(p * 10))
+    },
+    prestige: { // only offered when a prestige is within reach
+      icon: '\u{1F31F}', text: t => 'Prestige ' + t + ' time' + (t === 1 ? '' : 's'),
+      needs: (kind, w) => (game.prestige || 0) >= 1 && w >= PRESTIGE_COST * (kind === 'daily' ? 0.25 : 0.05),
+      daily:  () => 1,
+      weekly: () => 3
+    },
+    dailyclears: { // weekly only: claim the Daily Bonus on 3 different days
+      icon: '\u{1F4C5}', text: t => 'Claim the Daily Bonus on ' + t + ' different days',
+      weekly: () => 3
+    }
+  };
+
+  function questBuild(kind){
+    const key = questPeriodKey(kind);
+    const weekly = kind === 'weekly';
+    const rnd = questRng(questHash(kind + ':' + key));
+    const p = questPower(), w = questWealth();
+    const R = QUEST_REWARDS[kind];
+    // Same shuffle for everyone, then drop the types this player cannot do right now.
+    const ids = questShuffle(Object.keys(QUEST_TYPES).filter(t => QUEST_TYPES[t][kind]), rnd)
+      .filter(t => !QUEST_TYPES[t].needs || QUEST_TYPES[t].needs(kind, w))
+      .slice(0, weekly ? 5 : 3);
+    return {
+      key,
+      list: ids.map(type => ({
+        type,
+        target: QUEST_TYPES[type][kind](p, w),
+        progress: 0,
+        claimed: false,
+        reward: { money: questNice(Math.max(R.moneyMin, w * R.moneyPct)), gems: R.gems }
+      })),
+      bonus: { money: questNice(Math.max(R.bonusMoneyMin, w * R.bonusMoneyPct)), gems: R.bonusGems, claimed: false }
+    };
+  }
+
+  // Makes sure today's and this week's quests exist. Returns null when quests are paused.
+  function questEnsure(){
+    if (!questActive()) return null;
+    const s = questState();
+    if (!s.daily || s.daily.key !== questPeriodKey('daily') || !Array.isArray(s.daily.list)) { s.daily = questBuild('daily'); questDirty = true; }
+    if (!s.weekly || s.weekly.key !== questPeriodKey('weekly') || !Array.isArray(s.weekly.list)) { s.weekly = questBuild('weekly'); questDirty = true; }
+    return s;
+  }
+
+  function questTrack(type, n){
+    if (!(n > 0)) return;
+    const s = questEnsure();
+    if (!s) return;
+    ['daily', 'weekly'].forEach(kind => {
+      s[kind].list.forEach(q => {
+        if (q.type !== type || q.progress >= q.target) return;
+        q.progress = Math.min(q.target, q.progress + n);
+        questDirty = true;
+        if (q.progress >= q.target) {
+          try { showBanner('Quest complete: ' + QUEST_TYPES[q.type].text(q.target)); } catch (e) {}
+        }
+      });
+    });
+  }
+
+  // Counts the owned upgrades. Prestige resets them, so only RISES are treated as purchases.
+  function questSig(){
+    let n = 0;
+    QUEST_BUY_NUMBERS.forEach(k => { n += Number(game[k]) || 0; });
+    QUEST_BUY_FLAGS.forEach(k => { if (game[k]) n += 1; });
+    n += (game.cosmeticsOwned || []).length;
+    return n;
+  }
+
+  function questPoll(){
+    if (!currentUsername) return;
+    if (roomSession) { questBase = null; questUiTick(); return; } // paused: the room's numbers are not yours
+    const s = questState();
+    const cur = {
+      user: currentUsername, clicks: game.clicks || 0, tot: game.totalPrestige || 0,
+      pres: game.prestige || 0, sig: questSig()
+    };
+    if (!questBase || questBase.user !== cur.user) { // first check, or another account logged in
+      questBase = cur;
+      if (cur.clicks > (s.peak || 0)) s.peak = cur.clicks;
+      questEnsure();
+      questUiTick();
+      return;
+    }
+    questEnsure();
+    if (cur.tot > questBase.tot || cur.pres > questBase.pres) {
+      // A prestige reset the moneys and the upgrades: count it, start the peak over.
+      questTrack('prestige', Math.max(1, cur.tot - questBase.tot));
+      s.peak = cur.clicks;
+    } else {
+      if (cur.clicks > questBase.clicks) questTrack('earn', cur.clicks - questBase.clicks);
+      else if (cur.clicks < questBase.clicks) questTrack('spend', questBase.clicks - cur.clicks);
+      if (cur.sig > questBase.sig) questTrack('buy', cur.sig - questBase.sig);
+    }
+    if (cur.clicks > (s.peak || 0)) s.peak = cur.clicks;
+    if (document.visibilityState === 'visible') questTrack('play', 1 / 60);
+    questBase = cur;
+    if (questDirty && Date.now() - questLastSave > 3000) { questDirty = false; questLastSave = Date.now(); saveGame(); }
+    questUiTick();
+  }
+
+  // Pays a reward. Same pattern as the Daily Reward: it is a gift, not income.
+  function questGive(r){
+    game.clicks = (game.clicks || 0) + r.money;
+    game.gems = (game.gems || 0) + r.gems;
+    if (questBase) questBase.clicks += r.money; // do not count the reward as "earned"
+    incomeIgnore += r.money;
+    playSound('audio/sfx/money.mp3');
+    updateCounter();
+    saveGame();
+    syncToSheet();
+    refreshShopAffordability();
+    refreshStatsMoneys();
+    if (!isLowPerfMode()) { try { spawnConfettiBurst(); } catch (e) {} }
+  }
+  function questClaimedCount(kind){ const s = questState()[kind]; return s ? s.list.filter(q => q.claimed).length : 0; }
+  function questNeed(kind){ return kind === 'weekly' ? QUEST_WEEKLY_PICKS : 3; }
+
+  function questClaim(kind, i){
+    const s = questEnsure();
+    if (!s) { showBanner('Leave the room to claim quest rewards.'); return; }
+    const q = s[kind].list[i];
+    if (!q || q.claimed || q.progress < q.target) return;
+    if (kind === 'weekly' && questClaimedCount('weekly') >= QUEST_WEEKLY_PICKS) return;
+    q.claimed = true; // marked FIRST, so a reload in the middle cannot pay twice
+    saveGame();
+    questGive(q.reward);
+    questRender(); questBadge();
+  }
+  function questClaimBonus(kind){
+    const s = questEnsure();
+    if (!s) { showBanner('Leave the room to claim quest rewards.'); return; }
+    const b = s[kind].bonus;
+    if (b.claimed || questClaimedCount(kind) < questNeed(kind)) return;
+    b.claimed = true;
+    saveGame();
+    questGive(b);
+    if (kind === 'daily') questTrack('dailyclears', 1);
+    saveGame();
+    questRender(); questBadge();
+  }
+
+  function questClaimable(){
+    if (!questActive()) return 0;
+    const s = questState();
+    if (!s.daily || !s.weekly) return 0;
+    let n = 0;
+    ['daily', 'weekly'].forEach(kind => {
+      const P = s[kind];
+      if (kind === 'daily' || questClaimedCount('weekly') < QUEST_WEEKLY_PICKS) {
+        n += P.list.filter(q => !q.claimed && q.progress >= q.target).length;
+      }
+      if (!P.bonus.claimed && questClaimedCount(kind) >= questNeed(kind)) n += 1;
+    });
+    return n;
+  }
+  function questBadge(){ // the number on the Quests tab. Called by renderNotificationBadges().
+    try { setBadge(tabBar.querySelector('.tab-btn[data-tab="quests"]'), questClaimable(), 'tab-notif-badge', false); } catch (e) {}
+  }
+
+  /* ---------- QUESTS: SCREEN ---------- */
+  function questCountdown(kind){
+    let ms = Math.max(0, questNextReset(kind) - Date.now());
+    const d = Math.floor(ms / QUEST_DAY_MS); ms -= d * QUEST_DAY_MS;
+    const h = Math.floor(ms / 36e5), m = Math.floor((ms % 36e5) / 6e4), sec = Math.floor((ms % 6e4) / 1e3);
+    return (d ? d + 'd ' : '') + questPad(h) + ':' + questPad(m) + ':' + questPad(sec);
+  }
+  function questRewardHtml(r){
+    return '<img src="images/ui/money.png" alt="" style="width:14px;height:14px;vertical-align:-2px;"> ' + questFmt(r.money) +
+      ' &nbsp;<img src="images/ui/gems.png" alt="" style="width:14px;height:14px;vertical-align:-2px;"> ' + r.gems;
+  }
+  function questShown(q){ return q.progress >= q.target ? q.target : Math.floor(q.progress); }
+
+  function questCardHtml(kind, q, i){
+    const t = QUEST_TYPES[q.type];
+    const done = q.progress >= q.target;
+    const locked = kind === 'weekly' && !q.claimed && questClaimedCount('weekly') >= QUEST_WEEKLY_PICKS;
+    const pct = Math.min(100, (q.progress / q.target) * 100);
+    let btn;
+    if (q.claimed) btn = '<button class="buy-btn quest-claim" disabled>Claimed</button>';
+    else if (locked) btn = '<button class="buy-btn quest-claim" disabled>Locked</button>';
+    else btn = '<button class="buy-btn quest-claim" data-q-claim="' + kind + ':' + i + '"' + (done ? '' : ' disabled') + '>Claim</button>';
+    return '<div class="quest-card' + (done ? ' done' : '') + (q.claimed ? ' claimed' : '') + (locked ? ' locked' : '') + '" data-qcard="' + kind + ':' + i + '">' +
+      '<div class="quest-top"><div class="quest-title">' + t.icon + ' ' + t.text(q.target) + '</div>' + btn + '</div>' +
+      '<div class="quest-track"><div class="quest-fill" style="width:' + pct + '%;"></div></div>' +
+      '<div class="quest-meta"><span class="quest-prog">' + questFmt(questShown(q)) + ' / ' + questFmt(q.target) + '</span>' +
+      '<span>' + questRewardHtml(q.reward) + '</span></div></div>';
+  }
+
+  function questStructKey(s){
+    const part = P => P.key + ':' + P.list.map(q => (q.claimed ? 'c' : (q.progress >= q.target ? 'd' : 'p'))).join('') + (P.bonus.claimed ? 'B' : 'b');
+    return questSub + '|' + part(s.daily) + '|' + part(s.weekly);
+  }
+
+  function questRender(){
+    if (activeTab !== 'quests') return;
+    const s = questEnsure();
+    if (!s) {
+      list.innerHTML = '<div class="empty-state">' + (currentUsername ? 'Quests are paused while you are in a room. Leave the room to see them.' : 'Log in to see your quests.') + '</div>';
+      questRenderedKey = '';
+      return;
+    }
+    const kind = questSub, P = s[kind], weekly = kind === 'weekly';
+    const got = questClaimedCount(kind), want = questNeed(kind);
+    const bonusReady = !P.bonus.claimed && got >= want;
+    const tabs = [['daily', 'Daily'], ['weekly', 'Weekly']].map(([id, label]) =>
+      '<button class="shop-category-btn' + (questSub === id ? ' active' : '') + '" data-q-sub="' + id + '">' + label + '</button>').join('');
+    list.innerHTML =
+      '<div class="shop-category-bar">' + tabs + '</div>' +
+      '<div class="quest-head"><span>' + (weekly ? 'Claim any ' + want + ' of ' + P.list.length + ' (' + got + '/' + want + ')' : got + '/3 claimed') + '</span>' +
+      '<span>Resets in <b data-q-timer="' + kind + '">' + questCountdown(kind) + '</b></span></div>' +
+      P.list.map((q, i) => questCardHtml(kind, q, i)).join('') +
+      '<div class="quest-card quest-bonus' + (P.bonus.claimed ? ' claimed' : '') + (bonusReady ? ' done' : '') + '">' +
+        '<div class="quest-top"><div class="quest-title">' + (weekly ? '\u{1F3C6} Weekly Mastery Bonus' : '\u{1F389} Daily Bonus') +
+        '<div class="quest-meta" style="margin-top:4px;"><span>' + (weekly ? 'Claim ' + want + ' weekly tasks' : 'Claim all 3 daily quests') + '</span><span>' + questRewardHtml(P.bonus) + '</span></div></div>' +
+        '<button class="buy-btn quest-claim" data-q-bonus="' + kind + '"' + (bonusReady ? '' : ' disabled') + '>' + (P.bonus.claimed ? 'Claimed' : 'Claim') + '</button></div></div>';
+    questRenderedKey = questStructKey(s);
+  }
+
+  // Cheap once-a-second update: progress bars and the countdown change in place.
+  function questRefreshLive(){
+    if (activeTab !== 'quests') return;
+    const s = questEnsure();
+    if (!s) { if (questRenderedKey !== '') questRender(); return; }
+    if (questRenderedKey !== questStructKey(s)) { questRender(); return; }
+    list.querySelectorAll('[data-qcard]').forEach(card => {
+      const [kind, i] = card.dataset.qcard.split(':');
+      const q = s[kind] && s[kind].list[+i];
+      if (!q) return;
+      const fill = card.querySelector('.quest-fill'), prog = card.querySelector('.quest-prog');
+      const pct = Math.min(100, (q.progress / q.target) * 100) + '%';
+      if (fill && fill.style.width !== pct) fill.style.width = pct;
+      const txt = questFmt(questShown(q)) + ' / ' + questFmt(q.target);
+      if (prog && prog.textContent !== txt) prog.textContent = txt;
+    });
+    list.querySelectorAll('[data-q-timer]').forEach(el => { el.textContent = questCountdown(el.dataset.qTimer); });
+  }
+  function questUiTick(){ questBadge(); questRefreshLive(); }
+
+  function questStart(){ // called once at the end of startGame()
+    if (questStarted) return;
+    questStarted = true;
+    avatarEl.addEventListener('click', () => {
+      questTrack('clicks', 1);
+      const now = Date.now();
+      if (now - questLastLive > 250) { questLastLive = now; questRefreshLive(); }
+    });
+    list.addEventListener('click', e => {
+      const b = e.target.closest('[data-q-claim], [data-q-bonus], [data-q-sub]');
+      if (!b || activeTab !== 'quests') return;
+      if (b.dataset.qSub) { questSub = b.dataset.qSub; questRender(); }
+      else if (b.dataset.qClaim) { const [k, i] = b.dataset.qClaim.split(':'); questClaim(k, +i); }
+      else if (b.dataset.qBonus) questClaimBonus(b.dataset.qBonus);
+    });
+    setInterval(questPoll, 1000);
+  }
+
   function startGame(){
     loadGame();
     checkSymbolsHeadsUpOnLoad();
@@ -31267,6 +31727,7 @@ ${hasCode
     startGameplayExtras();   // GAMEPLAY EXTRAS: moneys per second, Lucky Star, Daily Reward
     roomTryRejoin();         // ROOMS: go back into the room you were in before a page reload
     startRoomRentChecks();   // ROOMS: pay the monthly bill of your servers (1.40.0)
+    questStart();            // QUESTS: daily + weekly quests (1.72.0)
   }
 
   /* ---------- ROOMS + SERVERS (1.34.0) ----------
