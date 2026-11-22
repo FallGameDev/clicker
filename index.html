@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.73.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.73.0">
+<!-- Game version: 1.74.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.74.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -1433,6 +1433,11 @@
     background:var(--brand-gradient);
     transition:width .5s ease;
   }
+
+  /* ---------- BARK BUTTON (1.74.0) ---------- */
+  .public-profile-bark-row{ display:none; justify-content:center; margin-top:10px; }
+  .public-profile-bark-row.visible{ display:flex; }
+  html body .bark-btn.bark-btn.bark-btn{ font-family:'MeFontCustom', cursive !important; font-size:15px; padding:10px 22px; }
 
   /* ---------- GTA 6 GIFT (1.73.0) ---------- */
   .gift-card{
@@ -10027,6 +10032,7 @@
         <span id="public-profile-clicks"></span>
       </div>
       <div class="public-profile-social-row" id="public-profile-social-row"></div>
+      <div class="public-profile-bark-row" id="public-profile-bark-row"></div>
       <div class="public-profile-support-row" id="public-profile-support-row"></div>
       <div class="public-profile-friend-row" id="public-profile-friend-row"></div>
     </div>
@@ -10489,9 +10495,10 @@
       applyIconPick(category, game.lastIconPick);
       return;
     }
-    if (game.iconModifierOwned && game.iconChosen && game.selectedIcon && game.selectedIcon !== 'profile.png') {
+    if ((game.iconModifierOwned || furryUsable()) && game.iconChosen && game.selectedIcon && game.selectedIcon !== 'profile.png') {
       avatarEl.classList.remove('emoji-mode');
       applyIcon(game.selectedIcon);
+      furryShowStill(); // FURRY (1.74.0): the gif waits on its first frame until it is clicked
     } else {
       avatarEl.classList.add('emoji-mode');
       avatarEmojiEl.textContent = currentAvatarEmoji;
@@ -10763,7 +10770,8 @@
   }
 
   avatarEl.addEventListener('click', () => {
-    playSound('audio/sfx/click.mp3');
+    playSound(avatarClickSound()); // FURRY (1.74.0): the Furry icon has its own click sound
+    furryOnClick();
     // GAMEPLAY EXTRAS: fast clicking builds a combo that multiplies this click (see COMBO_TIERS).
     const comboMult = registerComboClick();
     const earnedThisClick = earnClicks(game.clickPower * comboMult);
@@ -14308,19 +14316,23 @@
       { sel: songSelect, owned: !!game.musicPlayerOwned,
         gift: v => !!(SONGS[Number(v)] && SONGS[Number(v)].file === GIFT_SONG.file), extra: () => false, keep: () => false },
       { sel: iconSelect, owned: !!game.iconModifierOwned,
-        gift: v => v === GIFT_ICON_FILE, extra: () => false, keep: v => v === 'profile.png' }
+        // the icon picker has two free icons: the GTA 6 set (the gift) and Furry (the Bark button)
+        any: () => giftHas() || furryHas(),
+        on: v => v === FURRY_ICON_FILE ? furryHas() : giftHas(),
+        gift: v => v === GIFT_ICON_FILE || v === FURRY_ICON_FILE, extra: () => false, keep: v => v === 'profile.png' }
     ];
   }
   function giftApplyPickerLimits(){
     try {
-      const has = giftHas();
       giftSelectRules().forEach(r => {
         if (!r.sel) return;
+        const has = r.any ? r.any() : giftHas();
         const restrict = has && !r.owned;
         Array.from(r.sel.options).forEach(opt => {
           if (!opt.value) return; // the "Choose a ..." line
           const isGift = r.gift(opt.value), isExtra = r.extra(opt.value);
-          const hide = (isGift && !has) || (isExtra && !restrict) || (restrict && !isGift && !isExtra && !r.keep(opt.value));
+          const on = r.on ? r.on(opt.value) : giftHas();
+          const hide = (isGift && !on) || (isExtra && !restrict) || (restrict && !isGift && !isExtra && !r.keep(opt.value));
           if (opt.hidden !== hide) opt.hidden = hide;   // iOS Safari ignores "hidden", so it is disabled too
           if (opt.disabled !== hide) opt.disabled = hide;
         });
@@ -14340,6 +14352,7 @@
   function giftRefresh(){
     try {
       giftWatchSelects();
+      if (furryHas()) { furryRefresh(); updatePickerVisibility(); } // FURRY (1.74.0)
       if (giftHas()) {
         ICON_EMOJI_POOLS.gta = GIFT_ICONS.slice();
         if (!ICONS.some(i => i.file === GIFT_ICON_FILE)) addIconOption({ label: 'GTA 6', file: GIFT_ICON_FILE });
@@ -14411,6 +14424,122 @@
     showBanner(useNow ? 'Gift claimed! Welcome to Vice City.' : 'Gift claimed! Find it in Preferences.');
     if (activeTab === 'stats') renderStats();
     renderNotificationBadges();
+  }
+
+  /* ======================================================
+     FURRY ICON + BARK BUTTON (1.74.0)
+     Miggy's profile (player id 4) has a "Bark" button, in MeFont. Pressing it plays the
+     bark and gives the player a free icon called "Furry" (images/ui/giphy.gif).
+
+     FURRY ICON
+       - It shows in the Icon picker in Preferences. Like the GTA 6 gift it works even
+         without the Icon Modifier (the picker then only lists Default and Furry).
+       - The avatar shows the first frame of the gif. A click plays the gif, and it goes
+         back to the still picture when you stop clicking (FURRY_PLAY_MS).
+       - While Furry is the picked icon, a click plays FURRY_SOUND instead of the normal
+         click sound (audio/sfx/click.mp3). The "Mute sound effects" setting still wins.
+     GIVEN = localStorage ("fgd_furry_icon_<username>"), so it is kept on this device and
+     survives a Prestige, the same way the Daily Reward and the gift are.
+     ====================================================== */
+  const FURRY_PLAYER_ID = '4';                     // Miggy's profile
+  const FURRY_ICON_FILE = 'images/ui/giphy.gif';
+  const FURRY_SOUND = 'audio/sfx/Voice (3).m4a';
+  const FURRY_PLAY_MS = 2500;                      // how long the gif keeps playing after the last click
+
+  const furryMemory = new Set();                   // backup for browsers that block localStorage
+  let furryStillUrl = '';                          // the first frame of the gif ('none' if it cannot be made)
+  let furryStillTimer = null;                      // set while the gif is playing
+  let furryBlob = null;                            // the gif file, kept so a restart needs no download
+  let furryBlobUrl = '';
+
+  function furryKey(){ return 'fgd_furry_icon_' + String(currentUsername || 'guest').toLowerCase(); }
+  function furryHas(){
+    if (furryMemory.has(furryKey())) return true;
+    try { return localStorage.getItem(furryKey()) === '1'; } catch (e) { return false; }
+  }
+  // True while Furry is the icon being used. Safe to call at any time (it is used by older code).
+  function furryUsable(){
+    try { return game.selectedIcon === FURRY_ICON_FILE && furryHas(); } catch (e) { return false; }
+  }
+  function furrySound(){ return encodeURI(FURRY_SOUND); } // the file name has a space and brackets
+  // The avatar click calls this instead of always playing click.mp3.
+  function avatarClickSound(){ return furryUsable() ? furrySound() : 'audio/sfx/click.mp3'; }
+
+  function furryAvatarImg(){ return document.querySelector('.avatar img'); }
+  function furryLoadBlob(){
+    if (furryBlob || typeof fetch !== 'function') return;
+    fetch(FURRY_ICON_FILE).then(r => r.ok ? r.blob() : null).then(b => { if (b) furryBlob = b; }).catch(() => {});
+  }
+  function furryMakeStill(done){
+    if (furryStillUrl) { done(furryStillUrl); return; }
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth || 200;
+        c.height = img.naturalHeight || 200;
+        c.getContext('2d').drawImage(img, 0, 0);
+        furryStillUrl = c.toDataURL('image/png');
+      } catch (e) { furryStillUrl = 'none'; } // canvas blocked: the gif just plays all the time
+      done(furryStillUrl);
+    };
+    img.onerror = () => done('none');
+    img.src = FURRY_ICON_FILE;
+  }
+  // The avatar waits on the first frame until it is clicked.
+  function furryShowStill(){
+    if (!furryUsable()) return;
+    furryMakeStill(url => {
+      const im = furryAvatarImg();
+      if (im && url !== 'none' && furryUsable() && !furryStillTimer) im.src = url;
+    });
+  }
+  function furryOnClick(){
+    if (!furryUsable()) return;
+    const im = furryAvatarImg();
+    if (!im) return;
+    if (!furryStillTimer) { // not playing yet: start the gif from its first frame
+      if (furryBlob) {
+        if (furryBlobUrl) URL.revokeObjectURL(furryBlobUrl);
+        furryBlobUrl = URL.createObjectURL(furryBlob); // a new address restarts the animation, with no download
+        im.src = furryBlobUrl;
+      } else {
+        im.src = FURRY_ICON_FILE + '?play=' + Date.now();
+      }
+    }
+    clearTimeout(furryStillTimer);
+    furryStillTimer = setTimeout(() => { furryStillTimer = null; furryShowStill(); }, FURRY_PLAY_MS);
+  }
+
+  // Puts the icon in the picker once it has been given. Safe to call as often as you like.
+  function furryRefresh(){
+    if (!furryHas()) return;
+    if (!ICONS.some(i => i.file === FURRY_ICON_FILE)) addIconOption({ label: 'Furry', file: FURRY_ICON_FILE });
+    furryLoadBlob();
+  }
+
+  function furryBark(){
+    playSound(furrySound());
+    if (!currentUsername) { showBanner('Log in to get the free Furry icon.'); return; }
+    if (furryHas()) { showBanner('Woof! You already have the Furry icon.'); return; }
+    furryMemory.add(furryKey());
+    try { localStorage.setItem(furryKey(), '1'); } catch (e) {} // given FIRST, so it can never be given twice
+    furryRefresh();
+    updatePickerVisibility();
+    giftApplyPickerLimits();
+    showBanner('You got a free icon: Furry! Pick it in Preferences.');
+  }
+
+  // The Bark button on the profile with player id 4. Called with null to clear it.
+  function furryRenderBark(account){
+    const row = document.getElementById('public-profile-bark-row');
+    if (!row) return;
+    row.innerHTML = '';
+    row.classList.remove('visible');
+    if (!account || String(account.playerId) !== FURRY_PLAYER_ID) return;
+    row.innerHTML = '<button class="buy-btn bark-btn" id="bark-btn" type="button">Bark</button>';
+    row.classList.add('visible');
+    document.getElementById('bark-btn').addEventListener('click', furryBark);
   }
 
   const UI_THEMES = [
@@ -15999,14 +16128,14 @@
     musicPlayerEl.classList.toggle('visible', !!(game.musicPlayerOwned || giftHas()));
     cursorPickerEl.classList.toggle('visible', !!game.cursorsOwned);
     bgPickerEl.classList.toggle('visible', !!game.bgOwned);
-    iconPickerEl.classList.toggle('visible', !!(game.iconModifierOwned || giftHas()));
+    iconPickerEl.classList.toggle('visible', !!(game.iconModifierOwned || giftHas() || furryHas()));
     effectPickerEl.classList.toggle('visible', !!game.effectsOwned);
     const fontManagerPickerEl = document.getElementById('font-manager-picker');
     if (fontManagerPickerEl) fontManagerPickerEl.classList.toggle('visible', !!(game.fontManagerOwned || giftHas()));
     const themePickerEl = document.getElementById('theme-picker');
     if (themePickerEl) themePickerEl.classList.toggle('visible', !!(game.themeSwitcherOwned || giftHas()));
 
-    const anyPickerOwned = !!(game.musicPlayerOwned || game.cursorsOwned || game.bgOwned || game.iconModifierOwned || game.effectsOwned || game.fontManagerOwned || game.themeSwitcherOwned || giftHas());
+    const anyPickerOwned = !!(game.musicPlayerOwned || game.cursorsOwned || game.bgOwned || game.iconModifierOwned || game.effectsOwned || game.fontManagerOwned || game.themeSwitcherOwned || giftHas() || furryHas());
     const preferencesDropdownEl = document.getElementById('preferences-dropdown');
     if (preferencesDropdownEl) preferencesDropdownEl.classList.toggle('visible', anyPickerOwned);
     giftApplyPickerLimits(); // GIFT (1.73.0): players without the shop item only see the gift items
@@ -28419,6 +28548,7 @@ ${hasCode
     publicProfileSupportRow.innerHTML = '';
     publicProfileSocialRow.classList.remove('visible');
     publicProfileSocialRow.innerHTML = '';
+    furryRenderBark(null); // FURRY (1.74.0)
     publicProfileOverlay.classList.add('visible');
 
     try {
@@ -28483,6 +28613,7 @@ ${hasCode
 
       renderPublicProfileSocial(account);
       updatePublicProfileFriendRow(account, isSelf);
+      furryRenderBark(account); // FURRY (1.74.0): the Bark button on player id 4
 
       if (!skipUrlUpdate && account.playerId != null) {
         const url = new URL(window.location);
@@ -31939,7 +32070,7 @@ ${hasCode
     if (game.musicPlayerOwned || giftHas()) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
-    if (game.iconModifierOwned || giftHas()) showIconPicker();
+    if (game.iconModifierOwned || giftHas() || furryHas()) showIconPicker();
     else updateAvatarIconDisplay();
     if (game.effectsOwned) showEffectPicker();
     if (game.fontManagerOwned || giftHas()) showFontManager();
@@ -32133,7 +32264,7 @@ ${hasCode
     else { try { songPause(); } catch (e) {} }
     if (game.cursorsOwned) showCursorPicker(); else applyCursor('default');
     if (game.bgOwned) showBgPicker(); else applyBackground('default');
-    if (game.iconModifierOwned || giftHas()) showIconPicker(); else updateAvatarIconDisplay();
+    if (game.iconModifierOwned || giftHas() || furryHas()) showIconPicker(); else updateAvatarIconDisplay();
     if (game.effectsOwned) showEffectPicker();
     if (game.fontManagerOwned || giftHas()) showFontManager(); else applyUiFont('');
     showThemePicker(); // THEME SWITCHER: without it the game goes back to the Original theme
