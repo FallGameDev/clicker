@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Game version: 1.72.0 | Deployment: 217 | Update both on every release, see README.md -->
-<meta name="game-version" content="1.72.0">
+<!-- Game version: 1.73.0 | Deployment: 217 | Update both on every release, see README.md -->
+<meta name="game-version" content="1.73.0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>The Clicker Game!</title>
 <link rel="icon" type="image/x-icon" href="images/ui/maksy.ico" id="favicon-link">
@@ -1433,6 +1433,50 @@
     background:var(--brand-gradient);
     transition:width .5s ease;
   }
+
+  /* ---------- GTA 6 GIFT (1.73.0) ---------- */
+  .gift-card{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-top:10px;
+    padding:12px 16px;
+    text-align:left;
+    cursor:pointer;
+    color:#fff;
+    text-shadow:0 1px 3px rgba(20,0,50,.55);
+    background:linear-gradient(45deg, #2E5BFF, #FF4FA0, #FF9249);
+    border:2px solid var(--ink);
+    border-radius:14px;
+    box-shadow:var(--pop-sm);
+  }
+  .gift-card .gift-emoji{ font-size:32px; line-height:1; }
+  .gift-card .gift-text{ flex:1; min-width:0; }
+  .gift-card h3{ margin:0; font-family:'Fredoka One', cursive; font-size:15px; }
+  .gift-card p{ margin:2px 0 0; font-family:'Poppins', sans-serif; font-size:12px; font-weight:600; opacity:.95; }
+  .gift-bubble{
+    margin:6px 0 12px;
+    padding:12px 14px;
+    border-radius:14px;
+    border:2px solid var(--ink);
+    font-family:'Fredoka One', cursive;
+    font-size:16px;
+    color:#fff;
+    text-shadow:0 1px 3px rgba(20,0,50,.55);
+    background:linear-gradient(45deg, #2E5BFF, #FF4FA0, #FF9249);
+  }
+  .gift-list{
+    list-style:none;
+    margin:0 0 14px;
+    padding:0;
+    text-align:left;
+    font-family:'Poppins', sans-serif;
+    font-size:13px;
+    font-weight:600;
+  }
+  .gift-list li{ padding:4px 0; }
+  .gift-list li span{ display:inline-block; width:24px; }
 
   /* ---------- QUESTS (1.72.0) ---------- */
   .quest-head{
@@ -11893,9 +11937,10 @@
   }
 
   function renderNotificationBadges(){
-    const total = notifCounts.requests + notifCounts.messages;
+    const giftDot = giftPending() ? 1 : 0; // GIFT (1.73.0): an unopened gift counts as one
+    const total = notifCounts.requests + notifCounts.messages + giftDot;
     setBadge(tabBar.querySelector('.tab-btn[data-tab="stats"]'), total, 'tab-notif-badge', true);
-    setBadge(document.getElementById('stats-subtab-overview'), notifCounts.requests);
+    setBadge(document.getElementById('stats-subtab-overview'), notifCounts.requests + giftDot);
     setBadge(document.getElementById('stats-subtab-messages'), notifCounts.messages);
     questBadge(); // QUESTS: rewards waiting to be claimed
   }
@@ -14154,8 +14199,9 @@
     const current = fontManagerSelect.value;
     for (let i = UI_FONTS.length - 1; i >= 0; i--) if (UI_FONTS[i].mod) UI_FONTS.splice(i, 1);
     found.forEach(f => UI_FONTS.push({ label: f.label, value: f.value, mod: true }));
+    giftAddFontEntries(); // GIFT (1.73.0): the GTA 6 font
     rebuildPickerSelect(fontManagerSelect, 'Choose a font', UI_FONTS, e => e.value);
-    const wanted = (typeof game !== 'undefined' && game && game.fontManagerChosen && game.fontManagerOwned) ? game.selectedUiFont : current;
+    const wanted = (typeof game !== 'undefined' && game && game.fontManagerChosen && (game.fontManagerOwned || giftHas())) ? game.selectedUiFont : current;
     fontManagerSelect.value = UI_FONTS.some(f => f.value === wanted) ? wanted : '';
   }
 
@@ -14178,6 +14224,195 @@
   const COLOR_MODE_KEY = 'fgd_color_mode';   // 'light', 'dark' or 'system'
   const UI_THEME_KEY = 'fgd_ui_theme';       // id of the picked theme (only matters with 2+ themes)
   const COLOR_MODES = ['light', 'dark', 'system'];
+  /* ======================================================
+     GTA 6 GIFT (1.73.0)
+     A gift from FallGameDev that every player can open once, from the Stats tab.
+     It unlocks four things:
+       1. a "GTA 6" theme   (every surface is a 45 degree blue > pink > orange gradient)
+       2. a "GTA 6" font    (fonts/gta.otf)
+       3. a song            ("Flowers in a Hurricane", audio/music/Flower in a Hurricane.mp3)
+       4. a "GTA 6" icon set (the emoji in GIFT_ICONS, for the avatar and the tab icon)
+
+     CLAIMED = localStorage ("fgd_gift_gta6_<username>"). It is marked FIRST, so a reload
+     in the middle can never show it twice. It is kept on this device (like the Daily
+     Reward) and it survives a Prestige, because it does not live in the save.
+
+     WITHOUT THE SHOP ITEMS: a player who never bought the Theme Switcher, Font Manager,
+     Music Player or Icon Modifier (or lost them in a Prestige) still gets the pickers, but
+     each one only lists the gift items (plus the normal way back, like "Original").
+     Players who own an item see its whole list, gift included.
+
+     To change the gift: GIFT_MESSAGE, GIFT_COLORS and the GIFT_* constants just below.
+     ====================================================== */
+  const GIFT_FROM = 'FallGameDev';
+  const GIFT_MESSAGE = 'GTA 6? Whats that? \u{1F440}';
+  const GIFT_COLORS = { blue: '#2E5BFF', pink: '#FF4FA0', yellow: '#FF9249' }; // cobalt blue > hot pink > #FF9249
+  const GIFT_GRADIENT = `linear-gradient(45deg, ${GIFT_COLORS.blue}, ${GIFT_COLORS.pink}, ${GIFT_COLORS.yellow})`;
+  const GIFT_GRADIENT_HOVER = 'linear-gradient(45deg, #4A73FF, #FF6DB2, #FFA467)';
+  const GIFT_GRADIENT_DARK = 'linear-gradient(45deg, #101f66, #7a1d4e, #86431b)'; // inputs and bar tracks
+  const GIFT_THEME_ID = 'gift:gta6';
+  const GIFT_FONT_VALUE = 'gta6';
+  const GIFT_FONT_ORIGINAL = 'original';   // "Original look": the way back, only listed for players without the Font Manager
+  const GIFT_FONT_FILE = 'fonts/gta.otf';
+  const GIFT_SONG = { label: 'Flowers in a Hurricane', file: 'audio/music/Flower in a Hurricane.mp3', artist: 'Gift from ' + GIFT_FROM };
+  const GIFT_ICON_FILE = 'category:gta';
+  const GIFT_ICONS = ['\u{1F52B}', '\u{1F4AA}', '\u{1F694}', '\u{1F646}\u{1F3FB}\u200D\u2640\uFE0F', '\u{1F334}', '\u{1F306}', '\u{1F4B8}', '\u{1F697}'];
+
+  const GIFT_THEME_VARS = {
+    'night': GIFT_GRADIENT_DARK, 'card': GIFT_GRADIENT, 'card-hover': GIFT_GRADIENT_HOVER, 'surface': GIFT_GRADIENT,
+    'brand-gradient': GIFT_GRADIENT, 'page': GIFT_GRADIENT,
+    'ink': '#1b0b3a', 'rind': '#ffffff', 'cream': '#ffffff', 'muted': 'rgba(255,255,255,0.84)', 'line': 'rgba(255,255,255,0.24)',
+    'lavender': '#ffe3f4', 'grape': '#8b5cf6', 'zap': '#fff3a8', 'pow': '#ff4fa0',
+    'moneys-green': '#7dffc0', 'on-bright': '#ffffff', 'zap-text': '#fff3a8',
+    'shine': 'inset 0 1px 0 rgba(255,255,255,0.35)', 'color-scheme': 'dark'
+  };
+  const GIFT_THEME = {
+    id: GIFT_THEME_ID, label: 'GTA 6', gift: true,
+    dark: GIFT_THEME_VARS, light: GIFT_THEME_VARS,
+    // White text on a bright gradient needs a soft shadow to stay readable.
+    css: 'body{text-shadow:0 1px 3px rgba(20,0,50,.55);}\ninput,textarea,select,option{text-shadow:none;}'
+  };
+
+  const giftMemoryClaimed = new Set(); // backup for browsers that block localStorage
+  function giftKey(){ return 'fgd_gift_gta6_' + String(currentUsername || 'guest').toLowerCase(); }
+  function giftHas(){
+    if (giftMemoryClaimed.has(giftKey())) return true;
+    try { return localStorage.getItem(giftKey()) === '1'; } catch (e) { return false; }
+  }
+  function giftPending(){ return !!currentUsername && !giftHas(); }
+
+  // The font. Only the @font-face and class are written here; the picker entries come from giftAddFontEntries().
+  function giftFontStyle(){
+    let el = document.getElementById('gift-font-style');
+    if (!el) { el = document.createElement('style'); el.id = 'gift-font-style'; document.head.appendChild(el); }
+    el.textContent =
+      `@font-face{font-family:'GTA Gift Font';src:url('${fixAssetPath(GIFT_FONT_FILE)}');font-display:swap;}\n` +
+      `body.ui-font-${GIFT_FONT_VALUE} *{font-family:'GTA Gift Font', 'Fredoka One', cursive !important;}`;
+  }
+  // Called by refreshModFonts() every time the font list is rebuilt, so the gift fonts never get lost.
+  function giftAddFontEntries(){
+    if (!giftHas()) return;
+    giftFontStyle();
+    if (!UI_FONTS.some(f => f.value === GIFT_FONT_VALUE)) UI_FONTS.push({ label: 'GTA 6', value: GIFT_FONT_VALUE, gift: true });
+    if (!UI_FONTS.some(f => f.value === GIFT_FONT_ORIGINAL)) UI_FONTS.push({ label: 'Original look', value: GIFT_FONT_ORIGINAL, gift: true });
+  }
+
+  // Which options each picker shows. gift = only with the gift. extra = only for players without the
+  // shop item. keep = normal options that stay for players without the shop item.
+  function giftSelectRules(){
+    return [
+      { sel: themeSelect, owned: !!game.themeSwitcherOwned,
+        gift: v => v === GIFT_THEME_ID, extra: () => false, keep: v => v === UI_THEMES[0].id },
+      { sel: fontManagerSelect, owned: !!game.fontManagerOwned,
+        gift: v => v === GIFT_FONT_VALUE, extra: v => v === GIFT_FONT_ORIGINAL, keep: () => false },
+      { sel: songSelect, owned: !!game.musicPlayerOwned,
+        gift: v => !!(SONGS[Number(v)] && SONGS[Number(v)].file === GIFT_SONG.file), extra: () => false, keep: () => false },
+      { sel: iconSelect, owned: !!game.iconModifierOwned,
+        gift: v => v === GIFT_ICON_FILE, extra: () => false, keep: v => v === 'profile.png' }
+    ];
+  }
+  function giftApplyPickerLimits(){
+    try {
+      const has = giftHas();
+      giftSelectRules().forEach(r => {
+        if (!r.sel) return;
+        const restrict = has && !r.owned;
+        Array.from(r.sel.options).forEach(opt => {
+          if (!opt.value) return; // the "Choose a ..." line
+          const isGift = r.gift(opt.value), isExtra = r.extra(opt.value);
+          const hide = (isGift && !has) || (isExtra && !restrict) || (restrict && !isGift && !isExtra && !r.keep(opt.value));
+          if (opt.hidden !== hide) opt.hidden = hide;   // iOS Safari ignores "hidden", so it is disabled too
+          if (opt.disabled !== hide) opt.disabled = hide;
+        });
+      });
+    } catch (e) { /* the pickers are not built yet */ }
+  }
+  // The pickers get rebuilt in several places, so every rebuild is caught here and limited again.
+  function giftWatchSelects(){
+    [themeSelect, fontManagerSelect, songSelect, iconSelect].forEach(sel => {
+      if (!sel || sel.__giftWatch) return;
+      sel.__giftWatch = new MutationObserver(() => giftApplyPickerLimits());
+      sel.__giftWatch.observe(sel, { childList: true });
+    });
+  }
+
+  // Puts everything the gift gives into the pickers. Safe to call as often as you like.
+  function giftRefresh(){
+    try {
+      giftWatchSelects();
+      if (giftHas()) {
+        ICON_EMOJI_POOLS.gta = GIFT_ICONS.slice();
+        if (!ICONS.some(i => i.file === GIFT_ICON_FILE)) addIconOption({ label: 'GTA 6', file: GIFT_ICON_FILE });
+        if (!SONGS.some(s => s.file === GIFT_SONG.file)) addSongOption(Object.assign({}, GIFT_SONG));
+        rebuildThemeSelect();
+        applyUiTheme();
+        refreshModFonts(); // rebuilds the font list, gift font included
+        updatePickerVisibility();
+      }
+      giftApplyPickerLimits();
+    } catch (e) { console.warn('Gift setup failed', e); }
+  }
+
+  /* ---------- GIFT: THE STATS CARD AND THE DIALOG ---------- */
+  function giftCardHtml(){
+    return `<div class="gift-card" id="gift-card">
+      <div class="gift-emoji">\u{1F381}</div>
+      <div class="gift-text"><h3>A gift from @${GIFT_FROM}</h3><p>Tap to see what is inside.</p></div>
+      <button class="buy-btn" id="gift-open-btn">Open</button>
+    </div>`;
+  }
+  function giftBindCard(){
+    const card = document.getElementById('gift-card');
+    if (card) card.addEventListener('click', giftOpenDialog);
+  }
+
+  function giftOpenDialog(){
+    if (!giftPending()) return;
+    confirmBox.innerHTML = `
+      <h1 class="auth-heading">A Gift!</h1>
+      <p class="auth-sub">From @${GIFT_FROM}</p>
+      <div class="gift-bubble">${GIFT_MESSAGE}</div>
+      <ul class="gift-list">
+        <li><span>\u{1F3A8}</span> GTA 6 theme</li>
+        <li><span>\u{1F520}</span> GTA 6 font</li>
+        <li><span>\u{1F3B5}</span> ${GIFT_SONG.label}</li>
+        <li><span>\u{1F52B}</span> GTA 6 icon set ${GIFT_ICONS.slice(0, 4).join(' ')}</li>
+      </ul>
+      <button class="auth-btn" id="gift-claim-use">Claim and use it</button>
+      <button class="auth-btn secondary" id="gift-claim">Claim</button>
+      <button class="auth-btn secondary" id="gift-later">Later</button>
+    `;
+    document.getElementById('gift-claim-use').addEventListener('click', () => giftClaim(true));
+    document.getElementById('gift-claim').addEventListener('click', () => giftClaim(false));
+    document.getElementById('gift-later').addEventListener('click', closeConfirm);
+    confirmOverlay.classList.add('visible');
+  }
+
+  function giftPick(select, value){ // uses the picker's own change code, so saving and labels work as usual
+    if (!select) return;
+    select.value = value;
+    select.dispatchEvent(new Event('change'));
+  }
+  function giftUseNow(){
+    giftPick(themeSelect, GIFT_THEME_ID);
+    giftPick(fontManagerSelect, GIFT_FONT_VALUE);
+    giftPick(iconSelect, GIFT_ICON_FILE);
+    const idx = SONGS.findIndex(s => s.file === GIFT_SONG.file);
+    if (idx !== -1) giftPick(songSelect, String(idx));
+  }
+  function giftClaim(useNow){
+    if (!giftPending()) { closeConfirm(); return; }
+    giftMemoryClaimed.add(giftKey());
+    try { localStorage.setItem(giftKey(), '1'); } catch (e) {} // marked FIRST, so it can never show twice
+    giftRefresh();
+    if (useNow) giftUseNow();
+    closeConfirm();
+    if (!isLowPerfMode()) { try { spawnConfettiBurst(); } catch (e) {} }
+    showBanner(useNow ? 'Gift claimed! Welcome to Vice City.' : 'Gift claimed! Find it in Preferences.');
+    if (activeTab === 'stats') renderStats();
+    renderNotificationBadges();
+  }
+
   const UI_THEMES = [
     {
       id: 'original',
@@ -14198,7 +14433,7 @@
   ];
   const MOD_THEMES = [];      // themes that come from installed mods (filled by loadModThemes)
   let themeGateOn = false;    // turns on in startGame(): from then on themes need the Theme Switcher
-  function allUiThemes(){ return UI_THEMES.concat(MOD_THEMES); }
+  function allUiThemes(){ return UI_THEMES.concat(giftHas() ? [GIFT_THEME] : [], MOD_THEMES); } // GIFT (1.73.0): the GTA 6 theme
 
   // Watches the device's light/dark setting, for the "system" button.
   const systemLightQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null;
@@ -14219,7 +14454,12 @@
   // The picked theme, or the first one in the list (Original) if the pick is gone.
   // Once the save is loaded, a player without the Theme Switcher always gets Original.
   function getUiTheme(){
-    if (themeGateOn && !game.themeSwitcherOwned) return UI_THEMES[0];
+    if (themeGateOn && !game.themeSwitcherOwned) {
+      // GIFT (1.73.0): without the Theme Switcher it is Original, or the GTA 6 theme once the gift is claimed.
+      let pick = null;
+      try { pick = localStorage.getItem(UI_THEME_KEY); } catch (e) {}
+      return (pick === GIFT_THEME_ID && giftHas()) ? GIFT_THEME : UI_THEMES[0];
+    }
     let saved = null;
     try { saved = localStorage.getItem(UI_THEME_KEY); } catch (e) {}
     return allUiThemes().find(t => t.id === saved) || UI_THEMES[0];
@@ -14336,6 +14576,7 @@
     else if (THEME_CORNERS[corners].scale !== 1) css += scaledCornersCss(THEME_CORNERS[corners].scale);
     // "compactTabs": true is for wide fonts (like typewriter fonts): smaller tab text so all five tabs still fit.
     if (theme.compactTabs === true) css += `@media (min-width:481px){.tabs .tab-btn{font-size:10px;padding-left:3px;padding-right:3px;gap:3px;letter-spacing:-0.3px;}}\n`;
+    if (typeof theme.css === 'string') css += theme.css + '\n'; // GIFT (1.73.0): only the built-in gift theme has this
     styleEl.textContent = css;
   }
 
@@ -15755,19 +15996,20 @@
   const tutorialVisitedTabs = new Set();
 
   function updatePickerVisibility(){
-    musicPlayerEl.classList.toggle('visible', !!game.musicPlayerOwned);
+    musicPlayerEl.classList.toggle('visible', !!(game.musicPlayerOwned || giftHas()));
     cursorPickerEl.classList.toggle('visible', !!game.cursorsOwned);
     bgPickerEl.classList.toggle('visible', !!game.bgOwned);
-    iconPickerEl.classList.toggle('visible', !!game.iconModifierOwned);
+    iconPickerEl.classList.toggle('visible', !!(game.iconModifierOwned || giftHas()));
     effectPickerEl.classList.toggle('visible', !!game.effectsOwned);
     const fontManagerPickerEl = document.getElementById('font-manager-picker');
-    if (fontManagerPickerEl) fontManagerPickerEl.classList.toggle('visible', !!game.fontManagerOwned);
+    if (fontManagerPickerEl) fontManagerPickerEl.classList.toggle('visible', !!(game.fontManagerOwned || giftHas()));
     const themePickerEl = document.getElementById('theme-picker');
-    if (themePickerEl) themePickerEl.classList.toggle('visible', !!game.themeSwitcherOwned);
+    if (themePickerEl) themePickerEl.classList.toggle('visible', !!(game.themeSwitcherOwned || giftHas()));
 
-    const anyPickerOwned = !!(game.musicPlayerOwned || game.cursorsOwned || game.bgOwned || game.iconModifierOwned || game.effectsOwned || game.fontManagerOwned || game.themeSwitcherOwned);
+    const anyPickerOwned = !!(game.musicPlayerOwned || game.cursorsOwned || game.bgOwned || game.iconModifierOwned || game.effectsOwned || game.fontManagerOwned || game.themeSwitcherOwned || giftHas());
     const preferencesDropdownEl = document.getElementById('preferences-dropdown');
     if (preferencesDropdownEl) preferencesDropdownEl.classList.toggle('visible', anyPickerOwned);
+    giftApplyPickerLimits(); // GIFT (1.73.0): players without the shop item only see the gift items
   }
 
   const preferencesToggleEl = document.getElementById('preferences-toggle');
@@ -16354,6 +16596,7 @@
             <button class="gems-plus-btn" id="gems-plus-btn" title="Convert Moneys to Gems">+</button>
           </div>
         </div>
+        ${giftPending() ? giftCardHtml() : ''}
         <div class="friend-requests-card" id="friend-requests-card" style="display:none;">
           <h3>Friend Requests</h3>
           <div class="friend-requests-list" id="friend-requests-list"></div>
@@ -16399,6 +16642,7 @@
     document.getElementById('stats-name-click').addEventListener('click', openEditProfile);
     document.getElementById('gems-plus-btn').addEventListener('click', openGemsConvertDialog);
     document.getElementById('open-workshop-btn').addEventListener('click', openWorkshop);
+    giftBindCard(); // GIFT (1.73.0)
     document.getElementById('new-chat-btn').addEventListener('click', openNewChatPicker);
     applyMessagesOffState(); // SOCIAL: "Disable messages" turns this tab off
 
@@ -31688,16 +31932,17 @@ ${hasCode
     migrateOldLightMode(); // old saves: carry the account's light mode pick to this device
     themeGateOn = true;    // THEME SWITCHER: from here on a theme needs the Shop item
     refreshModThemes();    // themes from installed mods join the picker
+    giftRefresh();         // GIFT (1.73.0): the GTA 6 theme, font, song and icons, if the gift was claimed
     applyLightMode();
     playColorBgSong(); // COLOR SONGS
     updatePickerVisibility();
-    if (game.musicPlayerOwned) showMusicPlayer();
+    if (game.musicPlayerOwned || giftHas()) showMusicPlayer();
     if (game.cursorsOwned) showCursorPicker();
     if (game.bgOwned) showBgPicker();
-    if (game.iconModifierOwned) showIconPicker();
+    if (game.iconModifierOwned || giftHas()) showIconPicker();
     else updateAvatarIconDisplay();
     if (game.effectsOwned) showEffectPicker();
-    if (game.fontManagerOwned) showFontManager();
+    if (game.fontManagerOwned || giftHas()) showFontManager();
     updateDvdVisibility(); // spawns the right number of DVDs, or starts the math timer
     // Restore saved crewmate tasks and noob banks (localStorage), then fill up with new ones.
     const savedCrew = loadCrewStore();
@@ -31884,13 +32129,13 @@ ${hasCode
   // their own song, cursor and so on once the room owns the picker.
   function roomRefreshPickers(){
     updatePickerVisibility();
-    if (game.musicPlayerOwned) showMusicPlayer();
+    if (game.musicPlayerOwned || giftHas()) showMusicPlayer();
     else { try { songPause(); } catch (e) {} }
     if (game.cursorsOwned) showCursorPicker(); else applyCursor('default');
     if (game.bgOwned) showBgPicker(); else applyBackground('default');
-    if (game.iconModifierOwned) showIconPicker(); else updateAvatarIconDisplay();
+    if (game.iconModifierOwned || giftHas()) showIconPicker(); else updateAvatarIconDisplay();
     if (game.effectsOwned) showEffectPicker();
-    if (game.fontManagerOwned) showFontManager(); else applyUiFont('');
+    if (game.fontManagerOwned || giftHas()) showFontManager(); else applyUiFont('');
     showThemePicker(); // THEME SWITCHER: without it the game goes back to the Original theme
   }
 
