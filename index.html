@@ -9816,10 +9816,9 @@
 
   /* TAB BAR WITH 6 TABS (1.74.1)
      The Quests tab made it six. This block is LAST on purpose, so it wins over the older tab rules above.
-     Phones (480px and under): the round buttons used to be a fixed 54px, so six of them ran off the
-     screen on most phones. Now they share the space and only shrink when they have to (54px max).
-     Wider screens: the labels did not fit, so only the OPEN tab shows its name and the others are
-     icon only. Easy Navigation (icons only everywhere) still wins, it has !important. */
+     Phones only (480px and under): the round buttons used to be a fixed 54px, so six of them ran off
+     the screen on most phones. Now they share the space and only shrink when they have to (54px max).
+     Wider screens are untouched. */
   @media (max-width:480px){
     .tabs{ gap:6px; }
     .tab-btn{
@@ -9830,16 +9829,6 @@
       height:auto;
       aspect-ratio:1 / 1;
       align-self:center;
-    }
-  }
-  .tabs{ container-type:inline-size; container-name:tabs; }
-  @media (min-width:481px){
-    @container tabs (max-width:700px){
-      .tab-btn{ flex:0 1 auto; min-width:0; padding:9px 12px; }
-      .tab-btn .tab-icon{ display:flex; align-items:center; justify-content:center; width:20px; height:20px; }
-      .tab-btn .tab-label{ display:none; }
-      .tab-btn.active{ flex:1 1 auto; }
-      .tab-btn.active .tab-label{ display:inline; }
     }
   }
 </style>
